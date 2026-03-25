@@ -2,6 +2,7 @@
 title: 差勤系統架構圖
 markmap:
   colorFreezeLevel: 2
+  initialExpandLevel: 5
 
 ---
 
