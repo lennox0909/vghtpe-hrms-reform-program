@@ -22,7 +22,8 @@
         <div style="display: flex; align-items: center; gap: 0.5rem;">
             <label for="sel-expand" style="font-size: 0.875rem; font-weight: 600; color: #475569;">展開層級</label>
             <select id="sel-expand">
-                <option value="999" selected>全部展開</option>
+                <option value="-1" selected>目前視角</option>
+                <option value="999">全部展開</option>
                 <option value="1">第 1 層</option>
                 <option value="2">第 2 層</option>
                 <option value="3">第 3 層</option>
@@ -37,10 +38,6 @@
     </div>
     <svg id="mindmap"></svg>
     <script type="text/template" id="md-content">
----
-markmap:
-  initialExpandLevel: 999
----
 ---
 title: 出納組加班費發放作業
 markmap:
@@ -161,14 +158,31 @@ markmap:
             
             const optionsRaw = frontmatter?.markmap || {};
             let finalOptions = typeof deriveOptions === "function" ? deriveOptions(optionsRaw) : {};
-            if (!finalOptions.color && optionsRaw.colorFreezeLevel !== undefined) {
-                const freezeLevel = optionsRaw.colorFreezeLevel;
+            const uiColor = -1;
+            if (!finalOptions.color && (optionsRaw.colorFreezeLevel !== undefined || uiColor !== -1)) {
+                const freezeLevel = uiColor !== -1 ? uiColor : optionsRaw.colorFreezeLevel;
                 const colors = ["#00508C", "#00A0E9", "#00B2A9", "#F39200", "#E60012", "#71C5E8", "#C4D600", "#8A8D8F"];
                 finalOptions.color = (node) => colors[Math.min(node.depth, freezeLevel) % colors.length];
             }
             
+            // 套用匯出當下的折疊狀態
+            const foldedPaths = [];
+            const applyFoldedPaths = (node, paths, path = "0") => {
+                if (!node.payload) node.payload = {};
+                node.payload.fold = paths.includes(path) ? 1 : 0;
+                if (node.children) {
+                    node.children.forEach((c, i) => applyFoldedPaths(c, paths, `${path}-${i}`));
+                }
+            };
+            applyFoldedPaths(root, foldedPaths);
+            
             const svgEl = document.getElementById("mindmap");
             const mm = Markmap.create(svgEl, finalOptions, root);
+            
+            // 恢復匯出當下的平移與縮放視角
+            const transformData = {"k":0.6019574673755437,"x":-34.224999999999966,"y":540.6660802886358};
+            const d3Transform = d3.zoomIdentity.translate(transformData.x, transformData.y).scale(transformData.k);
+            d3.select(svgEl).call(mm.zoom.transform, d3Transform);
             
             // Controls Logic
             document.getElementById("btn-zoom-in").addEventListener("click", () => {
