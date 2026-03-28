@@ -1,15 +1,72 @@
-@import url('[https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;700&display=swap](https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;700&display=swap)');
+/* 引入外部字體 */
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;700&display=swap');
 
 :root {
     --indigo-600: #4f46e5;
     --purple-600: #9333ea;
-    --vgh-blue: #2563eb;
 }
 
 body {
     font-family: 'Inter', 'Noto Sans TC', sans-serif;
+    background-color: #f8fafc;
     -webkit-tap-highlight-color: transparent;
 }
 
-/* 包含 .flow-card, .arrow-path, .author-badge 等所有樣式 */
-...
+/* 互動卡片樣式 */
+.flow-card {
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.flow-card.active {
+    border-color: var(--indigo-600);
+    background-color: #f5f3ff;
+    transform: scale(1.02);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* 步驟數字樣式 */
+.step-number {
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+}
+
+/* SVG 動畫箭頭路徑 */
+.arrow-path {
+    stroke-dasharray: 10;
+    animation: dash 20s linear infinite;
+}
+
+@keyframes dash {
+    to { stroke-dashoffset: -1000; }
+}
+
+/* 互動式節點節點（SVG） */
+.interactive-node {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.interactive-node:hover, .interactive-node:active {
+    filter: brightness(0.9);
+    transform: translateY(-2px);
+}
+
+/* 視覺化切換按鈕高亮狀態 */
+.example-toggle-btn.active {
+    background-color: white;
+    color: var(--indigo-600);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 隱藏捲軸但保持功能 */
+.no-scrollbar::-webkit-scrollbar { 
+    display: none; 
+}
+.no-scrollbar { 
+    -ms-overflow-style: none; 
+    scrollbar-width: none; 
+}
+
+/* 等寬字體設定 */
+code { 
+    font-family: 'Fira Code', monospace; 
+}
