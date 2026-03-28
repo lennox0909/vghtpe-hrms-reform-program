@@ -50,8 +50,8 @@
 
             <!-- 雲端造訪人次計數器 -->
             <div class="flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
-                <i class="fa-solid fa-cloud text-blue-400 text-[10px] animate-pulse"></i>
-                <span class="text-[11px] text-slate-500 font-bold uppercase tracking-tight">全院造訪</span>
+                <i id="counter-icon" class="fa-solid fa-cloud text-blue-400 text-[10px] animate-pulse"></i>
+                <span id="counter-label" class="text-[11px] text-slate-500 font-bold uppercase tracking-tight">全院造訪</span>
                 <span id="visitor-count" class="text-sm font-black text-blue-600 tabular-nums">---</span>
             </div>
         </div>
@@ -128,7 +128,7 @@
                 </div>
             </a>
 
-            <!-- 特別休假日數試算系統 (Placeholder) -->
+            <!-- 特別休假日數試算系統 -->
             <div class="glass-card p-8 rounded-3xl border-dashed border-2 border-slate-200 opacity-80 flex flex-col justify-center items-center text-center">
                 <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mb-6">
                     <i class="fa-solid fa-calculator text-2xl"></i>
@@ -156,59 +156,85 @@
         import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // Firebase 設定與初始化
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vghtpe-hrms-toolbox';
+        /** * 自訂 Firebase 設定
+         * 若您在自己的網域執行，請在此貼入您的 Firebase Config 物件
+         * 例如: const manualConfig = { apiKey: "...", authDomain: "...", ... };
+         */
+        const manualConfig = null; 
 
-        const statsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'visitor_stats');
+        // 偵測環境變數
+        const getEnvConfig = () => {
+            try { return typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : manualConfig; } 
+            catch (e) { return manualConfig; }
+        };
 
-        const initCounter = async () => {
-            // 1. 進行身份驗證 (Rule 3)
+        const config = getEnvConfig();
+        const visitorCountEl = document.getElementById('visitor-count');
+
+        // --- 模式 A: 雲端同步模式 ---
+        const startCloudCounter = async (firebaseConfig) => {
             try {
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                const auth = getAuth(app);
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'vghtpe-hrms-toolbox';
+                const statsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'visitor_stats');
+
+                // 認證
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
-            } catch (err) {
-                console.error("Auth failed", err);
-                return;
-            }
 
-            // 2. 監聽身份變更後執行資料操作
-            onAuthStateChanged(auth, async (user) => {
-                if (!user) return;
+                onAuthStateChanged(auth, async (user) => {
+                    if (!user) return;
+                    
+                    // 增加計數
+                    try {
+                        const snap = await getDoc(statsDocRef);
+                        if (snap.exists()) {
+                            await updateDoc(statsDocRef, { count: increment(1) });
+                        } else {
+                            await setDoc(statsDocRef, { count: 1025 });
+                        }
+                    } catch (e) { console.warn("Firestore increment failed, using read-only."); }
 
-                // 3. 嘗試增加次數 (Rule 1 & 2)
-                try {
-                    const snap = await getDoc(statsDocRef);
-                    if (snap.exists()) {
-                        await updateDoc(statsDocRef, { count: increment(1) });
-                    } else {
-                        // 首次初始化
-                        await setDoc(statsDocRef, { count: 1025 });
-                    }
-                } catch (err) {
-                    console.error("Update counter failed", err);
-                }
-
-                // 4. 即時監聽數據變化並更新 UI
-                onSnapshot(statsDocRef, (doc) => {
-                    if (doc.exists()) {
-                        const count = doc.data().count || 0;
-                        document.getElementById('visitor-count').innerText = count.toLocaleString();
-                    }
-                }, (error) => {
-                    console.error("Counter snapshot error", error);
-                    document.getElementById('visitor-count').innerText = "N/A";
+                    // 即時監聽
+                    onSnapshot(statsDocRef, (doc) => {
+                        if (doc.exists()) {
+                            visitorCountEl.innerText = (doc.data().count || 0).toLocaleString();
+                        }
+                    }, (err) => { throw err; });
                 });
-            });
+            } catch (err) {
+                console.error("Firebase Initialization Error:", err);
+                startLocalCounter(); // 報錯時降級到本地模式
+            }
         };
 
-        window.addEventListener('load', initCounter);
+        // --- 模式 B: 本地降級模式 (localStorage) ---
+        const startLocalCounter = () => {
+            console.log("切換至本地端計數模式...");
+            const STORAGE_KEY = 'vghtpe_hrms_local_count';
+            let count = parseInt(localStorage.getItem(STORAGE_KEY)) || 1024;
+            count += 1;
+            localStorage.setItem(STORAGE_KEY, count);
+            
+            visitorCountEl.innerText = count.toLocaleString();
+            document.getElementById('counter-label').innerText = "造訪人次";
+            document.getElementById('counter-icon').classList.remove('fa-cloud', 'animate-pulse');
+            document.getElementById('counter-icon').classList.add('fa-user-check');
+        };
+
+        // 啟動邏輯
+        window.addEventListener('load', () => {
+            if (config) {
+                startCloudCounter(config);
+            } else {
+                startLocalCounter();
+            }
+        });
     </script>
 </body>
 </html>
