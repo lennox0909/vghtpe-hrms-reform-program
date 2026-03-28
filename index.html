@@ -47,13 +47,7 @@
                     <span class="text-[10px] text-slate-400 font-medium tracking-widest uppercase">Personnel Office Digital Toolbox</span>
                 </div>
             </div>
-
-            <!-- 造訪人次計數器 (自動切換雲端/本地模式) -->
-            <div class="flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
-                <i id="counter-icon" class="fa-solid fa-cloud text-blue-400 text-[10px] animate-pulse"></i>
-                <span id="counter-label" class="text-[11px] text-slate-500 font-bold uppercase tracking-tight">全院造訪</span>
-                <span id="visitor-count" class="text-sm font-black text-blue-600 tabular-nums">---</span>
-            </div>
+            <!-- 人次統計功能已移除 -->
         </div>
     </nav>
 
@@ -63,9 +57,13 @@
         <div class="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full -ml-32 -mb-32"></div>
         
         <div class="max-w-4xl mx-auto text-center relative z-10">
-            <div class="inline-block px-4 py-1.5 mb-6 bg-blue-500/20 border border-blue-400/30 rounded-full text-blue-300 text-xs font-bold tracking-widest">
+            <!-- 已加上 LinkedIn 連結與懸停動畫 -->
+            <a href="https://www.linkedin.com/in/leno-bing-shi-tsai-59744285" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               class="inline-block px-4 py-1.5 mb-6 bg-blue-500/20 border border-blue-400/30 rounded-full text-blue-300 text-xs font-bold tracking-widest hover:bg-blue-500/30 hover:border-blue-400/60 transition-all duration-300 transform hover:scale-105 active:scale-95">
                 by Leno Tsai
-            </div>
+            </a>
             <h1 class="text-4xl md:text-6xl font-black mb-6 tracking-tight leading-tight">
                 臺北榮民總醫院<br><span class="text-blue-400">人事室數位工具箱</span>
             </h1>
@@ -151,109 +149,5 @@
         </div>
     </footer>
 
-    <!-- Firebase 邏輯腳本 (模組化導入) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-        // Firebase 配置參數 (來源：您的專案設定)
-        const manualConfig = {
-            apiKey: "AIzaSyBQzXNCG52Yi6TdwElv4lc3MG30vqhHVd4",
-            authDomain: "vghtpe-hrms-toolbox.firebaseapp.com",
-            projectId: "vghtpe-hrms-toolbox",
-            storageBucket: "vghtpe-hrms-toolbox.firebasestorage.app",
-            messagingSenderId: "410790278484",
-            appId: "1:410790278484:web:f837a0d9d907b268d8c4c1"
-        }; 
-
-        // 自動偵測環境變數或使用手動配置
-        const getEnvConfig = () => {
-            try { 
-                // 若在支援環境執行，優先讀取系統變數，否則讀取手動配置
-                return typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : manualConfig; 
-            } catch (e) { 
-                return manualConfig; 
-            }
-        };
-
-        const config = getEnvConfig();
-        const visitorCountEl = document.getElementById('visitor-count');
-
-        // --- 模式 A: 雲端同步模式 ---
-        const startCloudCounter = async (firebaseConfig) => {
-            try {
-                const app = initializeApp(firebaseConfig);
-                const db = getFirestore(app);
-                const auth = getAuth(app);
-                
-                // 定義資料庫路徑
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'vghtpe-hrms-toolbox';
-                const statsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'visitor_stats');
-
-                // 身份認證
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                onAuthStateChanged(auth, async (user) => {
-                    if (!user) return;
-                    
-                    // 執行計數增加
-                    try {
-                        const snap = await getDoc(statsDocRef);
-                        if (snap.exists()) {
-                            await updateDoc(statsDocRef, { count: increment(1) });
-                        } else {
-                            // 初始化計數器
-                            await setDoc(statsDocRef, { count: 1025 });
-                        }
-                    } catch (e) { 
-                        console.warn("Counter auto-update failed, monitoring existing value only."); 
-                    }
-
-                    // 即時監聽變化
-                    onSnapshot(statsDocRef, (doc) => {
-                        if (doc.exists()) {
-                            visitorCountEl.innerText = (doc.data().count || 0).toLocaleString();
-                        }
-                    }, (err) => { 
-                        console.error("Cloud connection failed:", err);
-                        startLocalCounter(); 
-                    });
-                });
-            } catch (err) {
-                console.error("Firebase startup failed:", err);
-                startLocalCounter();
-            }
-        };
-
-        // --- 模式 B: 本地降級模式 (localStorage) ---
-        const startLocalCounter = () => {
-            const STORAGE_KEY = 'vghtpe_hrms_local_count';
-            let count = parseInt(localStorage.getItem(STORAGE_KEY)) || 1024;
-            count += 1;
-            localStorage.setItem(STORAGE_KEY, count);
-            
-            visitorCountEl.innerText = count.toLocaleString();
-            document.getElementById('counter-label').innerText = "造訪人次";
-            document.getElementById('counter-icon').classList.remove('fa-cloud', 'animate-pulse');
-            document.getElementById('counter-icon').classList.add('fa-user-check');
-            document.getElementById('counter-icon').classList.remove('text-blue-400');
-            document.getElementById('counter-icon').classList.add('text-slate-400');
-        };
-
-        // 啟動流程
-        window.addEventListener('load', () => {
-            // 如果有設定金鑰則啟動雲端，否則切換為本地
-            if (config && config.apiKey && config.apiKey !== "您的 apiKey") {
-                startCloudCounter(config);
-            } else {
-                startLocalCounter();
-            }
-        });
-    </script>
 </body>
 </html>
