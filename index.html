@@ -26,12 +26,6 @@
             border-color: rgba(59, 130, 246, 0.4);
         }
 
-        .gradient-text {
-            background: linear-gradient(135deg, #2563eb, #4f46e5);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
         .hero-pattern {
             background-color: #1e293b;
             background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
@@ -52,6 +46,13 @@
                     <span class="font-bold text-lg block leading-none">臺北榮民總醫院</span>
                     <span class="text-[10px] text-slate-400 font-medium tracking-widest uppercase">Personnel Office Digital Toolbox</span>
                 </div>
+            </div>
+
+            <!-- 雲端造訪人次計數器 -->
+            <div class="flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
+                <i class="fa-solid fa-cloud text-blue-400 text-[10px] animate-pulse"></i>
+                <span class="text-[11px] text-slate-500 font-bold uppercase tracking-tight">全院造訪</span>
+                <span id="visitor-count" class="text-sm font-black text-blue-600 tabular-nums">---</span>
             </div>
         </div>
     </nav>
@@ -150,5 +151,64 @@
         </div>
     </footer>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // Firebase 設定與初始化
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'vghtpe-hrms-toolbox';
+
+        const statsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'visitor_stats');
+
+        const initCounter = async () => {
+            // 1. 進行身份驗證 (Rule 3)
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth failed", err);
+                return;
+            }
+
+            // 2. 監聽身份變更後執行資料操作
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) return;
+
+                // 3. 嘗試增加次數 (Rule 1 & 2)
+                try {
+                    const snap = await getDoc(statsDocRef);
+                    if (snap.exists()) {
+                        await updateDoc(statsDocRef, { count: increment(1) });
+                    } else {
+                        // 首次初始化
+                        await setDoc(statsDocRef, { count: 1025 });
+                    }
+                } catch (err) {
+                    console.error("Update counter failed", err);
+                }
+
+                // 4. 即時監聽數據變化並更新 UI
+                onSnapshot(statsDocRef, (doc) => {
+                    if (doc.exists()) {
+                        const count = doc.data().count || 0;
+                        document.getElementById('visitor-count').innerText = count.toLocaleString();
+                    }
+                }, (error) => {
+                    console.error("Counter snapshot error", error);
+                    document.getElementById('visitor-count').innerText = "N/A";
+                });
+            });
+        };
+
+        window.addEventListener('load', initCounter);
+    </script>
 </body>
 </html>
