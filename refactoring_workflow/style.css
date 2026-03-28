@@ -1,0 +1,15 @@
+@import url('[https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;700&display=swap](https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;700&display=swap)');
+
+:root {
+    --indigo-600: #4f46e5;
+    --purple-600: #9333ea;
+    --vgh-blue: #2563eb;
+}
+
+body {
+    font-family: 'Inter', 'Noto Sans TC', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* 包含 .flow-card, .arrow-path, .author-badge 等所有樣式 */
+...
