@@ -43,12 +43,12 @@
                     <i class="fa-solid fa-hospital-user text-white text-xl"></i>
                 </div>
                 <div>
-                    <span class="font-bold text-lg block leading-none">臺北榮民總醫院</span>
+                    <span class="font-bold text-lg block leading-none text-slate-900">臺北榮民總醫院</span>
                     <span class="text-[10px] text-slate-400 font-medium tracking-widest uppercase">Personnel Office Digital Toolbox</span>
                 </div>
             </div>
 
-            <!-- 雲端造訪人次計數器 -->
+            <!-- 造訪人次計數器 (自動切換雲端/本地模式) -->
             <div class="flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
                 <i id="counter-icon" class="fa-solid fa-cloud text-blue-400 text-[10px] animate-pulse"></i>
                 <span id="counter-label" class="text-[11px] text-slate-500 font-bold uppercase tracking-tight">全院造訪</span>
@@ -79,7 +79,7 @@
     <main class="max-w-6xl mx-auto py-16 px-6">
         <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
             <div>
-                <h2 class="text-3xl font-bold flex items-center mb-2">
+                <h2 class="text-3xl font-bold flex items-center mb-2 text-slate-900">
                     <span class="bg-blue-600 w-1.5 h-8 rounded-full mr-4"></span>
                     核心工具列
                 </h2>
@@ -97,7 +97,7 @@
                 <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-sm">
                     <i class="fa-solid fa-code-branch text-2xl"></i>
                 </div>
-                <h3 class="text-xl font-bold mb-3 flex items-center">
+                <h3 class="text-xl font-bold mb-3 flex items-center text-slate-900">
                     圖表即時編輯器
                 </h3>
                 <p class="text-slate-500 text-sm leading-relaxed mb-6">
@@ -116,7 +116,7 @@
                 <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-sm">
                     <i class="fa-solid fa-brain text-2xl"></i>
                 </div>
-                <h3 class="text-xl font-bold mb-3">心智圖即時編輯器</h3>
+                <h3 class="text-xl font-bold mb-3 text-slate-900">心智圖即時編輯器</h3>
                 <p class="text-slate-500 text-sm leading-relaxed mb-6">
                     基於 Markmap 技術的動態心智圖。適合業務模組化思考與架構拆解，支援 Markdown 即時編輯與轉換。
                 </p>
@@ -151,21 +151,30 @@
         </div>
     </footer>
 
+    <!-- Firebase 邏輯腳本 (模組化導入) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        /** * 自訂 Firebase 設定
-         * 若您在自己的網域執行，請在此貼入您的 Firebase Config 物件
-         * 例如: const manualConfig = { apiKey: "...", authDomain: "...", ... };
-         */
-        const manualConfig = null; 
+        // Firebase 配置參數 (來源：您的專案設定)
+        const manualConfig = {
+            apiKey: "AIzaSyBQzXNCG52Yi6TdwElv4lc3MG30vqhHVd4",
+            authDomain: "vghtpe-hrms-toolbox.firebaseapp.com",
+            projectId: "vghtpe-hrms-toolbox",
+            storageBucket: "vghtpe-hrms-toolbox.firebasestorage.app",
+            messagingSenderId: "410790278484",
+            appId: "1:410790278484:web:f837a0d9d907b268d8c4c1"
+        }; 
 
-        // 偵測環境變數
+        // 自動偵測環境變數或使用手動配置
         const getEnvConfig = () => {
-            try { return typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : manualConfig; } 
-            catch (e) { return manualConfig; }
+            try { 
+                // 若在支援環境執行，優先讀取系統變數，否則讀取手動配置
+                return typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : manualConfig; 
+            } catch (e) { 
+                return manualConfig; 
+            }
         };
 
         const config = getEnvConfig();
@@ -177,10 +186,12 @@
                 const app = initializeApp(firebaseConfig);
                 const db = getFirestore(app);
                 const auth = getAuth(app);
+                
+                // 定義資料庫路徑
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'vghtpe-hrms-toolbox';
                 const statsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'visitor_stats');
 
-                // 認證
+                // 身份認證
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
@@ -190,32 +201,37 @@
                 onAuthStateChanged(auth, async (user) => {
                     if (!user) return;
                     
-                    // 增加計數
+                    // 執行計數增加
                     try {
                         const snap = await getDoc(statsDocRef);
                         if (snap.exists()) {
                             await updateDoc(statsDocRef, { count: increment(1) });
                         } else {
+                            // 初始化計數器
                             await setDoc(statsDocRef, { count: 1025 });
                         }
-                    } catch (e) { console.warn("Firestore increment failed, using read-only."); }
+                    } catch (e) { 
+                        console.warn("Counter auto-update failed, monitoring existing value only."); 
+                    }
 
-                    // 即時監聽
+                    // 即時監聽變化
                     onSnapshot(statsDocRef, (doc) => {
                         if (doc.exists()) {
                             visitorCountEl.innerText = (doc.data().count || 0).toLocaleString();
                         }
-                    }, (err) => { throw err; });
+                    }, (err) => { 
+                        console.error("Cloud connection failed:", err);
+                        startLocalCounter(); 
+                    });
                 });
             } catch (err) {
-                console.error("Firebase Initialization Error:", err);
-                startLocalCounter(); // 報錯時降級到本地模式
+                console.error("Firebase startup failed:", err);
+                startLocalCounter();
             }
         };
 
         // --- 模式 B: 本地降級模式 (localStorage) ---
         const startLocalCounter = () => {
-            console.log("切換至本地端計數模式...");
             const STORAGE_KEY = 'vghtpe_hrms_local_count';
             let count = parseInt(localStorage.getItem(STORAGE_KEY)) || 1024;
             count += 1;
@@ -225,11 +241,14 @@
             document.getElementById('counter-label').innerText = "造訪人次";
             document.getElementById('counter-icon').classList.remove('fa-cloud', 'animate-pulse');
             document.getElementById('counter-icon').classList.add('fa-user-check');
+            document.getElementById('counter-icon').classList.remove('text-blue-400');
+            document.getElementById('counter-icon').classList.add('text-slate-400');
         };
 
-        // 啟動邏輯
+        // 啟動流程
         window.addEventListener('load', () => {
-            if (config) {
+            // 如果有設定金鑰則啟動雲端，否則切換為本地
+            if (config && config.apiKey && config.apiKey !== "您的 apiKey") {
                 startCloudCounter(config);
             } else {
                 startLocalCounter();
