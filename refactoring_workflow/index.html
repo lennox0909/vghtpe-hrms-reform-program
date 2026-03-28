@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代碼考古與重構工作流：CaD + DaC 結合</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;700&display=swap');
+        
+        :root {
+            --indigo-600: #4f46e5;
+            --purple-600: #9333ea;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .flow-card {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .flow-card.active {
+            border-color: var(--indigo-600);
+            background-color: #f5f3ff;
+            transform: scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        }
+
+        .arrow-path {
+            stroke-dasharray: 10;
+            animation: dash 20s linear infinite;
+        }
+
+        @keyframes dash {
+            to { stroke-dashoffset: -1000; }
+        }
+
+        .interactive-node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .interactive-node:hover, .interactive-node:active {
+            filter: brightness(0.9);
+            transform: translateY(-2px);
+        }
+
+        .example-toggle-btn.active {
+            background-color: white;
+            color: var(--indigo-600);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* 隱藏捲軸但保持功能 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        code { font-family: 'Fira Code', monospace; }
+    </style>
+</head>
+<body class="p-4 md:p-8 lg:p-12">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-8 md:mb-16">
+            <h1 class="text-2xl md:text-4xl font-bold text-slate-800 mb-4 leading-tight">
+                代碼考古與重構現代化工作流
+            </h1>
+            <p class="text-base md:text-lg text-slate-600 max-w-2xl mx-auto px-4">
+                結合 <span class="font-semibold text-indigo-600">CaD</span> 與
+                <span class="font-semibold text-purple-600">DaC</span>，
+                讓遺留系統重構變得精確且可視。
+            </p>
+        </header>
+
+        <!-- Interactive Visual Flow -->
+        <div class="bg-white p-4 md:p-8 rounded-3xl shadow-sm mb-12 border border-slate-100">
+            <div class="flex items-center justify-between mb-4 px-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">點擊節點查看詳情</span>
+                <span class="flex items-center text-xs text-indigo-500">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"/></svg>
+                    互動式導覽
+                </span>
+            </div>
+            <div class="overflow-x-auto no-scrollbar py-4">
+                <svg viewBox="0 0 800 200" class="w-full min-w-[750px] h-auto">
+                    <!-- Nodes Group -->
+                    <g class="interactive-node" onclick="scrollToStep(0)">
+                        <circle cx="100" cy="100" r="45" fill="#f1f5f9" />
+                        <text x="100" y="105" text-anchor="middle" class="text-xs font-bold fill-slate-600">遺留系統</text>
+                        <title>第一階段：分析舊代碼</title>
+                    </g>
+                    
+                    <path d="M145 100 L200 100" stroke="#6366f1" stroke-width="2" class="arrow-path" marker-end="url(#arrowhead)"/>
+                    
+                    <g class="interactive-node" onclick="scrollToStep(1)">
+                        <rect x="200" y="55" width="130" height="90" rx="15" fill="#6366f1" />
+                        <text x="265" y="95" text-anchor="middle" class="text-xs fill-white font-bold">CaD 自動考古</text>
+                        <text x="265" y="115" text-anchor="middle" class="text-[10px] fill-white opacity-80">視覺化現狀</text>
+                    </g>
+
+                    <path d="M330 100 L390 100" stroke="#94a3b8" stroke-width="2" />
+
+                    <g class="interactive-node" onclick="scrollToStep(2)">
+                        <rect x="390" y="55" width="130" height="90" rx="15" fill="#a855f7" />
+                        <text x="455" y="95" text-anchor="middle" class="text-xs fill-white font-bold">DaC 藍圖設計</text>
+                        <text x="455" y="115" text-anchor="middle" class="text-[10px] fill-white opacity-80">定義新架構代碼</text>
+                    </g>
+
+                    <path d="M520 100 L575 100" stroke="#a855f7" stroke-width="2" class="arrow-path" marker-end="url(#arrowhead-purple)"/>
+
+                    <g class="interactive-node" onclick="scrollToStep(3)">
+                        <circle cx="660" cy="100" r="45" fill="#22c55e" />
+                        <text x="660" y="105" text-anchor="middle" class="text-xs font-bold fill-white">新版系統</text>
+                    </g>
+
+                    <!-- Markers -->
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1" />
+                        </marker>
+                        <marker id="arrowhead-purple" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7" />
+                        </marker>
+                    </defs>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Examples Section with Interactive Toggle -->
+        <div class="mb-12">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                <h2 class="text-xl md:text-2xl font-bold text-slate-800">核心概念視覺化對比</h2>
+                <div class="bg-slate-200 p-1 rounded-xl flex self-start md:self-auto">
+                    <button onclick="toggleExample('cad')" id="btn-cad" class="example-toggle-btn active px-4 py-2 rounded-lg text-sm font-bold transition-all">CaD (考古現狀)</button>
+                    <button onclick="toggleExample('dac')" id="id-dac" class="example-toggle-btn px-4 py-2 rounded-lg text-sm font-bold transition-all ml-1">DaC (重構藍圖)</button>
+                </div>
+            </div>
+
+            <div class="relative bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden min-h-[400px]">
+                <!-- CaD View -->
+                <div id="view-cad" class="transition-all duration-500 opacity-100 p-6 md:p-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <span class="inline-block bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full mb-4 uppercase">Code as Diagram</span>
+                            <h3 class="text-2xl font-bold text-slate-800 mb-4">自動化現狀分析</h3>
+                            <p class="text-slate-600 leading-relaxed mb-6">
+                                透過靜態分析技術直接從原始碼產出。它能揭露人眼難以發現的「隱形依賴」與「循環引用」。在考古階段，這能幫助你標記出那些需要被拆解的複雜模塊。
+                            </p>
+                            <ul class="space-y-3">
+                                <li class="flex items-start text-sm text-slate-600">
+                                    <svg class="w-5 h-5 text-indigo-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    自動發現組件之間的非法呼叫。
+                                </li>
+                                <li class="flex items-start text-sm text-slate-600">
+                                    <svg class="w-5 h-5 text-indigo-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    量化代碼邏輯的耦合度。
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                            <svg viewBox="0 0 400 220" class="w-full h-auto">
+                                <g stroke="#94a3b8" stroke-width="1.5" opacity="0.4">
+                                    <line x1="100" y1="60" x2="200" y2="160" />
+                                    <line x1="200" y1="160" x2="300" y2="60" />
+                                    <line x1="300" y1="60" x2="100" y2="60" />
+                                    <path d="M200 160 Q 200 40 100 60" fill="none" />
+                                </g>
+                                <circle cx="100" cy="60" r="25" fill="white" stroke="#6366f1" stroke-width="2" />
+                                <text x="100" y="65" text-anchor="middle" font-size="10" font-weight="bold">DataLayer</text>
+                                
+                                <circle cx="200" cy="160" r="35" fill="#fee2e2" stroke="#ef4444" stroke-width="2" />
+                                <text x="200" y="165" text-anchor="middle" font-size="10" fill="#b91c1c" font-weight="bold">ComplexLogic</text>
+                                
+                                <circle cx="300" cy="60" r="25" fill="white" stroke="#6366f1" stroke-width="2" />
+                                <text x="300" y="65" text-anchor="middle" font-size="10" font-weight="bold">ExternalAPI</text>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DaC View -->
+                <div id="view-dac" class="hidden transition-all duration-500 opacity-0 p-6 md:p-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <span class="inline-block bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full mb-4 uppercase">Diagram as Code</span>
+                            <h3 class="text-2xl font-bold text-slate-800 mb-4">結構化架構定義</h3>
+                            <p class="text-slate-600 leading-relaxed mb-6">
+                                將重構後的理想架構撰寫為領域特定語言。這份「圖表代碼」就是你的施工藍圖，它與程式碼一同儲存在版本控制系統中，確保架構設計與開發進度同步演進。
+                            </p>
+                            <div class="bg-slate-900 rounded-xl p-4 mb-6">
+                                <pre class="text-xs md:text-sm text-purple-300"><code>graph LR
+  User --> AuthService
+  User --> ProfileService
+  AuthService --> SharedDB</code></pre>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                            <svg viewBox="0 0 400 220" class="w-full h-auto">
+                                <rect x="50" y="85" width="80" height="40" rx="8" fill="#a855f7" />
+                                <text x="90" y="110" text-anchor="middle" fill="white" font-size="10" font-weight="bold">UserSvc</text>
+                                
+                                <path d="M130 105 L200 70" stroke="#a855f7" stroke-width="2" fill="none" marker-end="url(#arrowhead-purple)"/>
+                                <path d="M130 105 L200 140" stroke="#a855f7" stroke-width="2" fill="none" marker-end="url(#arrowhead-purple)"/>
+                                
+                                <rect x="200" y="50" width="100" height="40" rx="8" fill="white" stroke="#a855f7" stroke-width="2" />
+                                <text x="250" y="75" text-anchor="middle" font-size="10">AuthModule</text>
+                                
+                                <rect x="200" y="120" width="100" height="40" rx="8" fill="white" stroke="#a855f7" stroke-width="2" />
+                                <text x="250" y="145" text-anchor="middle" font-size="10">ProfileModule</text>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detail Steps Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12">
+            <div id="step-0" class="flow-card bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="step-number w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mb-4">1</div>
+                <h4 class="font-bold text-slate-800 mb-2">CaD 逆向考古</h4>
+                <p class="text-slate-500 text-sm">自動掃描舊代碼，產出原始依賴圖。暴露混亂邏輯的重災區。</p>
+            </div>
+            <div id="step-1" class="flow-card bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="step-number w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mb-4">2</div>
+                <h4 class="font-bold text-slate-800 mb-2">精煉與轉化</h4>
+                <p class="text-slate-500 text-sm">將自動產出的雜亂圖表轉化為簡潔且具語義的文字描述。</p>
+            </div>
+            <div id="step-2" class="flow-card bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="step-number w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mb-4">3</div>
+                <h4 class="font-bold text-slate-800 mb-2">DaC 重構設計</h4>
+                <p class="text-slate-500 text-sm">直接在文字描述中「畫圖」，重新定義模組邊界，低成本嘗試不同重構方案。</p>
+            </div>
+            <div id="step-3" class="flow-card bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <div class="step-number w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mb-4">4</div>
+                <h4 class="font-bold text-slate-800 mb-2">藍圖導引編碼</h4>
+                <p class="text-slate-500 text-sm">依據最終確定的文字藍圖進行編碼，確保實現與設計精確一致。</p>
+            </div>
+        </div>
+
+        <!-- Comparison Table (Responsive) -->
+        <div class="bg-slate-900 rounded-3xl p-6 md:p-10 text-white overflow-hidden relative">
+            <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                <svg class="w-32 h-32" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+            </div>
+            <h2 class="text-xl md:text-2xl font-bold mb-8">為什麼結合兩者能拯救舊代碼？</h2>
+            
+            <div class="space-y-6">
+                <!-- Row 1 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-slate-800 pb-6">
+                    <div class="text-slate-400 text-sm uppercase font-bold tracking-widest">痛點：難以理解的現狀</div>
+                    <div class="text-slate-200">
+                        <strong class="text-emerald-400">解決：</strong> CaD 自動揭露隱藏依賴。不需要通讀萬行代碼，即可繪製系統地形圖。
+                    </div>
+                </div>
+                <!-- Row 2 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-slate-800 pb-6">
+                    <div class="text-slate-400 text-sm uppercase font-bold tracking-widest">痛點：設計與實現脫節</div>
+                    <div class="text-slate-200">
+                        <strong class="text-emerald-400">解決：</strong> DaC 將架構文字化。設計變更像代碼一樣可 Review、可比對，不再是虛幻的共識。
+                    </div>
+                </div>
+                <!-- Row 3 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="text-slate-400 text-sm uppercase font-bold tracking-widest">痛點：重構後的維護壓力</div>
+                    <div class="text-slate-200">
+                        <strong class="text-emerald-400">解決：</strong> 圖表隨代碼演進。透過自動化檢查，確保代碼更動始終遵循藍圖定義的原則。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty spacing for clean look -->
+        <div class="py-12"></div>
+    </div>
+
+    <script>
+        function toggleExample(type) {
+            const cadView = document.getElementById('view-cad');
+            const dacView = document.getElementById('view-dac');
+            const cadBtn = document.getElementById('btn-cad');
+            const dacBtn = document.getElementById('id-dac');
+
+            if (type === 'cad') {
+                cadView.classList.remove('hidden');
+                setTimeout(() => cadView.classList.replace('opacity-0', 'opacity-100'), 10);
+                dacView.classList.add('hidden');
+                dacView.classList.replace('opacity-100', 'opacity-0');
+                cadBtn.classList.add('active');
+                dacBtn.classList.remove('active');
+            } else {
+                dacView.classList.remove('hidden');
+                setTimeout(() => dacView.classList.replace('opacity-0', 'opacity-100'), 10);
+                cadView.classList.add('hidden');
+                cadView.classList.replace('opacity-100', 'opacity-0');
+                dacBtn.classList.add('active');
+                cadBtn.classList.remove('active');
+            }
+        }
+
+        function scrollToStep(index) {
+            // 取消所有高亮
+            document.querySelectorAll('.flow-card').forEach(card => card.classList.remove('active'));
+            
+            const target = document.getElementById(`step-${index}`);
+            if (target) {
+                target.classList.add('active');
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    </script>
+</body>
+</html>
