@@ -64,6 +64,30 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         code { font-family: 'Fira Code', monospace; }
+
+        .enterprise-card {
+            border-left: 4px solid transparent;
+            transition: border-color 0.3s;
+        }
+        .enterprise-card:hover {
+            border-left-color: var(--purple-600);
+        }
+
+        .logo-container {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .logo-img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8 lg:p-12">
@@ -75,9 +99,9 @@
                 代碼考古與重構現代化工作流
             </h1>
             <p class="text-base md:text-lg text-slate-600 max-w-2xl mx-auto px-4">
-                結合 <span class="font-semibold text-indigo-600">CaD</span> 與
+                結合 <span class="font-semibold text-indigo-600">CaD</span> 與 
                 <span class="font-semibold text-purple-600">DaC</span>，
-                讓遺留系統重構變得精確且可視。
+                讓<span class="text-slate-800 font-medium">舊系統</span>重構變得精確且可視。
             </p>
         </header>
 
@@ -95,8 +119,7 @@
                     <!-- Nodes Group -->
                     <g class="interactive-node" onclick="scrollToStep(0)">
                         <circle cx="100" cy="100" r="45" fill="#f1f5f9" />
-                        <text x="100" y="105" text-anchor="middle" class="text-xs font-bold fill-slate-600">遺留系統</text>
-                        <title>第一階段：分析舊代碼</title>
+                        <text x="100" y="105" text-anchor="middle" class="text-xs font-bold fill-slate-600">舊系統</text>
                     </g>
                     
                     <path d="M145 100 L200 100" stroke="#6366f1" stroke-width="2" class="arrow-path" marker-end="url(#arrowhead)"/>
@@ -135,6 +158,68 @@
             </div>
         </div>
 
+        <!-- Enterprise Practice Section -->
+        <section class="mb-16">
+            <div class="flex items-center mb-8">
+                <div class="w-1.5 h-8 bg-indigo-600 rounded-full mr-4"></div>
+                <h2 class="text-2xl md:text-3xl font-bold text-slate-800">企業實踐：誰在應用這套思維？</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Spotify -->
+                <div class="enterprise-card bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex items-center mb-4">
+                        <div class="logo-container bg-[#1DB954]/10 mr-3">
+                            <img src="https://cdn.simpleicons.org/spotify/1DB954" alt="Spotify Logo" class="logo-img">
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800">Spotify</h3>
+                    </div>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Spotify 是「文件即代碼」與「架構視覺化」的先驅。他們透過自動掃描 (CaD) 數千個微服務的依賴關係，並將其定義為可視化的系統圖譜，解決了工程師在龐大<span class="font-medium text-slate-700">舊系統</span>中迷路的問題。
+                    </p>
+                </div>
+
+                <!-- Netflix -->
+                <div class="enterprise-card bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex items-center mb-4">
+                        <div class="logo-container bg-[#E50914]/10 mr-3">
+                            <img src="https://cdn.simpleicons.org/netflix/E50914" alt="Netflix Logo" class="logo-img">
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800">Netflix</h3>
+                    </div>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Netflix 發展出了一套即時拓撲視覺化思維。他們透過監控流量自動生成調用鏈路圖 (CaD)，讓架構師能一眼看穿哪些舊服務已經過載或應該被廢棄。
+                    </p>
+                </div>
+
+                <!-- Uber -->
+                <div class="enterprise-card bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex items-center mb-4">
+                        <div class="logo-container bg-[#000000]/10 mr-3">
+                            <img src="https://cdn.simpleicons.org/uber/000000" alt="Uber Logo" class="logo-img">
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800">Uber</h3>
+                    </div>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        在將單體應用拆解為微服務的過程中，Uber 大量使用自動依賴分析。他們將程式碼轉化為圖表以識別強耦合模塊，並將重構後的設計定義為文字藍圖 (DaC)，確保設計準則被嚴格執行。
+                    </p>
+                </div>
+
+                <!-- GitHub -->
+                <div class="enterprise-card bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex items-center mb-4">
+                        <div class="logo-container bg-[#181717]/10 mr-3">
+                            <img src="https://cdn.simpleicons.org/github/181717" alt="GitHub Logo" class="logo-img">
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800">GitHub</h3>
+                    </div>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        GitHub 將「Diagram as Code」原生集成到了 Markdown 預覽中。這推動了業界將架構圖直接寫在代碼庫旁的風潮，讓工程師能在提交代碼時，一併審查架構的變更。
+                    </p>
+                </div>
+            </div>
+        </section>
+
         <!-- Examples Section with Interactive Toggle -->
         <div class="mb-12">
             <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
@@ -153,16 +238,16 @@
                             <span class="inline-block bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full mb-4 uppercase">Code as Diagram</span>
                             <h3 class="text-2xl font-bold text-slate-800 mb-4">自動化現狀分析</h3>
                             <p class="text-slate-600 leading-relaxed mb-6">
-                                透過靜態分析技術直接從原始碼產出。它能揭露人眼難以發現的「隱形依賴」與「循環引用」。在考古階段，這能幫助你標記出那些需要被拆解的複雜模塊。
+                                透過分析技術直接從源碼產出。它能揭露人眼難以發現的「隱形依賴」。在考古階段，這能幫助你標記出那些需要被拆解的複雜模塊。
                             </p>
                             <ul class="space-y-3">
                                 <li class="flex items-start text-sm text-slate-600">
                                     <svg class="w-5 h-5 text-indigo-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                    自動發現組件之間的非法呼叫。
+                                    自動發現資料層與外部 API 之間的非法呼叫。
                                 </li>
                                 <li class="flex items-start text-sm text-slate-600">
                                     <svg class="w-5 h-5 text-indigo-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                    量化代碼邏輯的耦合度。
+                                    量化舊代碼邏輯的耦合度。
                                 </li>
                             </ul>
                         </div>
@@ -174,14 +259,14 @@
                                     <line x1="300" y1="60" x2="100" y2="60" />
                                     <path d="M200 160 Q 200 40 100 60" fill="none" />
                                 </g>
-                                <circle cx="100" cy="60" r="25" fill="white" stroke="#6366f1" stroke-width="2" />
-                                <text x="100" y="65" text-anchor="middle" font-size="10" font-weight="bold">DataLayer</text>
+                                <circle cx="100" cy="60" r="28" fill="white" stroke="#6366f1" stroke-width="2" />
+                                <text x="100" y="64" text-anchor="middle" font-size="9" font-weight="bold" fill="#4338ca">資料層</text>
                                 
-                                <circle cx="200" cy="160" r="35" fill="#fee2e2" stroke="#ef4444" stroke-width="2" />
-                                <text x="200" y="165" text-anchor="middle" font-size="10" fill="#b91c1c" font-weight="bold">ComplexLogic</text>
+                                <circle cx="200" cy="160" r="38" fill="#fee2e2" stroke="#ef4444" stroke-width="2" />
+                                <text x="200" y="164" text-anchor="middle" font-size="9" fill="#b91c1c" font-weight="bold">複雜邏輯</text>
                                 
-                                <circle cx="300" cy="60" r="25" fill="white" stroke="#6366f1" stroke-width="2" />
-                                <text x="300" y="65" text-anchor="middle" font-size="10" font-weight="bold">ExternalAPI</text>
+                                <circle cx="300" cy="60" r="28" fill="white" stroke="#6366f1" stroke-width="2" />
+                                <text x="300" y="64" text-anchor="middle" font-size="9" font-weight="bold" fill="#4338ca">外部介面</text>
                             </svg>
                         </div>
                     </div>
@@ -194,28 +279,34 @@
                             <span class="inline-block bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full mb-4 uppercase">Diagram as Code</span>
                             <h3 class="text-2xl font-bold text-slate-800 mb-4">結構化架構定義</h3>
                             <p class="text-slate-600 leading-relaxed mb-6">
-                                將重構後的理想架構撰寫為領域特定語言。這份「圖表代碼」就是你的施工藍圖，它與程式碼一同儲存在版本控制系統中，確保架構設計與開發進度同步演進。
+                                將理想架構撰寫為 DSL。這份「圖表代碼」就是你的施工藍圖，它與程式碼一同儲存在版本控制系統中。
                             </p>
                             <div class="bg-slate-900 rounded-xl p-4 mb-6">
                                 <pre class="text-xs md:text-sm text-purple-300"><code>graph LR
-  User --> AuthService
-  User --> ProfileService
-  AuthService --> SharedDB</code></pre>
+  UserSvc --> AuthModule
+  UserSvc --> ProfileModule
+  AuthModule --> SharedDB</code></pre>
                             </div>
                         </div>
                         <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200">
                             <svg viewBox="0 0 400 220" class="w-full h-auto">
-                                <rect x="50" y="85" width="80" height="40" rx="8" fill="#a855f7" />
-                                <text x="90" y="110" text-anchor="middle" fill="white" font-size="10" font-weight="bold">UserSvc</text>
+                                <rect x="40" y="85" width="90" height="40" rx="8" fill="#a855f7" />
+                                <text x="85" y="110" text-anchor="middle" fill="white" font-size="10" font-weight="bold">使用者模組</text>
                                 
                                 <path d="M130 105 L200 70" stroke="#a855f7" stroke-width="2" fill="none" marker-end="url(#arrowhead-purple)"/>
                                 <path d="M130 105 L200 140" stroke="#a855f7" stroke-width="2" fill="none" marker-end="url(#arrowhead-purple)"/>
                                 
-                                <rect x="200" y="50" width="100" height="40" rx="8" fill="white" stroke="#a855f7" stroke-width="2" />
-                                <text x="250" y="75" text-anchor="middle" font-size="10">AuthModule</text>
+                                <rect x="200" y="50" width="110" height="40" rx="8" fill="white" stroke="#a855f7" stroke-width="2" />
+                                <text x="255" y="75" text-anchor="middle" font-size="10" fill="#6b21a8">認證組件</text>
                                 
-                                <rect x="200" y="120" width="100" height="40" rx="8" fill="white" stroke="#a855f7" stroke-width="2" />
-                                <text x="250" y="145" text-anchor="middle" font-size="10">ProfileModule</text>
+                                <rect x="200" y="120" width="110" height="40" rx="8" fill="white" stroke="#a855f7" stroke-width="2" />
+                                <text x="255" y="145" text-anchor="middle" font-size="10" fill="#6b21a8">資料組件</text>
+                                
+                                <defs>
+                                    <marker id="arrowhead-purple" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                                        <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7" />
+                                    </marker>
+                                </defs>
                             </svg>
                         </div>
                     </div>
@@ -223,8 +314,8 @@
             </div>
         </div>
 
-        <!-- Detail Steps Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12">
+        <!-- Detail Steps -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
             <div id="step-0" class="flow-card bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                 <div class="step-number w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mb-4">1</div>
                 <h4 class="font-bold text-slate-800 mb-2">CaD 逆向考古</h4>
@@ -233,54 +324,38 @@
             <div id="step-1" class="flow-card bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                 <div class="step-number w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mb-4">2</div>
                 <h4 class="font-bold text-slate-800 mb-2">精煉與轉化</h4>
-                <p class="text-slate-500 text-sm">將自動產出的雜亂圖表轉化為簡潔且具語義的文字描述。</p>
+                <p class="text-slate-500 text-sm">轉化為簡潔具語義的描述。</p>
             </div>
             <div id="step-2" class="flow-card bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                 <div class="step-number w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mb-4">3</div>
                 <h4 class="font-bold text-slate-800 mb-2">DaC 重構設計</h4>
-                <p class="text-slate-500 text-sm">直接在文字描述中「畫圖」，重新定義模組邊界，低成本嘗試不同重構方案。</p>
+                <p class="text-slate-500 text-sm">在文字藍圖中重新規劃邊界。</p>
             </div>
             <div id="step-3" class="flow-card bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                 <div class="step-number w-10 h-10 rounded-full flex items-center justify-center text-white font-bold mb-4">4</div>
                 <h4 class="font-bold text-slate-800 mb-2">藍圖導引編碼</h4>
-                <p class="text-slate-500 text-sm">依據最終確定的文字藍圖進行編碼，確保實現與設計精確一致。</p>
+                <p class="text-slate-500 text-sm">依據藍圖精確實現新架構。</p>
             </div>
         </div>
 
-        <!-- Comparison Table (Responsive) -->
-        <div class="bg-slate-900 rounded-3xl p-6 md:p-10 text-white overflow-hidden relative">
-            <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                <svg class="w-32 h-32" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
-            </div>
-            <h2 class="text-xl md:text-2xl font-bold mb-8">為什麼結合兩者能拯救舊代碼？</h2>
-            
-            <div class="space-y-6">
-                <!-- Row 1 -->
+        <!-- Value Table -->
+        <div class="bg-slate-900 rounded-3xl p-6 md:p-10 text-white overflow-hidden relative mb-12">
+            <h2 class="text-xl md:text-2xl font-bold mb-8">結合兩者的核心價值</h2>
+            <div class="space-y-6 text-sm md:text-base">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-slate-800 pb-6">
                     <div class="text-slate-400 text-sm uppercase font-bold tracking-widest">痛點：難以理解的現狀</div>
                     <div class="text-slate-200">
-                        <strong class="text-emerald-400">解決：</strong> CaD 自動揭露隱藏依賴。不需要通讀萬行代碼，即可繪製系統地形圖。
+                        <strong class="text-emerald-400">解決：</strong> CaD 自動揭露隱藏依賴。不需要通讀代碼，即可繪製系統地形圖。
                     </div>
                 </div>
-                <!-- Row 2 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-slate-800 pb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="text-slate-400 text-sm uppercase font-bold tracking-widest">痛點：設計與實現脫節</div>
                     <div class="text-slate-200">
-                        <strong class="text-emerald-400">解決：</strong> DaC 將架構文字化。設計變更像代碼一樣可 Review、可比對，不再是虛幻的共識。
-                    </div>
-                </div>
-                <!-- Row 3 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="text-slate-400 text-sm uppercase font-bold tracking-widest">痛點：重構後的維護壓力</div>
-                    <div class="text-slate-200">
-                        <strong class="text-emerald-400">解決：</strong> 圖表隨代碼演進。透過自動化檢查，確保代碼更動始終遵循藍圖定義的原則。
+                        <strong class="text-emerald-400">解決：</strong> DaC 將架構文字化。設計變更像代碼一樣可 Review、可比對。
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Empty spacing for clean look -->
-        <div class="py-12"></div>
     </div>
 
     <script>
@@ -308,9 +383,7 @@
         }
 
         function scrollToStep(index) {
-            // 取消所有高亮
             document.querySelectorAll('.flow-card').forEach(card => card.classList.remove('active'));
-            
             const target = document.getElementById(`step-${index}`);
             if (target) {
                 target.classList.add('active');
