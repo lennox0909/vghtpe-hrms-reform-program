@@ -398,6 +398,7 @@
             </div>
 
             <div class="relative bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden min-h-[400px]">
+                <!-- CaD View -->
                 <div id="view-cad" class="transition-all duration-500 opacity-100 p-6 md:p-8">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                         <div>
@@ -425,6 +426,7 @@
                     </div>
                 </div>
 
+                <!-- DaC View -->
                 <div id="view-dac" class="hidden transition-all duration-500 opacity-0 p-6 md:p-8">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                         <div>
@@ -436,12 +438,25 @@
                         </div>
                         <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200">
                             <svg viewBox="0 0 400 220" class="w-full h-auto">
+                                <!-- Connectors -->
+                                <path d="M130 105 L200 70" stroke="#a855f7" stroke-width="2" fill="none" marker-end="url(#arrowhead-purple)"/>
+                                <path d="M130 105 L200 140" stroke="#a855f7" stroke-width="2" fill="none" marker-end="url(#arrowhead-purple)"/>
+                                
+                                <!-- Nodes -->
                                 <rect x="40" y="85" width="90" height="40" rx="8" fill="#a855f7" />
                                 <text x="85" y="110" text-anchor="middle" fill="white" font-size="10" font-weight="bold">使用者模組</text>
+                                
                                 <rect x="200" y="50" width="110" height="40" rx="8" fill="white" stroke="#a855f7" stroke-width="2" />
                                 <text x="255" y="75" text-anchor="middle" font-size="10" fill="#6b21a8">認證組件</text>
+                                
                                 <rect x="200" y="120" width="110" height="40" rx="8" fill="white" stroke="#a855f7" stroke-width="2" />
                                 <text x="255" y="145" text-anchor="middle" font-size="10" fill="#6b21a8">資料組件</text>
+                                
+                                <defs>
+                                    <marker id="arrowhead-purple" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                                        <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7" />
+                                    </marker>
+                                </defs>
                             </svg>
                         </div>
                     </div>
