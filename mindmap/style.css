@@ -24,7 +24,7 @@ textarea:focus {
     fill: none;
 }
 
-/* 節點圓圈懸停動畫 */
+/* 讓可點擊折疊的「小圓圈」更明顯 */
 svg#mindmap .markmap-node circle {
     cursor: pointer;
     transition: r 0.2s ease;
@@ -33,7 +33,12 @@ svg#mindmap .markmap-node circle:hover {
     r: 6px;
 }
 
-/* 調整桿觸控優化 */
+/* 調整桿的觸控優化 */
 #resizer {
     touch-action: none;
+}
+
+/* 自定義模態框顯示邏輯相關 */
+#custom-modal.flex {
+    display: flex;
 }

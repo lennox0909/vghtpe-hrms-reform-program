@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>臺北榮民總醫院人事室 心智圖即時編輯器</title>
     
-    <!-- 引入 Tailwind & D3 -->
+    <!-- 核心依賴 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <link rel="stylesheet" href="style.css">
@@ -17,30 +17,30 @@
         <div class="flex items-center gap-2">
             <h1 class="flex flex-col gap-0.5 text-base md:text-xl font-bold">
                 <span>臺北榮民總醫院人事室</span>
-                <span class="flex items-baseline gap-2 text-xs font-normal text-white/75">
-                    心智圖即時編輯器 <span class="hidden sm:inline">by Leno Tsai</span>
-                </span>
+                <span class="text-xs font-normal text-white/75">心智圖即時編輯器</span>
             </h1>
         </div>
 
+        <!-- UI 設定面板 -->
         <div class="flex items-center gap-2 bg-white/10 p-1.5 rounded-xl backdrop-blur-sm border border-white/20">
-            <button id="btn-toggle-editor" class="p-1.5 hover:bg-white/20 rounded-lg transition-all" title="收合/展開編輯區">
+            <button id="btn-toggle-editor" class="p-1.5 hover:bg-white/20 rounded-lg transition-all">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 4v16M4 6h16M4 18h16"></path></svg>
             </button>
             <div class="w-px h-6 bg-white/30 hidden sm:block"></div>
-            <select id="sel-expand" class="bg-white text-gray-800 text-xs rounded px-2 py-1 outline-none">
+            <select id="sel-expand" class="bg-white text-gray-800 text-xs rounded px-2 py-1 outline-none cursor-pointer">
                 <option value="-1">依文本設定</option>
                 <option value="1">第 1 層</option>
                 <option value="2">第 2 層</option>
                 <option value="999">全部展開</option>
             </select>
-            <select id="sel-color" class="bg-white text-gray-800 text-xs rounded px-2 py-1 outline-none">
+            <select id="sel-color" class="bg-white text-gray-800 text-xs rounded px-2 py-1 outline-none cursor-pointer">
                 <option value="-1">依文本設定</option>
                 <option value="0">不凍結</option>
                 <option value="2">第 2 層</option>
             </select>
         </div>
 
+        <!-- 下載與適應按鈕 -->
         <div class="flex items-center gap-2">
             <button id="btn-download-md" class="bg-teal-600 hover:bg-teal-500 px-3 py-2 rounded-xl text-xs font-medium transition-colors">MD</button>
             <button id="btn-download-svg" class="bg-blue-600 hover:bg-blue-500 px-3 py-2 rounded-xl text-xs font-medium transition-colors">SVG</button>
@@ -61,8 +61,8 @@
                 </div>
                 <div class="flex gap-2">
                     <input type="file" id="file-import" accept=".md,.txt" class="hidden">
-                    <button id="btn-import-file" class="bg-indigo-500 text-white px-2 py-1 rounded text-xs">匯入</button>
-                    <button id="btn-clear-editor" class="bg-red-500 text-white px-2 py-1 rounded text-xs">清除</button>
+                    <button id="btn-import-file" class="bg-indigo-500 text-white px-2 py-1 rounded text-xs hover:bg-indigo-600">匯入</button>
+                    <button id="btn-clear-editor" class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">清除</button>
                 </div>
             </div>
             <textarea id="editor" class="flex-1 p-5 w-full resize-none font-mono text-base leading-relaxed text-gray-700" spellcheck="false"></textarea>
@@ -76,7 +76,7 @@
             </div>
         </div>
 
-        <!-- 右側顯示區 -->
+        <!-- 右側心智圖顯示區 -->
         <section class="flex-1 relative bg-white overflow-hidden">
             <svg id="mindmap" class="w-full h-full cursor-grab active:cursor-grabbing"></svg>
         </section>
