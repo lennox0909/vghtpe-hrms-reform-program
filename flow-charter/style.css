@@ -1,0 +1,384 @@
+:root {
+    --bg-color: #1e1e2e;
+    --panel-bg: #282a36;
+    --text-color: #f8f8f2;
+    --primary: #bd93f9;
+    --secondary: #8be9fd;
+    --danger: #ff5555;
+    --grid-color: rgba(255, 255, 255, 0.05);
+    --node-bg: #44475a;
+    --node-border: #6272a4;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* 頂部工具列 */
+header {
+    background-color: var(--panel-bg);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    z-index: 10;
+}
+
+header h1 {
+    font-size: 1.2rem;
+    margin-right: 20px;
+    color: var(--primary);
+}
+
+select, button {
+    background-color: var(--node-bg);
+    color: var(--text-color);
+    border: 1px solid var(--node-border);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+select:hover, button:hover {
+    border-color: var(--primary);
+}
+
+button.primary {
+    background-color: var(--primary);
+    color: #282a36;
+    font-weight: bold;
+    border: none;
+}
+button.primary:hover {
+    background-color: #d6b4fc;
+}
+
+button.danger {
+    background-color: var(--danger);
+    color: white;
+    border: none;
+}
+
+/* 主要佈局 */
+.main-container {
+    display: flex;
+    flex: 1;
+    height: calc(100vh - 60px);
+}
+
+/* 左側：視覺化畫布 */
+.workspace-wrapper {
+    flex: 6;
+    position: relative;
+    background-image:
+        linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+    background-size: 20px 20px;
+    overflow: hidden;
+    touch-action: none; /* 支援觸控拖拉 */
+}
+
+#workspace {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* 右側：程式碼與預覽 */
+.sidebar {
+    flex: 4;
+    background-color: var(--panel-bg);
+    border-left: 1px solid var(--node-border);
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-title {
+    padding: 10px 15px;
+    background-color: rgba(0,0,0,0.2);
+    font-size: 0.9rem;
+    color: var(--secondary);
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+textarea {
+    flex: 1;
+    background-color: #1e1e2e;
+    color: #f8f8f2;
+    border: none;
+    padding: 15px;
+    font-family: monospace;
+    resize: none;
+    outline: none;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.preview-container {
+    flex: 1.5;
+    padding: 15px;
+    background-color: white; /* 預覽區保持白色背景確保 Mermaid 顏色正確 */
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-top: 2px solid var(--node-border);
+}
+
+/* --- 修正 Mermaid 圖表文字對比度 --- */
+#mermaidPreview svg text {
+    fill: #1f2937 !important; /* 強制文字為深灰色/黑色 */
+    paint-order: stroke fill; /* 設定 SVG 描邊順序：先畫描邊再填色，產生光暈效果 */
+    stroke: rgba(255, 255, 255, 0.9) !important; /* 白色保護光暈底框 */
+    stroke-width: 3px !important; /* 光暈厚度 */
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* 節點樣式 */
+.canvas-node {
+    position: absolute;
+    background-color: var(--node-bg);
+    border: 2px solid var(--node-border);
+    border-radius: 8px;
+    min-width: 100px;
+    text-align: center;
+    cursor: grab;
+    user-select: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: box-shadow 0.2s, border-radius 0.2s;
+    transform: translate(-50%, -50%); /* 以中心點定位 */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* 確保內容不會超出版邊 */
+    z-index: 10; /* 確保節點在線條和標籤之上 */
+}
+
+.node-title {
+    padding: 10px 20px;
+    font-weight: bold;
+    pointer-events: auto;
+}
+
+.node-details {
+    display: none; /* 預設隱藏，只有在特定圖表顯示 */
+    padding: 10px;
+    font-size: 0.8rem;
+    color: #f8f8f2;
+    background-color: rgba(0,0,0,0.2);
+    border-top: 1px solid var(--node-border);
+    text-align: left;
+    white-space: pre-wrap;
+    pointer-events: auto;
+    min-height: 40px; /* 給予可點擊空間 */
+}
+
+.canvas-node:active {
+    cursor: grabbing;
+}
+
+.canvas-node.selected {
+    border-color: var(--primary);
+    box-shadow: 0 0 10px var(--primary);
+}
+
+/* 節點上的連線觸發點 */
+.port {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background-color: var(--secondary);
+    border-radius: 50%;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: crosshair;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.canvas-node:hover .port {
+    opacity: 1;
+}
+
+/* 編輯文字的輸入框 */
+.node-input, .node-textarea {
+    width: 100%;
+    background: rgba(0,0,0,0.5);
+    border: none;
+    color: white;
+    text-align: center;
+    font-size: 1rem;
+    outline: none;
+    pointer-events: auto;
+}
+.node-input {
+    padding: 10px 20px;
+}
+.node-textarea {
+    padding: 10px;
+    font-size: 0.8rem;
+    text-align: left;
+    resize: vertical;
+    min-height: 60px;
+}
+
+/* 連線上的文字標籤 */
+.edge-label {
+    position: absolute;
+    background-color: var(--panel-bg);
+    color: var(--secondary);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+    border: 1px solid var(--node-border);
+    user-select: none;
+    z-index: 5;
+    pointer-events: auto;
+    white-space: nowrap;
+}
+
+.edge-label.selected {
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: 0 0 5px rgba(189, 147, 249, 0.5);
+}
+
+/* 連線編輯面板 */
+.edge-edit-panel {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    display: flex;
+    gap: 5px;
+    background: rgba(40,42,54,0.95);
+    padding: 6px;
+    border-radius: 8px;
+    border: 1px solid var(--primary);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.edge-input-inline {
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border: 1px solid var(--node-border);
+    padding: 4px 8px;
+    border-radius: 4px;
+    outline: none;
+    font-size: 0.85rem;
+    width: 120px;
+}
+
+.edge-del-btn {
+    background: var(--danger);
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.edge-del-btn:hover { background: #ff3333; }
+
+/* SVG 連線層 */
+#svg-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* 讓點擊穿透 SVG 點到背景，除非點在線上 */
+}
+
+line {
+    stroke: var(--secondary);
+    stroke-width: 2;
+    pointer-events: stroke;
+    cursor: pointer;
+    transition: stroke 0.2s, stroke-width 0.2s;
+}
+
+line:hover, line.selected {
+    stroke: var(--primary);
+    stroke-width: 6; /* 讓線變粗一點更好點擊 */
+}
+
+/* 提示覆蓋層 */
+.overlay-msg {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    pointer-events: none;
+    display: none;
+}
+
+/* --- 動態圖表樣式同步 --- */
+/* 類別圖 (Class Diagram) */
+#workspace.type-classDiagram .canvas-node {
+    border-radius: 0;
+    border-color: #8be9fd;
+}
+#workspace.type-classDiagram .node-details {
+    display: block;
+    border-top-color: #8be9fd;
+}
+
+/* 實體關聯圖 (ER Diagram) */
+#workspace.type-erDiagram .canvas-node {
+    border-radius: 0;
+    border-color: #50fa7b;
+}
+#workspace.type-erDiagram .node-details {
+    display: block;
+    border-top-color: #50fa7b;
+}
+
+/* 狀態圖 (State Diagram) */
+#workspace.type-stateDiagram-v2 .canvas-node {
+    border-radius: 20px;
+    border-color: #ffb86c;
+}
+
+/* 區塊/架構圖 */
+#workspace.type-block-beta .canvas-node,
+#workspace.type-architecture-beta .canvas-node {
+    border-radius: 0;
+    background-color: #6272a4;
+    color: white;
+}
+
+#workspace.type-architecture-beta .node-details {
+    display: block;
+    border-top-color: rgba(255,255,255,0.2);
+    text-align: center;
+    font-style: italic;
+    padding: 6px;
+}
