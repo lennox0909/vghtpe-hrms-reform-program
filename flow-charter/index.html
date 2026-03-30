@@ -9,13 +9,14 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <header>
         <h1>Mermaid 視覺化建構器</h1>
+        <h6>version 0.0.2 (測試版)</h6>
+
         <button class="primary" id="addNodeBtn">+ 新增節點</button>
         <button id="clearStorageBtn">清除暫存</button>
         <select id="diagramType">
-            <optgroup label="視覺化連線支援 (節點型)">
+            <optgroup label="視覺化節點型流程圖">
                 <option value="graph TD">1. 流程圖 (從上到下 Graph TD)</option>
                 <option value="graph LR">2. 流程圖 (由左至右 Graph LR)</option>
                 <option value="stateDiagram-v2">3. 狀態圖 (State Diagram)</option>
@@ -26,18 +27,6 @@
                 <option value="architecture-beta">8. 架構圖 (Architecture)</option>
                 <option value="sankey-beta">9. 桑基圖 (Sankey)</option>
                 <option value="flowchart TD">10. 進階流程圖 (Flowchart)</option>
-            </optgroup>
-            <optgroup label="僅支援範本 (非節點型)">
-                <option value="sequenceDiagram">11. 循序圖 (Sequence Diagram)</option>
-                <option value="gantt">12. 甘特圖 (Gantt Chart)</option>
-                <option value="pie">13. 圓餅圖 (Pie Chart)</option>
-                <option value="journey">14. 使用者旅程圖 (User Journey)</option>
-                <option value="gitGraph">15. Git 分支圖 (Git Graph)</option>
-                <option value="quadrantChart">16. 象限圖 (Quadrant Chart)</option>
-                <option value="requirementDiagram">17. 需求圖 (Requirement)</option>
-                <option value="timeline">18. 時間軸 (Timeline)</option>
-                <option value="zenuml">19. ZenUML</option>
-                <option value="xychart-beta">20. XY 圖表 (XY Chart)</option>
             </optgroup>
         </select>
         <button class="danger" id="deleteBtn" disabled>刪除選取物件</button>

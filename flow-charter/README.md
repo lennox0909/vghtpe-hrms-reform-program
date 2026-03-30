@@ -1,4 +1,7 @@
 
+# Decoupled Components of a Static Web Page
+
+---
 1. **HTML**：建立了一個卡片容器、標題、文字段落和一個互動按鈕。
 2. **CSS**：使用了 CSS 變數（Variables）來管理顏色，設計了圓角、陰影、懸停動畫，並準備了深色模式 (`.dark-mode`) 的配色。
 3. **JavaScript**：監聽按鈕的點擊事件，動態切換網頁的深淺色主題，並自動更改按鈕上的文字。
