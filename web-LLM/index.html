@@ -284,7 +284,7 @@
                 dom.sendIconDefault.classList.add('hidden');
                 dom.sendIconLoading.classList.remove('hidden');
             } else {
-                dom.chatInput.placeholder = "輸入訊息... (Shift + Enter 換行)";
+                dom.chatInput.placeholder = "輸入訊息...";
                 dom.sendIconDefault.classList.remove('hidden');
                 dom.sendIconLoading.classList.add('hidden');
             }
@@ -455,14 +455,6 @@
         
         // 監聽輸入框變化以切換發送按鈕狀態
         dom.chatInput.addEventListener('input', updateUIState);
-
-        // 處理 Enter 鍵發送 (Shift+Enter 換行)
-        dom.chatInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault(); // 防止預設換行
-                sendMessage();
-            }
-        });
 
     </script>
 </body>
