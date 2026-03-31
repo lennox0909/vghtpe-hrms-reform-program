@@ -58,6 +58,14 @@
                     <option value="gemma-2b-it-q4f16_1-MLC">Gemma 2B IT (極輕量, 約 1.7GB)</option>
                 </select>
                 
+                <button id="settings-btn" class="p-2.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg text-slate-300 transition-colors" title="參數設定">
+                    <!-- Settings Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </button>
+
                 <button id="load-btn" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
                     <span id="load-btn-icon">
                         <!-- Download Icon -->
@@ -72,6 +80,28 @@
             </div>
         </div>
     </header>
+
+    <!-- 參數設定面板 (預設隱藏) -->
+    <div id="settings-panel" class="hidden bg-slate-800 border-b border-slate-700 p-4 shadow-inner flex-shrink-0 transition-all">
+        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row gap-8">
+            <!-- Temperature -->
+            <div class="flex-1">
+                <div class="flex justify-between mb-2">
+                    <label for="temp-slider" class="text-sm font-medium text-slate-300">Temperature (隨機性：數值越高越有創意)</label>
+                    <span id="temp-val" class="text-sm font-bold text-blue-400">0.6</span>
+                </div>
+                <input type="range" id="temp-slider" min="0" max="2" step="0.1" value="0.6" class="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-500">
+            </div>
+            <!-- Top P -->
+            <div class="flex-1">
+                <div class="flex justify-between mb-2">
+                    <label for="top-p-slider" class="text-sm font-medium text-slate-300">Top P (核取樣：限制候選詞彙範圍)</label>
+                    <span id="top-p-val" class="text-sm font-bold text-blue-400">0.9</span>
+                </div>
+                <input type="range" id="top-p-slider" min="0" max="1" step="0.05" value="0.9" class="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-500">
+            </div>
+        </div>
+    </div>
 
     <!-- 警告訊息區塊 -->
     <div id="error-banner" class="hidden bg-red-900/50 border-l-4 border-red-500 p-4 m-4 max-w-5xl mx-auto rounded-r w-full flex-shrink-0">
@@ -174,6 +204,12 @@
         // DOM 元素參考
         const dom = {
             modelSelect: document.getElementById('model-select'),
+            settingsBtn: document.getElementById('settings-btn'),
+            settingsPanel: document.getElementById('settings-panel'),
+            tempSlider: document.getElementById('temp-slider'),
+            tempVal: document.getElementById('temp-val'),
+            topPSlider: document.getElementById('top-p-slider'),
+            topPVal: document.getElementById('top-p-val'),
             loadBtn: document.getElementById('load-btn'),
             loadBtnText: document.getElementById('load-btn-text'),
             loadBtnIcon: document.getElementById('load-btn-icon'),
@@ -223,6 +259,8 @@
             // 頂部控制項
             dom.modelSelect.disabled = isLoadingOrGenerating;
             dom.loadBtn.disabled = isLoadingOrGenerating;
+            dom.tempSlider.disabled = isLoadingOrGenerating;
+            dom.topPSlider.disabled = isLoadingOrGenerating;
             
             if (status === 'loading') {
                 dom.loadBtnText.textContent = "載入中";
@@ -363,12 +401,16 @@
             const aiTextBlock = appendMessageToDOM('assistant', "");
 
             try {
+                // 取得當前設定的參數
+                const currentTemp = parseFloat(dom.tempSlider.value);
+                const currentTopP = parseFloat(dom.topPSlider.value);
+
                 const chunks = await engine.chat.completions.create({
                     messages: messageHistory,
                     stream: true,
-                    // 修正亂碼關鍵：降低 temperature 減少幻覺與亂碼機率
-                    temperature: 0.6,
-                    top_p: 0.9,
+                    // 將參數套用至生成請求中
+                    temperature: currentTemp,
+                    top_p: currentTopP,
                 });
 
                 let fullReply = "";
@@ -397,6 +439,19 @@
         
         dom.loadBtn.addEventListener('click', loadModel);
         dom.sendBtn.addEventListener('click', sendMessage);
+
+        // 設定面板展開/收合
+        dom.settingsBtn.addEventListener('click', () => {
+            dom.settingsPanel.classList.toggle('hidden');
+        });
+
+        // 監聽參數滑桿變化即時更新數值顯示
+        dom.tempSlider.addEventListener('input', (e) => {
+            dom.tempVal.textContent = e.target.value;
+        });
+        dom.topPSlider.addEventListener('input', (e) => {
+            dom.topPVal.textContent = e.target.value;
+        });
         
         // 監聽輸入框變化以切換發送按鈕狀態
         dom.chatInput.addEventListener('input', updateUIState);
