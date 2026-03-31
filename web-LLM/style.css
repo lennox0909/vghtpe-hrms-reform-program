@@ -1,0 +1,27 @@
+/* 自訂的 CSS 樣式 */
+body {
+    font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+}
+
+.message-bubble {
+    transition: all 0.3s ease;
+}
+
+.typing-cursor {
+    display: inline-block;
+    width: 8px;
+    height: 16px;
+    margin-left: 4px;
+    background-color: #60a5fa;
+    animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+}
+
+/* 隱藏元素的輔助類別 */
+.d-none {
+    display: none !important;
+}

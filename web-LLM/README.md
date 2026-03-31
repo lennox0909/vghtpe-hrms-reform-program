@@ -46,26 +46,9 @@ e((外部開源 WebGPU <br> LLM 資料庫 <br> 供使用者下載))
 
 
 
-
-%% sq[Square shape]
-%% ci((Circle shape))
-
-%% Notice that no text in shape are added here instead that is appended further down
-%% od10>Really long text with linebreak<br>in an Odd shape]
-
-%% Comments after double percent signs
-    
-%% f(,.?!+-*ز)
-
-%% cyr[Cyrillic]
-%% cyr2((Circle shape Начало));
-
      classDef green fill:#9f6,stroke:#333,stroke-width:2px;
      classDef orange fill:#f96,stroke:#333,stroke-width:4px;
      class sq,e green
      class di orange
-
-
-
 
 ```
