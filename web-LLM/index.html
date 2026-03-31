@@ -51,10 +51,11 @@
             
             <div class="flex items-center gap-3 w-full md:w-auto">
                 <select id="model-select" class="flex-1 md:w-64 bg-slate-700 border border-slate-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none">
-                    <option value="Phi-3-mini-4k-instruct-q4f16_1-MLC" selected>Phi-3 Mini 4K (推薦, 約 2.2GB)</option>
-                    <option value="Llama-3-8B-Instruct-q4f32_1-MLC">Llama 3 8B (需較高VRAM, 約 4.6GB)</option>
-                    <option value="gemma-2b-it-q4f16_1-MLC">Gemma 2B IT (輕量, 約 1.7GB)</option>
-                    <option value="TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC">TinyLlama 1.1B (極輕量, 約 0.7GB)</option>
+                    <!-- 更換預設模型：選擇對繁體中文支援極佳的 Qwen2 或 Llama3 -->
+                    <option value="Qwen2-7B-Instruct-q4f16_1-MLC" selected>Qwen2 7B (強烈推薦中文, 約 4.5GB)</option>
+                    <option value="Llama-3.1-8B-Instruct-q4f16_1-MLC">Llama 3.1 8B (中文優良, 約 4.6GB)</option>
+                    <option value="Phi-3-mini-4k-instruct-q4f16_1-MLC">Phi-3 Mini 4K (英文為主/輕量, 約 2.2GB)</option>
+                    <option value="gemma-2b-it-q4f16_1-MLC">Gemma 2B IT (極輕量, 約 1.7GB)</option>
                 </select>
                 
                 <button id="load-btn" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">
@@ -99,7 +100,8 @@
                 </svg>
                 <p class="text-center">
                     請在上方選擇模型並點擊「下載並載入」。<br/>
-                    首次載入需下載數 GB 的模型檔案至瀏覽器快取中。
+                    首次載入需下載數 GB 的模型檔案至瀏覽器快取中。<br/>
+                    <span class="text-blue-400 text-sm">💡 提示：若需流暢的中文對話，推薦使用 Qwen2 或 Llama 3.1 模型。</span>
                 </p>
             </div>
 
@@ -167,7 +169,6 @@
 
     <!-- 主要邏輯 -->
     <script type="module">
-        // 換回官方文件推薦的 JSDelivr (+esm) 確保不會有 Node polyfill 的問題
         import { CreateMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
 
         // DOM 元素參考
@@ -365,6 +366,9 @@
                 const chunks = await engine.chat.completions.create({
                     messages: messageHistory,
                     stream: true,
+                    // 修正亂碼關鍵：降低 temperature 減少幻覺與亂碼機率
+                    temperature: 0.6,
+                    top_p: 0.9,
                 });
 
                 let fullReply = "";
