@@ -15,6 +15,14 @@
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
+    <script>
+        // 雙重保險：手動提供 createRequire 的 Polyfill，防止某些深層依賴模組誤判 Node 環境而報錯
+        if (typeof window.createRequire === 'undefined') {
+            window.createRequire = function() {
+                return function() { return {}; };
+            };
+        }
+    </script>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans h-screen flex flex-col overflow-hidden">
 
@@ -159,8 +167,8 @@
 
     <!-- 主要邏輯 -->
     <script type="module">
-        // 替換為 esm.sh，它能更完美地處理 iframe (about:srcdoc) 下套件內部相對路徑 (import.meta.url) 的解析，防止 URL 構造失敗。
-        import { CreateMLCEngine } from "https://esm.sh/@mlc-ai/web-llm";
+        // 換回官方文件推薦的 JSDelivr (+esm) 確保不會有 Node polyfill 的問題
+        import { CreateMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
 
         // DOM 元素參考
         const dom = {
