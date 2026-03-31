@@ -1,11 +1,7 @@
 # 人事室智能小幫手 系統架構圖
 
 ```mermaid
----
-config:
-  look: handDrawn
 
----
 
 graph TB
     subgraph 人事室 AI Agent 
