@@ -8,7 +8,7 @@
     
     <!-- 加入 base 標籤：修復 iframe 預覽環境 (about:srcdoc) 造成的 Invalid URL 錯誤 -->
     <base href="https://localhost/">
-    <title>WebGPU AI 終端機</title>
+    <title>AI 聊天機器人 ( WebGPU )</title>
     <!-- 載入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -51,7 +51,7 @@
                 </svg>
                 <div>
                     <h1 class="text-lg sm:text-xl font-bold tracking-wide leading-tight">AI 聊天機器人 ( WebGPU )</h1>
-                    <p class="text-[10px] sm:text-xs text-slate-400">100% 瀏覽器本地端執行 by Leno Tsai v0.1</p>
+                    <p class="text-[10px] sm:text-xs text-slate-400">100% 瀏覽器本地端執行 by Leno Tsai v.0.2</p>
                 </div>
             </div>
             
@@ -173,6 +173,17 @@
     <!-- 輸入區塊 -->
     <footer class="bg-slate-800 border-t border-slate-700 p-3 sm:p-4 pb-safe flex-shrink-0 z-10">
         <div class="max-w-5xl mx-auto relative flex items-end gap-2">
+            
+            <!-- 繼續回覆按鈕 (絕對定位在輸入框上方) -->
+            <div id="continue-wrapper" class="hidden absolute -top-14 left-0 w-full flex justify-center z-20 pointer-events-none">
+                <button id="continue-btn" class="pointer-events-auto flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 px-4 py-2 rounded-full text-xs sm:text-sm shadow-lg transition-transform active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    繼續回覆
+                </button>
+            </div>
+
             <!-- 支援自動長高的 textarea -->
             <textarea
                 id="chat-input"
@@ -240,12 +251,15 @@
             sendIconDefault: document.getElementById('send-icon-default'),
             sendIconLoading: document.getElementById('send-icon-loading'),
             sendIconStop: document.getElementById('send-icon-stop'),
+            continueWrapper: document.getElementById('continue-wrapper'),
+            continueBtn: document.getElementById('continue-btn'),
         };
 
         // 應用程式狀態
         let engine = null;
         let status = 'idle'; // idle, loading, ready, generating
         let messageHistory = [];
+        let wasInterrupted = false; // 追蹤是否被手動停止，以決定是否顯示「繼續回覆」
 
         // 檢查 WebGPU 支援
         if (!navigator.gpu) {
@@ -294,6 +308,13 @@
                 dom.loadBtnText.textContent = "重新載入";
                 dom.loadBtnTextMobile.textContent = "重載";
                 dom.loadBtnIcon.innerHTML = reloadSVG;
+            }
+
+            // 繼續回覆按鈕顯示邏輯
+            if (wasInterrupted && status === 'ready') {
+                dom.continueWrapper.classList.remove('hidden');
+            } else {
+                dom.continueWrapper.classList.add('hidden');
             }
 
             // 底部輸入控制項
@@ -383,6 +404,7 @@
 
             const selectedModel = dom.modelSelect.value;
             status = 'loading';
+            wasInterrupted = false;
             updateUIState();
             
             // UI 整理
@@ -424,13 +446,24 @@
         }
 
         // 發送訊息與串流回覆
-        async function sendMessage() {
-            const text = dom.chatInput.value.trim();
-            if (!text || status !== 'ready' || !engine) return;
+        async function sendMessage(isContinue = false) {
+            let text = dom.chatInput.value.trim();
+
+            if (isContinue === true) {
+                // 若為繼續回覆模式，使用預設指令
+                text = "請繼續未完成的回覆";
+            } else {
+                // 若為一般發送，檢查輸入是否為空
+                if (!text || status !== 'ready' || !engine) return;
+                dom.chatInput.value = '';
+                dom.chatInput.style.height = '48px'; // 恢復原始高度
+            }
+
+            // 清除中斷標記，更新介面（隱藏繼續按鈕等）
+            wasInterrupted = false;
+            updateUIState();
 
             // 1. 處理 User 訊息
-            dom.chatInput.value = '';
-            dom.chatInput.style.height = '48px'; // 恢復原始高度
             messageHistory.push({ role: 'user', content: text });
             appendMessageToDOM('user', text);
             
@@ -464,6 +497,7 @@
             } catch (err) {
                 if (err.message && err.message.toLowerCase().includes('abort')) {
                     aiTextBlock.textContent += " ⏹️ [已停止]";
+                    wasInterrupted = true; // 標記為已被手動停止，以便顯示繼續按鈕
                 } else {
                     console.error(err);
                     aiTextBlock.textContent = "❌ 發生錯誤，無法生成回覆。請確認控制台日誌。";
@@ -479,7 +513,7 @@
             if (status === 'generating') {
                 if (engine) engine.interruptGenerate();
             } else if (status === 'ready') {
-                sendMessage();
+                sendMessage(); // 預設為 false (一般發送)
             }
         }
 
@@ -487,6 +521,11 @@
         
         dom.loadBtn.addEventListener('click', loadModel);
         dom.sendBtn.addEventListener('click', handleSendBtnClick);
+        
+        // 綁定「繼續回覆」按鈕
+        dom.continueBtn.addEventListener('click', () => {
+            sendMessage(true);
+        });
 
         // 設定面板展開/收合
         dom.settingsBtn.addEventListener('click', () => {
