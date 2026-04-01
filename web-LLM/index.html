@@ -51,7 +51,7 @@
                 </svg>
                 <div>
                     <h1 class="text-lg sm:text-xl font-bold tracking-wide leading-tight">WebGPU AI 終端機</h1>
-                    <p class="text-[10px] sm:text-xs text-slate-400">100% 瀏覽器本地端執行</p>
+                    <p class="text-[10px] sm:text-xs text-slate-400">100% 瀏覽器本地端執行 by Leno Tsai</p>
                 </div>
             </div>
             
@@ -203,6 +203,10 @@
                     <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
                     <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
                 </svg>
+                <!-- Stop Icon (隱藏狀態) -->
+                <svg id="send-icon-stop" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="hidden">
+                    <rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect>
+                </svg>
             </button>
         </div>
     </footer>
@@ -235,6 +239,7 @@
             sendBtn: document.getElementById('send-btn'),
             sendIconDefault: document.getElementById('send-icon-default'),
             sendIconLoading: document.getElementById('send-icon-loading'),
+            sendIconStop: document.getElementById('send-icon-stop'),
         };
 
         // 應用程式狀態
@@ -294,20 +299,35 @@
             // 底部輸入控制項
             const isReadyToInput = status === 'ready';
             dom.chatInput.disabled = !isReadyToInput;
-            dom.sendBtn.disabled = !isReadyToInput || dom.chatInput.value.trim() === '';
             
-            if (status === 'idle') {
-                dom.chatInput.placeholder = "請先載入模型...";
-            } else if (status === 'loading') {
-                dom.chatInput.placeholder = "模型載入中...";
-            } else if (status === 'generating') {
-                dom.chatInput.placeholder = "AI 正在思考...";
+            if (status === 'generating') {
+                // 生成時按鈕轉變為紅色的「停止按鈕」
+                dom.sendBtn.disabled = false;
+                dom.sendBtn.classList.remove('bg-blue-600', 'hover:bg-blue-500');
+                dom.sendBtn.classList.add('bg-red-600', 'hover:bg-red-500');
+                
                 dom.sendIconDefault.classList.add('hidden');
-                dom.sendIconLoading.classList.remove('hidden');
-            } else {
-                dom.chatInput.placeholder = "輸入訊息...";
-                dom.sendIconDefault.classList.remove('hidden');
                 dom.sendIconLoading.classList.add('hidden');
+                dom.sendIconStop.classList.remove('hidden');
+                
+                dom.chatInput.placeholder = "AI 正在思考... (可點擊右側按鈕停止)";
+            } else {
+                // 恢復為原本藍色的「發送按鈕」
+                dom.sendBtn.disabled = !isReadyToInput || dom.chatInput.value.trim() === '';
+                dom.sendBtn.classList.remove('bg-red-600', 'hover:bg-red-500');
+                dom.sendBtn.classList.add('bg-blue-600', 'hover:bg-blue-500');
+                
+                dom.sendIconStop.classList.add('hidden');
+                dom.sendIconLoading.classList.add('hidden');
+                dom.sendIconDefault.classList.remove('hidden');
+                
+                if (status === 'idle') {
+                    dom.chatInput.placeholder = "請先載入模型...";
+                } else if (status === 'loading') {
+                    dom.chatInput.placeholder = "模型載入中...";
+                } else {
+                    dom.chatInput.placeholder = "輸入訊息... (連按四下 Enter 送出)";
+                }
             }
         }
 
@@ -442,18 +462,31 @@
 
                 messageHistory.push({ role: 'assistant', content: fullReply });
             } catch (err) {
-                console.error(err);
-                aiTextBlock.textContent = "❌ 發生錯誤，無法生成回覆。請確認控制台日誌。";
+                if (err.message && err.message.toLowerCase().includes('abort')) {
+                    aiTextBlock.textContent += " ⏹️ [已停止]";
+                } else {
+                    console.error(err);
+                    aiTextBlock.textContent = "❌ 發生錯誤，無法生成回覆。請確認控制台日誌。";
+                }
             } finally {
                 status = 'ready';
                 updateUIState();
             }
         }
 
+        // 處理發送按鈕點擊事件 (兼顧發送與停止)
+        function handleSendBtnClick() {
+            if (status === 'generating') {
+                if (engine) engine.interruptGenerate();
+            } else if (status === 'ready') {
+                sendMessage();
+            }
+        }
+
         // --- 綁定事件監聽器 ---
         
         dom.loadBtn.addEventListener('click', loadModel);
-        dom.sendBtn.addEventListener('click', sendMessage);
+        dom.sendBtn.addEventListener('click', handleSendBtnClick);
 
         // 設定面板展開/收合
         dom.settingsBtn.addEventListener('click', () => {
@@ -479,6 +512,23 @@
             
             if (this.value === '') {
                 this.style.height = '48px';
+            }
+        });
+
+        // 處理連按四下 Enter 鍵直接送出的邏輯
+        let enterCount = 0;
+        dom.chatInput.addEventListener('keydown', (e) => {
+            if (status !== 'ready') return;
+            
+            if (e.key === 'Enter') {
+                enterCount++;
+                if (enterCount === 4) {
+                    e.preventDefault(); // 防止加入最後的換行
+                    enterCount = 0;
+                    sendMessage();
+                }
+            } else {
+                enterCount = 0; // 若輸入了其他字元，則重新計算
             }
         });
 
