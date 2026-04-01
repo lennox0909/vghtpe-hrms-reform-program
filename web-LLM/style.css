@@ -1,27 +1,23 @@
 /* 自訂的 CSS 樣式 */
-body {
-    font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+/* 自訂滾動條樣式：針對行動裝置稍微改細 */
+::-webkit-scrollbar {
+    width: 6px;
 }
 
-.message-bubble {
-    transition: all 0.3s ease;
+::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-.typing-cursor {
-    display: inline-block;
-    width: 8px;
-    height: 16px;
-    margin-left: 4px;
-    background-color: #60a5fa;
-    animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 4px;
 }
 
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: .5; }
+::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
 }
 
-/* 隱藏元素的輔助類別 */
-.d-none {
-    display: none !important;
+/* 支援 iOS 底部 Home Bar 安全區域 */
+.pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
