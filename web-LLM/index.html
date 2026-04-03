@@ -41,7 +41,7 @@
                 </svg>
                 <div>
                     <h1 class="text-lg sm:text-xl font-bold tracking-wide leading-tight">AI 聊天機器人 ( WebGPU )</h1>
-                    <p class="text-[10px] sm:text-xs text-slate-400">100% 瀏覽器本地端執行 by Leno Tsai v.0.3</p>
+                    <p class="text-[10px] sm:text-xs text-slate-400">100% 瀏覽器本地端執行 by Leno Tsai v.0.4</p>
                 </div>
             </div>
             
@@ -50,8 +50,9 @@
                     <option value="Qwen2-7B-Instruct-q4f16_1-MLC" selected>Qwen2 7B (強推中文)</option>
                     <option value="Llama-3.1-8B-Instruct-q4f16_1-MLC">Llama 3.1 8B (中文優良)</option>
                     <option value="Phi-3-mini-4k-instruct-q4f16_1-MLC">Phi-3 Mini 4K (輕量英文)</option>
-                    <option value="gemma-2b-it-q4f16_1-MLC">Gemma 2B IT (極輕量)</option>
-                    <option value="Gemma-4-E4B-Instruct-q4f16_1-MLC">Gemma 4 E4B (最新模型)</option>
+                    <!-- 已將錯誤的 Gemma 模型 ID 修正為 WebLLM 官方目前支援的版本 -->
+                    <option value="gemma-2-9b-it-q4f16_1-MLC">Gemma 2 9B (高階模型, 約6.4GB)</option>
+                    <option value="gemma-2-2b-it-q4f16_1-MLC">Gemma 2 2B (輕量, 約1.9GB)</option>
                 </select>
                 
                 <button id="settings-btn" class="flex-shrink-0 p-2.5 sm:p-3 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg text-slate-300 transition-colors h-[42px] sm:h-[46px] flex items-center justify-center" title="參數設定">
