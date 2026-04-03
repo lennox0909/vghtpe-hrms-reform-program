@@ -114,11 +114,28 @@
                     <line x1="12" y1="16" x2="12" y2="12"></line>
                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                 </svg>
-                <p class="text-sm sm:text-base text-center leading-relaxed">
+                <div class="text-sm sm:text-base text-center leading-relaxed">
                     請在上方點擊「載入」按鈕。<br/>
                     <span class="text-xs sm:text-sm text-slate-400">首次載入需下載數 GB 檔案，建議使用 Wi-Fi 環境。</span><br/>
-                    <span class="text-blue-400 text-xs sm:text-sm font-medium mt-2 inline-block">💡 支援語音對話，點擊左下角麥克風即可開始</span>
-                </p>
+                    <span class="text-blue-400 text-xs sm:text-sm font-medium mt-3 inline-block">💡 支援語音對話，點擊左下角麥克風即可開始</span><br/>
+                    <div class="mt-2 p-3 bg-slate-800/60 rounded-lg border border-slate-700/50 inline-block text-left text-xs sm:text-sm text-slate-400">
+                        <div class="text-yellow-500/90 font-medium mb-1">⚠️ 隱私提示：</div>
+                        <div>
+                            • <strong class="text-slate-300">語音轉文字：</strong>由瀏覽器內建的雲端服務處理，並非本地端。
+                            <button id="learn-more-btn" class="text-blue-400 hover:text-blue-300 underline focus:outline-none transition-colors">了解更多</button>
+                            <div id="learn-more-content" class="hidden mt-2 mb-2 p-3 bg-slate-900/80 rounded border border-slate-700 text-xs text-slate-300">
+                                <ul class="list-disc pl-4 space-y-1.5">
+                                    <li><strong>使用 Google Chrome：</strong>您的語音會被送到 Google 的語音辨識伺服器（底層技術與 Google Cloud Speech-to-Text 相同）。</li>
+                                    <li><strong>使用 Microsoft Edge：</strong>您的語音會被送到 微軟 (Microsoft) 的 Azure 語音服務伺服器。</li>
+                                    <li><strong>使用 Apple Safari：</strong>您的語音會被送到 Apple 的聽寫與 Siri 伺服器處理。</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="mt-1">
+                            • <strong class="text-slate-300">AI 對話運算：</strong>模型思考與生成回覆為 <span class="text-blue-400 font-medium">100% 本地端執行</span>，不上傳對話。
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div id="loading-indicator" class="hidden bg-slate-800 rounded-xl p-5 sm:p-6 flex-col items-center justify-center space-y-3 sm:space-y-4 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)] mx-2 sm:mx-0">
@@ -158,7 +175,7 @@
             <button
                 id="mic-btn"
                 class="flex-shrink-0 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 text-slate-300 p-3 rounded-xl transition-colors h-[48px] w-[48px] flex items-center justify-center active:scale-95"
-                title="語音輸入 (Vibing 模式)"
+                title="語音輸入 (由瀏覽器雲端服務進行辨識)"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
@@ -231,6 +248,8 @@
             sendIconStop: document.getElementById('send-icon-stop'),
             continueWrapper: document.getElementById('continue-wrapper'),
             continueBtn: document.getElementById('continue-btn'),
+            learnMoreBtn: document.getElementById('learn-more-btn'),
+            learnMoreContent: document.getElementById('learn-more-content'),
         };
 
         let engine = null;
@@ -539,6 +558,14 @@
         dom.loadBtn.addEventListener('click', loadModel);
         dom.sendBtn.addEventListener('click', handleSendBtnClick);
         dom.continueBtn.addEventListener('click', () => { sendMessage(true); });
+        
+        // 隱私提示「了解更多」切換
+        if (dom.learnMoreBtn) {
+            dom.learnMoreBtn.addEventListener('click', () => {
+                dom.learnMoreContent.classList.toggle('hidden');
+            });
+        }
+
         dom.settingsBtn.addEventListener('click', () => { dom.settingsPanel.classList.toggle('hidden'); });
         dom.tempSlider.addEventListener('input', (e) => { dom.tempVal.textContent = e.target.value; });
         dom.topPSlider.addEventListener('input', (e) => { dom.topPVal.textContent = e.target.value; });
