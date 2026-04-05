@@ -1,6 +1,5 @@
 import { CreateMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
 
-// DOM 元素參考
 const dom = {
     modelSelect: document.getElementById('model-select'),
     settingsBtn: document.getElementById('settings-btn'),
@@ -20,37 +19,100 @@ const dom = {
     emptyState: document.getElementById('empty-state'),
     loadingIndicator: document.getElementById('loading-indicator'),
     progressText: document.getElementById('progress-text'),
+    micBtn: document.getElementById('mic-btn'),
     chatInput: document.getElementById('chat-input'),
     sendBtn: document.getElementById('send-btn'),
     sendIconDefault: document.getElementById('send-icon-default'),
     sendIconLoading: document.getElementById('send-icon-loading'),
     sendIconStop: document.getElementById('send-icon-stop'),
+    continueWrapper: document.getElementById('continue-wrapper'),
+    continueBtn: document.getElementById('continue-btn'),
+    learnMoreBtn: document.getElementById('learn-more-btn'),
+    learnMoreContent: document.getElementById('learn-more-content'),
 };
 
-// 應用程式狀態
 let engine = null;
 let status = 'idle'; // idle, loading, ready, generating
 let messageHistory = [];
+let wasInterrupted = false;
 
-// 檢查 WebGPU 支援
+// --- 語音辨識初始化 (Web Speech API) ---
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let isRecording = false;
+let recordingBaseText = "";
+let finalTranscript = "";
+
+if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'zh-TW';
+
+    recognition.onstart = () => {
+        isRecording = true;
+        recordingBaseText = dom.chatInput.value;
+        if (recordingBaseText && !recordingBaseText.endsWith(' ') && !recordingBaseText.endsWith('\n')) {
+            recordingBaseText += ' ';
+        }
+        dom.micBtn.classList.remove('bg-slate-700', 'hover:bg-slate-600', 'text-slate-300');
+        dom.micBtn.classList.add('bg-red-500', 'hover:bg-red-400', 'text-white', 'animate-pulse');
+        dom.chatInput.placeholder = "🔴 正在聆聽您的聲音... (再次點擊麥克風結束)";
+        updateUIState();
+    };
+
+    recognition.onresult = (event) => {
+        let interimTranscript = '';
+        let currentFinal = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                currentFinal += event.results[i][0].transcript;
+            } else {
+                interimTranscript += event.results[i][0].transcript;
+            }
+        }
+        
+        finalTranscript += currentFinal;
+        dom.chatInput.value = recordingBaseText + finalTranscript + interimTranscript;
+        
+        // 觸發輸入事件以調整高度
+        dom.chatInput.dispatchEvent(new Event('input'));
+    };
+
+    recognition.onend = () => {
+        isRecording = false;
+        finalTranscript = "";
+        dom.micBtn.classList.add('bg-slate-700', 'hover:bg-slate-600', 'text-slate-300');
+        dom.micBtn.classList.remove('bg-red-500', 'hover:bg-red-400', 'text-white', 'animate-pulse');
+        updateUIState();
+    };
+
+    dom.micBtn.addEventListener('click', () => {
+        if (status === 'loading' || status === 'generating') return;
+        if (isRecording) {
+            recognition.stop();
+        } else {
+            try { recognition.start(); } catch(e) { console.error("語音啟動失敗", e); }
+        }
+    });
+} else {
+    dom.micBtn.title = "您的瀏覽器不支援語音輸入";
+    dom.micBtn.disabled = true;
+    dom.micBtn.classList.add('opacity-50', 'cursor-not-allowed');
+}
+
+// 檢查 WebGPU
 if (!navigator.gpu) {
     showError("⚠️ 您的瀏覽器不支援 WebGPU。\n行動裝置建議使用最新版 Chrome 或 Safari (需開啟 WebGPU 實驗性功能)。");
 }
 
-// 自動滾動到底部
+// --- 通用工具函數 ---
+
 function scrollToBottom() {
-    dom.chatContainer.scrollTo({
-        top: dom.chatContainer.scrollHeight,
-        behavior: 'smooth'
-    });
+    dom.chatContainer.scrollTo({ top: dom.chatContainer.scrollHeight, behavior: 'smooth' });
 }
 
-// 監聽螢幕大小變化（特別是虛擬鍵盤彈出時），自動將內容滾動到可視範圍
-window.addEventListener('resize', () => {
-    if (status !== 'idle') scrollToBottom();
-});
-
-// 顯示錯誤橫幅
 function showError(msg) {
     dom.errorText.textContent = msg;
     dom.errorBanner.classList.remove('hidden');
@@ -58,16 +120,18 @@ function showError(msg) {
     console.error(msg);
 }
 
-// 更新介面狀態
 function updateUIState() {
     const isLoadingOrGenerating = status === 'loading' || status === 'generating';
-
-    // 頂部控制項
+    
     dom.modelSelect.disabled = isLoadingOrGenerating;
     dom.loadBtn.disabled = isLoadingOrGenerating;
     dom.tempSlider.disabled = isLoadingOrGenerating;
     dom.topPSlider.disabled = isLoadingOrGenerating;
-
+    
+    if (SpeechRecognition) {
+        dom.micBtn.disabled = isLoadingOrGenerating;
+    }
+    
     const loadingSVG = `<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>`;
     const reloadSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
 
@@ -81,63 +145,57 @@ function updateUIState() {
         dom.loadBtnIcon.innerHTML = reloadSVG;
     }
 
-    // 底部輸入控制項
-    const isReadyToInput = status === 'ready';
-    dom.chatInput.disabled = !isReadyToInput;
+    if (wasInterrupted && status === 'ready') {
+        dom.continueWrapper.classList.remove('hidden');
+    } else {
+        dom.continueWrapper.classList.add('hidden');
+    }
 
+    const isReadyToInput = status === 'ready' || status === 'idle';
+    dom.chatInput.disabled = !isReadyToInput && !isRecording;
+    
     if (status === 'generating') {
-        // 生成時按鈕轉變為紅色的「停止按鈕」
         dom.sendBtn.disabled = false;
-        dom.sendBtn.classList.remove('bg-blue-600', 'hover:bg-blue-500');
-        dom.sendBtn.classList.add('bg-red-600', 'hover:bg-red-500');
-
+        dom.sendBtn.classList.replace('bg-blue-600', 'bg-red-600');
+        dom.sendBtn.classList.replace('hover:bg-blue-500', 'hover:bg-red-500');
         dom.sendIconDefault.classList.add('hidden');
         dom.sendIconLoading.classList.add('hidden');
         dom.sendIconStop.classList.remove('hidden');
-
-        dom.chatInput.placeholder = "AI 正在思考... (可點擊右側按鈕停止)";
+        dom.chatInput.placeholder = "AI 正在思考... (可點擊停止)";
     } else {
-        // 恢復為原本藍色的「發送按鈕」
-        dom.sendBtn.disabled = !isReadyToInput || dom.chatInput.value.trim() === '';
-        dom.sendBtn.classList.remove('bg-red-600', 'hover:bg-red-500');
-        dom.sendBtn.classList.add('bg-blue-600', 'hover:bg-blue-500');
-
+        dom.sendBtn.disabled = status !== 'ready' || dom.chatInput.value.trim() === '';
+        dom.sendBtn.classList.replace('bg-red-600', 'bg-blue-600');
+        dom.sendBtn.classList.replace('hover:bg-red-500', 'hover:bg-blue-500');
         dom.sendIconStop.classList.add('hidden');
         dom.sendIconLoading.classList.add('hidden');
         dom.sendIconDefault.classList.remove('hidden');
-
-        if (status === 'idle') {
-            dom.chatInput.placeholder = "請先載入模型...";
-        } else if (status === 'loading') {
-            dom.chatInput.placeholder = "模型載入中...";
-        } else {
-            dom.chatInput.placeholder = "輸入訊息... (連按四下 Enter 送出)";
+        
+        if (!isRecording) {
+            if (status === 'idle') dom.chatInput.placeholder = "請先載入模型...";
+            else if (status === 'loading') dom.chatInput.placeholder = "模型載入中...";
+            else dom.chatInput.placeholder = "輸入訊息... (連按四下 Enter 送出)";
         }
     }
 }
 
-// 清除除了 loading 和 empty state 之外的所有訊息節點
 function clearMessagesDOM() {
     const nodesToRemove = [];
     dom.messagesArea.childNodes.forEach(node => {
-        if (node.id !== 'empty-state' && node.id !== 'loading-indicator' && node.nodeType === Node.ELEMENT_NODE) {
+        if (!['empty-state', 'loading-indicator'].includes(node.id) && node.nodeType === Node.ELEMENT_NODE) {
             nodesToRemove.push(node);
         }
     });
     nodesToRemove.forEach(node => node.remove());
 }
 
-// 在畫面上渲染一條訊息 (調整寬度以適應手機)
 function appendMessageToDOM(role, content) {
     const msgContainer = document.createElement('div');
     msgContainer.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} w-full`;
 
     const bubble = document.createElement('div');
-    // 行動端給予高達 92% 的寬度，平板/電腦維持 85% / 75%
-    bubble.className = `max-w-[92%] sm:max-w-[85%] md:max-w-[75%] rounded-2xl p-3 sm:p-4 shadow-sm ${role === 'user'
-            ? 'bg-blue-600 text-white rounded-br-sm'
-            : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-sm'
-        }`;
+    bubble.className = `max-w-[92%] sm:max-w-[85%] md:max-w-[75%] rounded-2xl p-3 sm:p-4 shadow-sm ${
+        role === 'user' ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-sm'
+    }`;
 
     if (role === 'assistant') {
         const header = document.createElement('div');
@@ -147,18 +205,19 @@ function appendMessageToDOM(role, content) {
     }
 
     const textBlock = document.createElement('div');
-    textBlock.className = "whitespace-pre-wrap text-sm leading-relaxed word-break break-words";
-    textBlock.textContent = content; // 防止 XSS
+    textBlock.className = "whitespace-pre-wrap text-sm leading-relaxed word-break";
+    textBlock.textContent = content;
 
     bubble.appendChild(textBlock);
     msgContainer.appendChild(bubble);
     dom.messagesArea.appendChild(msgContainer);
-
+    
     scrollToBottom();
     return textBlock;
 }
 
-// 載入模型邏輯
+// --- 核心業務邏輯 ---
+
 async function loadModel() {
     if (!navigator.gpu) {
         showError("需要 WebGPU 支援才能執行模型！");
@@ -167,18 +226,16 @@ async function loadModel() {
 
     const selectedModel = dom.modelSelect.value;
     status = 'loading';
+    wasInterrupted = false;
     updateUIState();
-
-    // UI 整理
+    
     dom.errorBanner.classList.add('hidden');
     dom.emptyState.classList.add('hidden');
-    dom.settingsPanel.classList.add('hidden'); // 載入時隱藏設定面板
+    dom.settingsPanel.classList.add('hidden');
     clearMessagesDOM();
     messageHistory = [];
-
-    // 顯示載入中動畫
-    dom.loadingIndicator.classList.remove('hidden');
-    dom.loadingIndicator.classList.add('flex');
+    
+    dom.loadingIndicator.classList.replace('hidden', 'flex');
     dom.progressText.textContent = "正在初始化引擎與下載模型...";
 
     try {
@@ -190,38 +247,43 @@ async function loadModel() {
         });
 
         status = 'ready';
-        dom.loadingIndicator.classList.add('hidden');
-        dom.loadingIndicator.classList.remove('flex');
-
-        const welcomeText = `✅ 系統提示：已成功載入模型 **${selectedModel}** 並準備就緒。請開始與我對話！`;
+        dom.loadingIndicator.classList.replace('flex', 'hidden');
+        
+        const welcomeText = `✅ 已載入模型 **${selectedModel}**。\n💡 點擊左下角麥克風可語音輸入！`;
         messageHistory.push({ role: 'assistant', content: welcomeText });
         appendMessageToDOM('assistant', welcomeText);
-
+        
     } catch (err) {
         status = 'error';
-        dom.loadingIndicator.classList.add('hidden');
-        dom.loadingIndicator.classList.remove('flex');
+        dom.loadingIndicator.classList.replace('flex', 'hidden');
         showError(`載入失敗：\n${err.stack || err.message}`);
     } finally {
         updateUIState();
     }
 }
 
-// 發送訊息與串流回覆
-async function sendMessage() {
-    const text = dom.chatInput.value.trim();
-    if (!text || status !== 'ready' || !engine) return;
+async function sendMessage(isContinue = false) {
+    if (isRecording && recognition) recognition.stop();
 
-    // 1. 處理 User 訊息
-    dom.chatInput.value = '';
-    dom.chatInput.style.height = '48px'; // 恢復原始高度
-    messageHistory.push({ role: 'user', content: text });
-    appendMessageToDOM('user', text);
+    let text = dom.chatInput.value.trim();
 
-    // 2. 準備 AI 訊息狀態
-    status = 'generating';
+    if (isContinue === true) {
+        text = "請繼續未完成的回覆";
+    } else {
+        if (!text || status !== 'ready' || !engine) return;
+        dom.chatInput.value = '';
+        dom.chatInput.style.height = '48px';
+    }
+
+    wasInterrupted = false;
     updateUIState();
 
+    messageHistory.push({ role: 'user', content: text });
+    appendMessageToDOM('user', text);
+    
+    status = 'generating';
+    updateUIState();
+    
     const aiTextBlock = appendMessageToDOM('assistant', "");
 
     try {
@@ -239,7 +301,6 @@ async function sendMessage() {
         for await (const chunk of chunks) {
             const delta = chunk.choices[0]?.delta?.content || "";
             fullReply += delta;
-
             aiTextBlock.textContent = fullReply;
             scrollToBottom();
         }
@@ -248,9 +309,10 @@ async function sendMessage() {
     } catch (err) {
         if (err.message && err.message.toLowerCase().includes('abort')) {
             aiTextBlock.textContent += " ⏹️ [已停止]";
+            wasInterrupted = true;
         } else {
             console.error(err);
-            aiTextBlock.textContent = "❌ 發生錯誤，無法生成回覆。請確認控制台日誌。";
+            aiTextBlock.textContent = "❌ 發生錯誤，無法生成回覆。";
         }
     } finally {
         status = 'ready';
@@ -258,60 +320,49 @@ async function sendMessage() {
     }
 }
 
-// 處理發送按鈕點擊事件 (兼顧發送與停止)
-function handleSendBtnClick() {
-    if (status === 'generating') {
-        if (engine) engine.interruptGenerate();
-    } else if (status === 'ready') {
-        sendMessage();
-    }
-}
-
-// --- 綁定事件監聽器 ---
+// --- 事件監聽器 ---
 
 dom.loadBtn.addEventListener('click', loadModel);
-dom.sendBtn.addEventListener('click', handleSendBtnClick);
-
-// 設定面板展開/收合
-dom.settingsBtn.addEventListener('click', () => {
-    dom.settingsPanel.classList.toggle('hidden');
+dom.sendBtn.addEventListener('click', () => {
+    if (status === 'generating') engine?.interruptGenerate();
+    else if (status === 'ready') sendMessage();
 });
 
-// 監聽參數滑桿變化即時更新數值顯示
-dom.tempSlider.addEventListener('input', (e) => {
-    dom.tempVal.textContent = e.target.value;
-});
-dom.topPSlider.addEventListener('input', (e) => {
-    dom.topPVal.textContent = e.target.value;
+dom.continueBtn.addEventListener('click', () => sendMessage(true));
+
+dom.learnMoreBtn?.addEventListener('click', () => {
+    dom.learnMoreContent.classList.toggle('hidden');
 });
 
-// 監聽輸入框變化以切換發送按鈕狀態，並實現自動長高 (Auto-resize textarea)
-dom.chatInput.addEventListener('input', function () {
+dom.settingsBtn.addEventListener('click', () => dom.settingsPanel.classList.toggle('hidden'));
+dom.tempSlider.addEventListener('input', (e) => { dom.tempVal.textContent = e.target.value; });
+dom.topPSlider.addEventListener('input', (e) => { dom.topPVal.textContent = e.target.value; });
+
+dom.chatInput.addEventListener('input', function() {
     updateUIState();
-
-    // 自動調整高度邏輯
-    this.style.height = '48px'; // 重置高度以取得真實的 scrollHeight
-    const newHeight = Math.min(this.scrollHeight, 200); // 限制最大高度
+    this.style.height = '48px';
+    const newHeight = Math.min(this.scrollHeight, 200);
     this.style.height = newHeight + 'px';
-
-    if (this.value === '') {
-        this.style.height = '48px';
-    }
+    if (this.value === '') this.style.height = '48px';
 });
 
-// 處理連按四下 Enter 鍵直接送出的邏輯
+// 4 次 Enter 快捷鍵
 let enterCount = 0;
 dom.chatInput.addEventListener('keydown', (e) => {
     if (status !== 'ready') return;
-
     if (e.key === 'Enter') {
         enterCount++;
         if (enterCount === 4) {
-            e.preventDefault(); // 防止加入最後的換行
+            e.preventDefault();
             enterCount = 0;
             sendMessage();
         }
     } else {
-        enterCount = 0; // 若輸入了其他字元，則重新計算
+        enterCount = 0;
     }
+});
+
+// 視窗調整大小時自動捲動
+window.addEventListener('resize', () => {
+    if (status !== 'idle') scrollToBottom();
 });

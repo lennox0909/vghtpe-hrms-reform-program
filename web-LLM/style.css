@@ -1,5 +1,4 @@
-/* 自訂的 CSS 樣式 */
-/* 自訂滾動條樣式：針對行動裝置稍微改細 */
+/* 自定義滾動條樣式 */
 ::-webkit-scrollbar {
     width: 6px;
 }
@@ -17,7 +16,37 @@
     background: #64748b;
 }
 
-/* 支援 iOS 底部 Home Bar 安全區域 */
+/* iOS 安全區域底距適配 */
 .pb-safe {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* 強化字體渲染 */
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 進度條動畫 */
+@keyframes progressMove {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: progressMove 2s linear infinite;
+}
+
+/* 文字折行強化 */
+.word-break {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
 }
