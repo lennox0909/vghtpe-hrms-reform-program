@@ -1,0 +1,62 @@
+/* 自訂滾動條 */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* 避免 Mermaid 溢出並支援無限放大滾動 */
+.mermaid {
+    overflow: auto;
+    text-align: center;
+}
+
+.mermaid svg {
+    max-width: none !important;
+    height: auto !important;
+    transform-origin: top center;
+}
+
+/* 拖曳條動畫 */
+#resizer:active,
+#resizer:hover {
+    transition: background-color 0.2s;
+}
+
+/* 預覽區塊內圖片與元素間距優化 */
+.prose pre {
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+/* 動態提示框動畫 */
+@keyframes slideInUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.animate-slide-up {
+    animation: slideInUp 0.3s ease-out;
+}

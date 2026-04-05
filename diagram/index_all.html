@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台北榮總人事室 Markdown & Mermaid 即時編輯器</title>
+    <!-- 引入 Tailwind CSS 與 Typography 插件 -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        indigo: {
+                            50: '#f5f7ff',
+                            100: '#ebf0ff',
+                            200: '#d9e0ff',
+                            300: '#b8c5ff',
+                            400: '#8f9eff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <!-- 引入工具庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* 自訂滾動條 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* 避免 Mermaid 溢出並支援無限放大滾動 */
+        .mermaid {
+            overflow: auto;
+            text-align: center;
+        }
+        .mermaid svg {
+            max-width: none !important;
+            height: auto !important;
+            transform-origin: top center;
+        }
+        
+        /* 拖曳條動畫 */
+        #resizer:active, #resizer:hover {
+            transition: background-color 0.2s;
+        }
+
+        /* 預覽區塊內圖片與元素間距優化 */
+        .prose pre { padding: 0 !important; background: transparent !important; }
+        
+        /* 動態提示框動畫 */
+        @keyframes slideInUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up { animation: slideInUp 0.3s ease-out; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 h-screen flex flex-col font-sans text-slate-800 dark:text-slate-200 overflow-hidden transition-colors duration-300">
+
+    <!-- 頂部導覽列 -->
+    <header class="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700 px-4 md:px-6 py-3 flex justify-between items-center z-30 transition-colors">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 p-2 rounded-lg text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800 dark:text-slate-100 leading-none">台北榮總人事室 圖表編輯器</h1>
+                <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-semibold">by Leno Tsai</p>
+            </div>
+            
+            <button id="themeToggleBtn" class="ml-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-all active:scale-95" title="切換深色/淺色模式">
+                <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+                <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            </button>
+            
+            <!-- 隱藏/顯示編輯區按鈕 -->
+            <button id="editorToggleBtn" class="ml-1 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-all active:scale-95" title="切換顯示編輯區">
+                <svg id="sidebarOpenIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                </svg>
+                <svg id="sidebarClosedIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="flex items-center gap-2 md:gap-4">
+            <span class="text-xs text-slate-400 hidden lg:block">支援 Markdown 與 20+ Mermaid 圖表</span>
+            <div id="save-status" class="text-xs text-emerald-500 font-medium opacity-0 transition-opacity">已自動儲存</div>
+        </div>
+    </header>
+
+    <!-- 工作區 -->
+    <main id="main-container" class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        
+        <!-- 左側：編輯器 -->
+        <section id="editor-pane" class="w-full md:w-1/2 flex flex-col bg-white dark:bg-slate-900 z-10">
+            <div class="bg-slate-50 dark:bg-slate-800/50 px-4 py-2 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <div class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                    編輯器
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- 隱藏的檔案輸入框 -->
+                    <input type="file" id="import-input" class="hidden" accept=".md,.txt">
+                    <button id="import-btn" class="text-xs font-medium text-slate-500 hover:text-indigo-600 transition-colors uppercase tracking-wider flex items-center gap-1" title="匯入 .md 或 .txt 檔案">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        匯入
+                    </button>
+                    <div class="relative group">
+                        <button id="export-dropdown-btn" class="text-xs font-medium text-slate-500 hover:text-indigo-600 transition-colors uppercase tracking-wider flex items-center gap-1">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            匯出
+                        </button>
+                        <!-- 匯出選單 -->
+                        <div class="absolute right-0 mt-2 w-32 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                            <button id="export-md-btn" class="w-full text-left px-4 py-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-700 rounded-t-lg transition-colors">匯出為 .md</button>
+                            <button id="export-txt-btn" class="w-full text-left px-4 py-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-700 rounded-b-lg transition-colors">匯出為 .txt</button>
+                        </div>
+                    </div>
+                    <button id="clearBtn" class="text-xs font-medium text-slate-400 hover:text-red-500 transition-colors uppercase tracking-wider">
+                        清空
+                    </button>
+                </div>
+            </div>
+            <textarea id="editor" class="flex-1 w-full p-6 resize-none outline-none font-mono text-sm leading-relaxed bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 transition-colors" spellcheck="false" placeholder="在此輸入內容..."></textarea>
+        </section>
+
+        <!-- 分隔線 (增加觸控寬度與取消預設觸控行為) -->
+        <div id="resizer" class="hidden md:flex w-3 shrink-0 bg-slate-200 dark:bg-slate-700 hover:bg-indigo-400 dark:hover:bg-indigo-500 cursor-col-resize items-center justify-center transition-all z-20 group active:bg-indigo-600 touch-none">
+            <div class="w-1 h-12 bg-slate-300 dark:bg-slate-600 rounded-full group-hover:bg-white/50 transition-colors pointer-events-none"></div>
+        </div>
+
+        <!-- 右側：預覽 -->
+        <section id="preview-pane" class="w-full md:flex-1 flex flex-col bg-slate-50 dark:bg-slate-900 overflow-hidden shadow-inner">
+            <div class="bg-slate-50 dark:bg-slate-800/50 px-4 py-2 border-b border-slate-200 dark:border-slate-700 flex items-center">
+                <div class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    即時預覽
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 md:p-10 scroll-smooth">
+                <div id="preview" class="prose prose-slate dark:prose-invert prose-indigo max-w-none">
+                    <!-- 渲染結果 -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 檔案名稱詢問彈窗 (圖表與文件通用，當環境不支援原生 API 時的備用方案) -->
+    <div id="filename-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold mb-2" id="modal-title">儲存圖表</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-4" id="modal-desc">目前環境限制直接選擇資料夾，請輸入檔名進行快速下載：</p>
+            <div class="relative mb-6">
+                <input type="text" id="filename-input" class="w-full px-4 py-2 bg-slate-100 dark:bg-slate-700 border-none rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-medium" value="vghtpe-document">
+                <span class="absolute right-4 top-2 text-slate-400" id="filename-ext">.svg</span>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button id="modal-cancel" class="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">取消</button>
+                <button id="modal-confirm" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-lg shadow-indigo-500/20">確認下載</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知提示系統 (Toast) -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[60] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- 腳本區域 -->
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        
+        const editor = document.getElementById('editor');
+        const preview = document.getElementById('preview');
+        const clearBtn = document.getElementById('clearBtn');
+        const resizer = document.getElementById('resizer');
+        const editorPane = document.getElementById('editor-pane');
+        const mainContainer = document.getElementById('main-container');
+        const saveStatus = document.getElementById('save-status');
+        const STORAGE_KEY = 'vghtpe_mermaid_editor_content';
+
+        // --- 通知系統功能 ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `px-4 py-3 rounded-lg shadow-lg text-sm font-medium animate-slide-up flex items-center gap-2 pointer-events-auto bg-white dark:bg-slate-800 border-l-4 ${
+                type === 'success' ? 'border-emerald-500 text-slate-700 dark:text-slate-100' : 'border-amber-500 text-slate-700 dark:text-slate-100'
+            }`;
+            
+            const icon = type === 'success'
+                ? '<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+                : '<svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+            
+            toast.innerHTML = `${icon}<span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- 主題切換 ---
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+        let isDarkMode = localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+        function updateTheme(initial = false) {
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark');
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            } else {
+                document.documentElement.classList.remove('dark');
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
+            
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: isDarkMode ? 'dark' : 'default',
+                securityLevel: 'loose',
+                fontFamily: 'inherit'
+            });
+
+            if (!initial) renderContent();
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+            updateTheme();
+        });
+
+        // --- 比例調整 (支援滑鼠與觸控) ---
+        let isResizing = false;
+        
+        const startResize = (e) => {
+            isResizing = true;
+            document.body.classList.add('cursor-col-resize');
+        };
+        
+        const doResize = (e) => {
+            if (!isResizing) return;
+            const containerRect = mainContainer.getBoundingClientRect();
+            // 自動判斷是滑鼠事件還是觸控事件
+            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            let newWidthPercent = ((clientX - containerRect.left) / containerRect.width) * 100;
+            // 限制拖曳範圍在 15% ~ 85% 之間
+            if (newWidthPercent > 15 && newWidthPercent < 85) {
+                editorPane.style.width = `${newWidthPercent}%`;
+            }
+        };
+        
+        const stopResize = () => {
+            isResizing = false;
+            document.body.classList.remove('cursor-col-resize');
+        };
+
+        // 綁定滑鼠事件
+        resizer.addEventListener('mousedown', startResize);
+        document.addEventListener('mousemove', doResize);
+        document.addEventListener('mouseup', stopResize);
+
+        // 綁定觸控事件
+        resizer.addEventListener('touchstart', startResize, { passive: true });
+        document.addEventListener('touchmove', doResize, { passive: true });
+        document.addEventListener('touchend', stopResize);
+
+        // --- 隱藏與開啟編輯區邏輯 ---
+        const editorToggleBtn = document.getElementById('editorToggleBtn');
+        const sidebarOpenIcon = document.getElementById('sidebarOpenIcon');
+        const sidebarClosedIcon = document.getElementById('sidebarClosedIcon');
+        let isEditorVisible = true;
+
+        editorToggleBtn.addEventListener('click', () => {
+            isEditorVisible = !isEditorVisible;
+            if (isEditorVisible) {
+                editorPane.style.display = ''; // 恢復原有的版面配置
+                resizer.style.display = ''; // 恢復原有的拖曳條
+                sidebarOpenIcon.classList.remove('hidden');
+                sidebarClosedIcon.classList.add('hidden');
+            } else {
+                editorPane.style.display = 'none'; // 隱藏編輯區
+                resizer.style.display = 'none'; // 隱藏拖曳條
+                sidebarOpenIcon.classList.add('hidden');
+                sidebarClosedIcon.classList.remove('hidden');
+            }
+        });
+
+        // --- 預設內容 (20 個範例) ---
+        const defaultContent = `# 歡迎使用 VGHTPE-HR Markdown & Mermaid 工具 🚀
+**by Leno Tsai**
+
+這是一個即時編輯器，可以將您的 Markdown 內容與 Mermaid 圖表程式碼轉換為視覺化的畫面。
+以下完整收錄了 Mermaid 官方內建支援的 **20 種各式圖表範例**：
+
+## 1. 流程圖 (Flowchart)
+\`\`\`mermaid
+graph TD
+    A[人事室] -->|處理加班費| B(差勤系統)
+    B --> C{人工列印憑證}
+    C -->|選項 A| D[進系統手動申報]
+    C -->|選項 B| E[手動查核、電話訪談]
+    C -->|選項 C| F[手動查核]
+\`\`\`
+
+## 2. 循序圖 (Sequence Diagram)
+\`\`\`mermaid
+sequenceDiagram
+    participant Alice
+    participant Bob
+    Alice ->>+ Bob: Hello Bob, how are you?
+    Alice ->> Bob: Bob, can you hear me?
+    Bob -->> Alice: Hi Alice, I can hear you!
+    Bob -->>- Alice: I feel great!
+\`\`\`
+
+## 3. 類別圖 (Class Diagram)
+\`\`\`mermaid
+classDiagram
+    Animal <|-- Duck
+    Animal <|-- Fish
+    Animal <|-- Zebra
+    Animal : +int age
+    Animal : +String gender
+    Animal: +isMammal()
+    Animal: +mate()
+    class Duck{
+        +String beakColor
+        +swim()
+        +quack()
+    }
+    class Fish{
+        -int sizeInFeet
+        -canEat()
+    }
+    class Zebra{
+        +bool is_wild
+        +run()
+    }
+\`\`\`
+
+## 4. 狀態圖 (State Diagram)
+\`\`\`mermaid
+stateDiagram-v2
+    [*] --> Still
+    Still --> [*]
+    Still --> Moving
+    Moving --> Still
+    Moving --> Crash
+    Crash --> [*]
+\`\`\`
+
+## 5. 實體關聯圖 (Entity Relationship Diagram)
+\`\`\`mermaid
+erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|{ LINE-ITEM : contains
+    CUSTOMER }|..|{ DELIVERY-ADDRESS : uses
+\`\`\`
+
+## 6. 使用者旅程圖 (User Journey)
+\`\`\`mermaid
+journey
+    title My working day
+    section Go to work
+      Make tea: 5: Me
+      Go upstairs: 3: Me
+      Do work: 1: Me, Team
+    section Go home
+      Go downstairs: 5: Me
+      Sit down: 5: Me
+\`\`\`
+
+## 7. 甘特圖 (Gantt Chart)
+\`\`\`mermaid
+gantt
+    title A Gantt Diagram
+    dateFormat  YYYY-MM-DD
+    section Section
+    A task           :a1, 2014-01-01, 30d
+    Another task     :after a1  , 20d
+    section Another
+    Task in sec      :2014-01-12  , 12d
+    another task     : 24d
+\`\`\`
+
+## 8. 圓餅圖 (Pie Chart)
+\`\`\`mermaid
+pie title Pets adopted by volunteers
+    "Dogs" : 386
+    "Cats" : 85
+    "Rats" : 15
+\`\`\`
+
+## 9. 象限圖 (Quadrant Chart)
+\`\`\`mermaid
+quadrantChart
+    title Reach and engagement of campaigns
+    x-axis Low Reach --> High Reach
+    y-axis Low Engagement --> High Engagement
+    quadrant-1 We should expand
+    quadrant-2 Need to promote
+    quadrant-3 Re-evaluate
+    quadrant-4 May be improved
+    Campaign A: [0.3, 0.6]
+    Campaign B: [0.45, 0.23]
+    Campaign C: [0.57, 0.69]
+    Campaign D: [0.78, 0.34]
+    Campaign E: [0.40, 0.34]
+    Campaign F: [0.35, 0.78]
+\`\`\`
+
+## 10. 需求圖 (Requirement Diagram)
+\`\`\`mermaid
+requirementDiagram
+
+requirement test_req {
+id: 1
+text: the test text.
+risk: high
+verifymethod: test
+}
+
+element test_entity {
+type: simulation
+}
+
+test_entity - satisfies -> test_req
+\`\`\`
+
+## 11. Git 圖 (Gitgraph)
+\`\`\`mermaid
+gitGraph
+    commit
+    commit
+    branch develop
+    checkout develop
+    commit
+    commit
+    checkout main
+    merge develop
+    commit
+    commit
+\`\`\`
+
+## 12. C4 架構圖 (C4 Diagram)
+\`\`\`mermaid
+C4Context
+    title System Context diagram for Internet Banking System
+    Person(customerA, "Banking Customer A", "A customer of the bank, with personal bank accounts.")
+    Person(customerB, "Banking Customer B")
+    Person_Ext(customerC, "Banking Customer C", "desc")
+    Enterprise_Boundary(b0, "BankBoundary") {
+      System(SystemAA, "Internet Banking System", "Allows customers to view information about their bank accounts.")
+    }
+    Rel(customerA, SystemAA, "Uses")
+\`\`\`
+
+## 13. 心智圖 (Mindmap)
+\`\`\`mermaid
+mindmap
+  root((mindmap))
+    Origins
+      Long history
+      Popularisation
+        British popular psychology author Tony Buzan
+    Research
+      On effectiveness
+      On Automatic creation
+        Uses
+            Creative techniques
+            Strategic planning
+    Tools
+      Pen and paper
+      Mermaid
+\`\`\`
+
+## 14. 時間軸 (Timeline)
+\`\`\`mermaid
+timeline
+    title History of Social Media Platform
+    2002 : LinkedIn
+    2004 : Facebook
+         : Google
+    2005 : Youtube
+    2006 : Twitter
+\`\`\`
+
+## 15. 桑基圖 (Sankey Diagram)
+\`\`\`mermaid
+sankey-beta
+Agricultural 'waste',Bio-conversion,124.729
+Bio-conversion,Liquid,0.597
+Bio-conversion,Solid,26.862
+\`\`\`
+
+## 16. XY 座標圖 (XYChart)
+\`\`\`mermaid
+xychart-beta
+    title "Sales Revenue"
+    x-axis [jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec]
+    y-axis "Revenue (in $)" 4000 --> 11000
+    bar [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
+    line [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
+\`\`\`
+
+## 17. 區塊圖 (Block Diagram)
+\`\`\`mermaid
+block-beta
+  columns 3
+  A["Node A"]
+  B["Node B"]
+  C["Node C"]
+  block:group1:2
+    D["Node D"]
+    E["Node E"]
+  end
+  F["Node F"]
+\`\`\`
+
+## 18. 封包圖 (Packet Diagram)
+\`\`\`mermaid
+packet-beta
+  title Packet Diagram
+  0-15: "Source Port"
+  16-31: "Destination Port"
+  32-63: "Sequence Number"
+  64-95: "Acknowledgment Number"
+\`\`\`
+
+## 19. 系統架構圖 (Architecture)
+\`\`\`mermaid
+architecture-beta
+    group api(cloud)[API]
+    service db(database)[Database] in api
+    service disk(disk)[Storage] in api
+    db:L -- R:disk
+\`\`\`
+
+## 20. 看板 (Kanban)
+\`\`\`mermaid
+kanban
+  Todo
+    [Create documentation]
+  In Progress
+    [Implement new charts]
+  Done
+    [Fix bugs]
+\`\`\`
+
+---
+*提示：您可以試著修改左側的程式碼，右側會即時更新喔！*`;
+
+        // --- 檔案匯入邏輯 ---
+        const importBtn = document.getElementById('import-btn');
+        const importInput = document.getElementById('import-input');
+
+        importBtn.addEventListener('click', () => importInput.click());
+
+        importInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                editor.value = event.target.result;
+                renderContent();
+                localStorage.setItem(STORAGE_KEY, editor.value);
+                showToast(`已匯入檔案：${file.name}`);
+                // 清除 input 值以利重複匯入同檔名檔案
+                importInput.value = '';
+            };
+            reader.readAsText(file);
+        });
+
+        // --- 檔案匯出邏輯 (TXT/MD) ---
+        async function handleFileExport(extension) {
+            const content = editor.value;
+            const mimeType = extension === 'md' ? 'text/markdown' : 'text/plain';
+            const suggestedName = `vghtpe-document.${extension}`;
+            
+            // 首選方案：嘗試使用原生 File System Access API (可選擇資料夾)
+            if ('showSaveFilePicker' in window) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: suggestedName,
+                        types: [{
+                            description: extension === 'md' ? 'Markdown 檔案' : '文字檔案',
+                            accept: { [mimeType]: [`.${extension}`] }
+                        }]
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(content);
+                    await writable.close();
+                    showToast(`已成功儲存為 ${handle.name}`);
+                    return; // 成功儲存，退出函數
+                } catch (err) {
+                    if (err.name === 'AbortError') return; // 使用者主動取消
+                    console.warn('原生儲存 API 無法使用，切換為備用下載模式', err);
+                }
+            }
+            
+            // 備用方案：彈窗輸入檔名並使用 Blob 下載 (系統預設下載路徑)
+            const modal = document.getElementById('filename-modal');
+            const input = document.getElementById('filename-input');
+            const confirmBtn = document.getElementById('modal-confirm');
+            const cancelBtn = document.getElementById('modal-cancel');
+            const title = document.getElementById('modal-title');
+            const desc = document.getElementById('modal-desc');
+            const extLabel = document.getElementById('filename-ext');
+            
+            title.innerText = "匯出文件";
+            desc.innerText = "目前環境限制直接選擇資料夾，請輸入檔名進行快速下載：";
+            extLabel.innerText = `.${extension}`;
+            input.value = `vghtpe-document`;
+            modal.classList.remove('hidden');
+            input.focus();
+            
+            return new Promise((resolve) => {
+                const cleanup = () => {
+                    modal.classList.add('hidden');
+                    confirmBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                };
+
+                confirmBtn.onclick = () => {
+                    const filename = input.value || 'document';
+                    const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${filename}.${extension}`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    cleanup();
+                    showToast(`已匯出為 ${filename}.${extension}`);
+                    resolve();
+                };
+
+                cancelBtn.onclick = () => { cleanup(); resolve(); };
+            });
+        }
+
+        document.getElementById('export-md-btn').onclick = () => handleFileExport('md');
+        document.getElementById('export-txt-btn').onclick = () => handleFileExport('txt');
+
+        // --- 圖表 SVG 儲存邏輯 ---
+        async function handleSvgDownload(svg, index) {
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const content = '<?xml version="1.0" standalone="no"?>\r\n' + svgData;
+            const suggestedName = `vghtpe-chart-${index + 1}.svg`;
+
+            // 首選方案：嘗試使用原生 File System Access API (可選擇資料夾)
+            if ('showSaveFilePicker' in window) {
+                try {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: suggestedName,
+                        types: [{
+                            description: 'SVG 圖片',
+                            accept: { 'image/svg+xml': ['.svg'] }
+                        }]
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(content);
+                    await writable.close();
+                    showToast(`圖表已成功儲存為 ${handle.name}`);
+                    return; // 成功儲存，退出函數
+                } catch (err) {
+                    if (err.name === 'AbortError') return; // 使用者主動取消
+                    console.warn('原生儲存 API 無法使用，切換為備用下載模式', err);
+                }
+            }
+
+            // 備用方案：彈窗輸入檔名並使用 Blob 下載 (系統預設下載路徑)
+            const modal = document.getElementById('filename-modal');
+            const input = document.getElementById('filename-input');
+            const confirmBtn = document.getElementById('modal-confirm');
+            const cancelBtn = document.getElementById('modal-cancel');
+            const title = document.getElementById('modal-title');
+            const desc = document.getElementById('modal-desc');
+            const extLabel = document.getElementById('filename-ext');
+            
+            title.innerText = "儲存圖表 (SVG)";
+            desc.innerText = "目前環境限制直接選擇資料夾，請輸入檔名進行快速下載：";
+            extLabel.innerText = ".svg";
+            input.value = `vghtpe-chart-${index + 1}`;
+            modal.classList.remove('hidden');
+            input.focus();
+            
+            return new Promise((resolve) => {
+                const cleanup = () => {
+                    modal.classList.add('hidden');
+                    confirmBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                };
+
+                confirmBtn.onclick = () => {
+                    const filename = input.value || 'chart';
+                    const blob = new Blob([content], { type: 'image/svg+xml;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${filename}.svg`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    cleanup();
+                    showToast(`已成功下載：${filename}.svg`);
+                    resolve();
+                };
+
+                cancelBtn.onclick = () => { cleanup(); resolve(); };
+            });
+        }
+
+        // --- 新增：圖表 PNG 儲存邏輯 ---
+        async function handlePngDownload(svg, index) {
+            // 拷貝一份 SVG 以便調整屬性而不會影響畫面上原有的顯示
+            const clonedSvg = svg.cloneNode(true);
+            const bbox = svg.getBoundingClientRect();
+            const width = bbox.width;
+            const height = bbox.height;
+
+            // 顯式設定寬高以利於繪製到 Canvas
+            clonedSvg.setAttribute('width', width);
+            clonedSvg.setAttribute('height', height);
+            
+            // 確保含有 xmlns
+            if (!clonedSvg.getAttribute('xmlns')) {
+                clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            }
+
+            const svgData = new XMLSerializer().serializeToString(clonedSvg);
+            const svgUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
+
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                // 將畫布放大兩倍以產生較高畫質的圖片
+                canvas.width = width * 2;
+                canvas.height = height * 2;
+                const ctx = canvas.getContext('2d');
+
+                // 依據當前深淺色模式填充背景色，避免透明背景造成文字難以閱讀
+                ctx.fillStyle = document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.scale(2, 2);
+                ctx.drawImage(img, 0, 0);
+
+                canvas.toBlob(async (blob) => {
+                    const suggestedName = `vghtpe-chart-${index + 1}.png`;
+
+                    // 首選方案：嘗試使用原生 File System Access API
+                    if ('showSaveFilePicker' in window) {
+                        try {
+                            const handle = await window.showSaveFilePicker({
+                                suggestedName: suggestedName,
+                                types: [{
+                                    description: 'PNG 圖片',
+                                    accept: { 'image/png': ['.png'] }
+                                }]
+                            });
+                            const writable = await handle.createWritable();
+                            await writable.write(blob);
+                            await writable.close();
+                            showToast(`圖表已成功儲存為 ${handle.name}`);
+                            return;
+                        } catch (err) {
+                            if (err.name === 'AbortError') return;
+                        }
+                    }
+
+                    // 備用方案：彈窗輸入檔名並使用 Blob 下載
+                    const modal = document.getElementById('filename-modal');
+                    const input = document.getElementById('filename-input');
+                    const confirmBtn = document.getElementById('modal-confirm');
+                    const cancelBtn = document.getElementById('modal-cancel');
+                    const title = document.getElementById('modal-title');
+                    const desc = document.getElementById('modal-desc');
+                    const extLabel = document.getElementById('filename-ext');
+                    
+                    title.innerText = "儲存圖表 (PNG)";
+                    desc.innerText = "目前環境限制直接選擇資料夾，請輸入檔名進行快速下載：";
+                    extLabel.innerText = ".png";
+                    input.value = `vghtpe-chart-${index + 1}`;
+                    modal.classList.remove('hidden');
+                    input.focus();
+                    
+                    const cleanup = () => {
+                        modal.classList.add('hidden');
+                        confirmBtn.onclick = null;
+                        cancelBtn.onclick = null;
+                    };
+
+                    confirmBtn.onclick = () => {
+                        const filename = input.value || 'chart';
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${filename}.png`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        cleanup();
+                        showToast(`已成功下載：${filename}.png`);
+                    };
+
+                    cancelBtn.onclick = () => { cleanup(); };
+                }, 'image/png');
+            };
+            img.src = svgUrl;
+        }
+
+        // --- 渲染與工具列 ---
+        async function renderContent() {
+            const rawText = editor.value || '';
+            preview.innerHTML = marked.parse(rawText.replace(/\u00A0/g, ' '));
+
+            const codeBlocks = preview.querySelectorAll('code.language-mermaid');
+            codeBlocks.forEach((block) => {
+                const pre = block.parentElement;
+                const container = document.createElement('div');
+                // 移除 overflow-hidden 以允許內部元件放大並產生滾動條
+                container.className = 'mermaid-wrapper group relative my-8 p-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transition-all hover:shadow-md flex flex-col items-center';
+                
+                const mDiv = document.createElement('div');
+                // 移除 flex 避免置中導致圖片左側被切斷，改用 text-center
+                mDiv.className = 'mermaid w-full overflow-auto text-center';
+                mDiv.textContent = block.textContent;
+                
+                container.appendChild(mDiv);
+                pre.replaceWith(container);
+            });
+
+            try {
+                const nodes = document.querySelectorAll('.mermaid');
+                if (nodes.length > 0) {
+                    await mermaid.run({ nodes });
+                    attachToolbars();
+                }
+            } catch (err) {
+                console.error("Mermaid Render Error:", err);
+            }
+        }
+
+        function attachToolbars() {
+            document.querySelectorAll('.mermaid-wrapper').forEach((container, i) => {
+                if (container.querySelector('.toolbar')) return;
+
+                const svg = container.querySelector('svg');
+                if (!svg) return;
+
+                let currentZoom = 100;
+                svg.style.width = '100%';
+                svg.style.minWidth = '100%';
+                svg.style.height = 'auto';
+                svg.style.transition = 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.2s';
+
+                const toolbar = document.createElement('div');
+                // 移除 opacity-0 與 group-hover:opacity-100 讓工具列永遠顯示
+                toolbar.className = 'toolbar absolute top-3 right-3 flex gap-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur shadow-sm border border-slate-200 dark:border-slate-700 rounded-lg p-1 z-20';
+                
+                const btnBase = 'p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors text-slate-500';
+                const flexBtnBase = btnBase + ' flex items-center gap-1';
+
+                const bIn = document.createElement('button');
+                bIn.className = btnBase;
+                bIn.title = "放大圖表";
+                bIn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>';
+                bIn.onclick = () => { currentZoom += 20; svg.style.width = `${currentZoom}%`; svg.style.minWidth = `${currentZoom}%`; };
+
+                const bOut = document.createElement('button');
+                bOut.className = btnBase;
+                bOut.title = "縮小圖表";
+                bOut.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>';
+                bOut.onclick = () => { currentZoom = Math.max(20, currentZoom - 20); svg.style.width = `${currentZoom}%`; svg.style.minWidth = `${currentZoom}%`; };
+
+                // 修改後的 SVG 下載按鈕 (帶有文字標示)
+                const bDlSvg = document.createElement('button');
+                bDlSvg.className = flexBtnBase;
+                bDlSvg.title = "下載 SVG 向量圖";
+                bDlSvg.innerHTML = '<span class="text-[10px] font-bold">SVG</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+                bDlSvg.onclick = () => handleSvgDownload(svg, i);
+
+                // 新增的 PNG 下載按鈕 (帶有文字標示)
+                const bDlPng = document.createElement('button');
+                bDlPng.className = flexBtnBase;
+                bDlPng.title = "下載 PNG 圖片";
+                bDlPng.innerHTML = '<span class="text-[10px] font-bold">PNG</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+                bDlPng.onclick = () => handlePngDownload(svg, i);
+
+                toolbar.append(bIn, bOut, bDlSvg, bDlPng);
+                container.appendChild(toolbar);
+            });
+        }
+
+        // --- 事件監聽 ---
+        let timer;
+        editor.addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                renderContent();
+                localStorage.setItem(STORAGE_KEY, editor.value);
+                saveStatus.style.opacity = '1';
+                setTimeout(() => saveStatus.style.opacity = '0', 1500);
+            }, 400);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            if(editor.value === '') return;
+            if(confirm('確定要清空編輯器嗎？')){
+                editor.value = '';
+                localStorage.removeItem(STORAGE_KEY);
+                renderContent();
+                editor.focus();
+            }
+        });
+
+        updateTheme(true);
+        const saved = localStorage.getItem(STORAGE_KEY);
+        editor.value = saved !== null ? saved : defaultContent;
+        renderContent();
+    </script>
+</body>
+</html>

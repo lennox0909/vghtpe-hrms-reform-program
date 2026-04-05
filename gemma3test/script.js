@@ -14,6 +14,7 @@ submitButton.addEventListener("click", function() {
     // 檢查使用者輸入是否有效
     if (isNaN(guess) || guess < 1 || guess > 100) {
         resultDiv.textContent = "請輸入 1 到 100 之間的數字。";
+        guessInput.focus(); // 將焦點設定到輸入框，方便使用者直接輸入
         return;
     }
 
@@ -28,4 +29,13 @@ submitButton.addEventListener("click", function() {
 
     // 清空輸入框
     guessInput.value = "";
+    guessInput.focus(); // 將焦點設定到輸入框，方便使用者繼續猜測
+
+});
+
+// 鍵盤 Enter 鍵事件處理函式
+guessInput.addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+        submitButton.click(); // 模擬點擊提交按鈕
+    }
 });
