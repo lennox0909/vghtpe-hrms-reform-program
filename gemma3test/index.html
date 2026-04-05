@@ -1,0 +1,46 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猜數字遊戲</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+        }
+
+        #guessInput {
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        #submitButton {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>猜數字遊戲</h1>
+
+    <p>請猜一個 1 到 100 之間的數字。</p>
+
+    <input type="number" id="guessInput" placeholder="輸入你的猜測">
+    <button id="submitButton">提交</button>
+
+    <div id="result"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
