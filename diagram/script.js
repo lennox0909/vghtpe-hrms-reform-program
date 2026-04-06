@@ -92,179 +92,17 @@ editorToggleBtn.addEventListener('click', () => {
     sidebarClosedIcon.classList.toggle('hidden', isEditorVisible);
 });
 
-// --- 20 個完整範例 ---
-const defaultContent = `# 歡迎使用 VGHTPE-HR Markdown & Mermaid 工具 🚀
-**by Leno Tsai**
-
-這是一個即時編輯器，可以將您的 Markdown 內容與 Mermaid 圖表程式碼轉換為視覺化的畫面。
-以下完整收錄了 Mermaid 官方內建支援的 **20 種各式圖表範例**：
-
-## 1. 流程圖 (Flowchart)
-\`\`\`mermaid
-graph TD
-    A[人事室] -->|處理加班費| B(差勤系統)
-    B --> C{人工列印憑證}
-    C -->|選項 A| D[進系統手動申報]
-    C -->|選項 B| E[手動查核]
-\`\`\`
-
-## 2. 循序圖 (Sequence Diagram)
-\`\`\`mermaid
-sequenceDiagram
-    Alice ->>+ Bob: Hello Bob, how are you?
-    Bob -->>- Alice: I feel great!
-\`\`\`
-
-## 3. 類別圖 (Class Diagram)
-\`\`\`mermaid
-classDiagram
-    Animal <|-- Duck
-    Animal : +int age
-    class Duck{ +swim() }
-\`\`\`
-
-## 4. 狀態圖 (State Diagram)
-\`\`\`mermaid
-stateDiagram-v2
-    [*] --> Still
-    Still --> Moving
-    Moving --> Still
-\`\`\`
-
-## 5. 實體關聯圖 (ER Diagram)
-\`\`\`mermaid
-erDiagram
-    CUSTOMER ||--o{ ORDER : places
-\`\`\`
-
-## 6. 使用者旅程圖 (User Journey)
-\`\`\`mermaid
-journey
-    title My working day
-    section Go to work
-      Make tea: 5: Me
-      Go upstairs: 3: Me
-\`\`\`
-
-## 7. 甘特圖 (Gantt Chart)
-\`\`\`mermaid
-gantt
-    title A Gantt Diagram
-    dateFormat  YYYY-MM-DD
-    section Section
-    A task :a1, 2024-01-01, 30d
-\`\`\`
-
-## 8. 圓餅圖 (Pie Chart)
-\`\`\`mermaid
-pie title Pets adopted
-    "Dogs" : 386
-    "Cats" : 85
-\`\`\`
-
-## 9. 象限圖 (Quadrant Chart)
-\`\`\`mermaid
-quadrantChart
-    title Reach and engagement
-    x-axis Low Reach --> High Reach
-    y-axis Low Engagement --> High Engagement
-    Campaign A: [0.3, 0.6]
-\`\`\`
-
-## 10. 需求圖 (Requirement Diagram)
-\`\`\`mermaid
-requirementDiagram
-requirement test_req {
-id: 1
-text: the test text.
-risk: high
-verifymethod: test
+// --- 讀取外部檔案 ---
+async function loadDefaultContent() {
+    try {
+        const response = await fetch('sample.md');
+        if (!response.ok) throw new Error('無法讀取 sample.md');
+        return await response.text();
+    } catch (err) {
+        console.error('載入預設內容失敗:', err);
+        return '# 載入失敗\n請檢查 sample.md 是否存在。';
+    }
 }
-\`\`\`
-
-## 11. Git 圖 (Gitgraph)
-\`\`\`mermaid
-gitGraph
-    commit
-    branch develop
-    commit
-    checkout main
-    merge develop
-\`\`\`
-
-## 12. C4 架構圖 (C4 Context)
-\`\`\`mermaid
-C4Context
-    Person(customer, "Banking Customer")
-    System(SystemAA, "Internet Banking")
-    Rel(customer, SystemAA, "Uses")
-\`\`\`
-
-## 13. 心智圖 (Mindmap)
-\`\`\`mermaid
-mindmap
-  root((mindmap))
-    Origins
-      Long history
-    Tools
-      Mermaid
-\`\`\`
-
-## 14. 時間軸 (Timeline)
-\`\`\`mermaid
-timeline
-    title History
-    2002 : LinkedIn
-    2004 : Facebook
-\`\`\`
-
-## 15. 桑基圖 (Sankey Diagram)
-\`\`\`mermaid
-sankey-beta
-Agricultural 'waste',Bio-conversion,124.729
-Bio-conversion,Solid,26.862
-\`\`\`
-
-## 16. XY 座標圖 (XYChart)
-\`\`\`mermaid
-xychart-beta
-    title "Sales Revenue"
-    x-axis [jan, feb, mar, apr]
-    y-axis "Revenue" 4000 --> 11000
-    bar [5000, 6000, 7500, 8200]
-\`\`\`
-
-## 17. 區塊圖 (Block Diagram)
-\`\`\`mermaid
-block-beta
-  columns 3
-  A["Node A"] B["Node B"] C["Node C"]
-\`\`\`
-
-## 18. 封包圖 (Packet Diagram)
-\`\`\`mermaid
-packet-beta
-  title Packet Diagram
-  0-15: "Source Port"
-  16-31: "Destination Port"
-\`\`\`
-
-## 19. 系統架構圖 (Architecture)
-\`\`\`mermaid
-architecture-beta
-    group api(cloud)[API]
-    service db(database)[Database] in api
-\`\`\`
-
-## 20. 看板 (Kanban)
-\`\`\`mermaid
-kanban
-  Todo
-    [Create documentation]
-  Done
-    [Fix bugs]
-\`\`\`
-`;
 
 // --- 檔案匯入/匯出 ---
 document.getElementById('import-btn').onclick = () => document.getElementById('import-input').click();
@@ -357,15 +195,43 @@ editor.addEventListener('input', () => {
 });
 
 clearBtn.onclick = () => {
-    if(confirm('確定要清空嗎？')) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-[100]';
+    modal.innerHTML = `
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-xl max-w-sm w-full mx-4">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">確定要清空嗎？</h3>
+            <p class="text-slate-500 dark:text-slate-400 mb-6">此操作將移除所有目前編輯的內容且無法復原。</p>
+            <div class="flex justify-end gap-3">
+                <button id="cancelClear" class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">取消</button>
+                <button id="confirmClear" class="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors">確定清空</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    document.getElementById('cancelClear').onclick = () => modal.remove();
+    document.getElementById('confirmClear').onclick = () => {
         editor.value = '';
         localStorage.removeItem(STORAGE_KEY);
         renderContent();
-    }
+        modal.remove();
+        showToast("已清空內容", "warning");
+    };
 };
 
-// 初始化啟動
-updateTheme(true);
-const saved = localStorage.getItem(STORAGE_KEY);
-editor.value = saved !== null ? saved : defaultContent;
-renderContent();
+// --- 初始化啟動 ---
+async function init() {
+    updateTheme(true);
+    
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved !== null) {
+        editor.value = saved;
+    } else {
+        // 如果沒有暫存，則從 sample.md 抓取
+        editor.value = await loadDefaultContent();
+    }
+    
+    renderContent();
+}
+
+init();
