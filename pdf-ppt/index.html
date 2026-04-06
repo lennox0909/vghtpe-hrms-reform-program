@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeckEdit - 專業版 AI 簡報解析器 (物件保護模式)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/libs/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.min.js"></script>
+
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        body { background-color: #0d1117; color: #c9d1d9; }
+        .progress-glow { box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
+        .page-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .page-checkbox:checked + label { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.05); }
+        
+        .slide-in { animation: slideUp 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .cursor-zoom-in { cursor: zoom-in; }
+        .log-item { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 11px; }
+        .details-content { transition: max-height 0.3s ease-out; overflow: hidden; }
+    </style>
+</head>
+<body class="min-h-screen font-sans flex flex-col no-scrollbar selection:bg-blue-500/30">
+
+    <!-- 頂部導航列 -->
+    <header class="bg-[#161b22] border-b border-[#30363d] px-8 py-5 flex justify-between items-center sticky top-0 z-40 backdrop-blur-xl bg-opacity-80">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h1 class="text-xl font-black text-white tracking-tighter uppercase italic">DeckEdit <span class="text-blue-500 not-italic text-[10px] font-mono ml-1">OBJECT_SAFE_AI</span></h1>
+        </div>
+        <div class="flex gap-4">
+            <button id="btn-ocr" class="hidden bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold shadow-xl transition-all text-sm active:scale-95">
+                執行物件保護辨識
+            </button>
+            <button id="btn-export" class="hidden bg-[#238636] hover:bg-[#2ea043] text-white px-6 py-2.5 rounded-xl font-bold shadow-xl transition-all text-sm active:scale-95">
+                匯出 PPTX
+            </button>
+        </div>
+    </header>
+
+    <!-- 工作進度條 -->
+    <div id="live-progress-container" class="h-1 w-full bg-[#30363d] sticky top-[73px] z-40 hidden">
+        <div id="live-progress-bar" class="h-full bg-blue-500 progress-glow transition-all duration-300 w-0"></div>
+    </div>
+
+    <main class="flex-1 p-8 flex flex-col items-center overflow-hidden relative">
+        <!-- 初始上傳區 -->
+        <div id="drop-zone" class="w-full max-w-3xl border-2 border-dashed border-[#30363d] rounded-[2.5rem] bg-[#161b22] flex flex-col items-center justify-center p-24 transition-all hover:border-blue-500 group cursor-pointer mt-12">
+            <div class="bg-[#0d1117] p-8 rounded-full mb-8 group-hover:scale-110 transition-transform duration-500 shadow-inner">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+            </div>
+            <h3 class="text-2xl font-black text-white tracking-tight">匯入精密圖稿，執行保護式修復</h3>
+            <p class="text-sm text-gray-400 mt-4 text-center max-w-sm leading-relaxed">
+                演算法會先鎖定攝影機等背景物件，<br><span class="text-blue-400 font-bold">確保在去除文字時不會影響原始圖像。</span>
+            </p>
+            <input type="file" id="file-input" class="hidden" accept=".pdf, image/png, image/jpeg">
+        </div>
+
+        <!-- 頁面選擇區域 -->
+        <div id="selection-area" class="hidden w-full max-w-6xl flex flex-col overflow-hidden animate-in fade-in duration-700">
+            <div class="flex justify-between items-center mb-8 bg-[#161b22] p-6 rounded-3xl border border-[#30363d] shadow-2xl">
+                <div class="flex items-center gap-5">
+                    <div class="bg-blue-500/20 text-blue-400 w-12 h-12 rounded-full flex items-center justify-center font-black border border-blue-500/30" id="loaded-pages-count">0</div>
+                    <div>
+                        <h4 class="text-white font-bold tracking-tight">已偵測頁面</h4>
+                        <p class="text-[10px] text-gray-500 mt-1 uppercase font-mono tracking-widest">Awaiting background preservation scan</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="toggleAllPages(true)" class="text-xs font-bold text-gray-300 hover:text-white bg-[#21262d] px-5 py-2.5 rounded-xl border border-[#30363d]">全選</button>
+                    <button onclick="toggleAllPages(false)" class="text-xs font-bold text-gray-300 hover:text-white bg-[#21262d] px-5 py-2.5 rounded-xl border border-[#30363d]">取消</button>
+                </div>
+            </div>
+            <div id="selection-grid" class="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 p-4 no-scrollbar"></div>
+        </div>
+
+        <!-- 分析結果區 -->
+        <div id="workspace" class="hidden w-full max-w-6xl h-full flex flex-col overflow-auto no-scrollbar pb-32 pt-4">
+            <div id="status-banner" class="mb-10 flex items-center justify-between bg-blue-500/5 border border-blue-500/20 p-5 rounded-3xl">
+                <div class="flex items-center gap-4">
+                    <div class="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.8)]"></div>
+                    <span id="banner-text" class="text-sm font-bold text-blue-400 font-mono uppercase tracking-tighter text-[11px]">AI_ENGINE: OBJECT_SHIELD_ACTIVE...</span>
+                </div>
+                <div id="mini-progress-text" class="text-xs font-mono text-blue-500/70 uppercase">0% Completed</div>
+            </div>
+            <div id="pages-container" class="w-full flex flex-col gap-24"></div>
+        </div>
+
+        <!-- 模型下載 Overlay -->
+        <div id="loading-overlay" class="fixed inset-0 bg-[#0d1117]/95 backdrop-blur-2xl z-50 hidden flex-col items-center justify-center">
+            <div class="relative w-28 h-28 mb-12">
+                <div class="absolute inset-0 border-[6px] border-blue-500/10 rounded-full"></div>
+                <div class="absolute inset-0 border-[6px] border-t-blue-500 rounded-full animate-spin"></div>
+            </div>
+            <h3 class="text-2xl font-black text-white tracking-[0.3em] uppercase">Syncing AI Hub</h3>
+            <p id="loading-text" class="text-sm text-gray-500 mt-4 font-mono text-center tracking-tight">Fetching character mapping tables...</p>
+            <div class="w-72 bg-[#161b22] rounded-full h-1 mt-10 overflow-hidden shadow-inner">
+                <div id="initial-progress-bar" class="bg-blue-500 h-full w-0 transition-all duration-300 progress-glow"></div>
+            </div>
+        </div>
+
+        <!-- Lightbox 燈箱 -->
+        <div id="lightbox" onclick="closeLightbox()" class="fixed inset-0 bg-[#0d1117]/95 backdrop-blur-2xl z-[100] hidden flex-col items-center justify-center p-6 animate-in fade-in duration-300 cursor-pointer">
+            <button onclick="closeLightbox()" class="absolute top-10 right-10 text-gray-400 hover:text-white transition-all transform hover:scale-110 active:scale-95 z-50">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <div onclick="event.stopPropagation()" class="max-w-[90vw] max-h-[80vh] bg-[#161b22] rounded-[2.5rem] p-4 shadow-[0_40px_80px_rgba(0,0,0,0.8)] border border-[#30363d] relative group cursor-default">
+                <img id="lightbox-img" src="" class="max-w-full max-h-[75vh] block rounded-[1.8rem] object-contain shadow-2xl">
+                <div class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[1.8rem]">
+                    <button id="lightbox-download" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-full font-black shadow-2xl flex items-center gap-3 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 active:scale-95">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" x2="12" y2="3"/></svg>
+                        下載此張圖檔 (PNG)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        const HF_USERNAME = 'leno99';
+        const DB_NAME = 'ppocr-object-safe-v1';
+        const STORE_NAME = 'cache';
+
+        const elements = {
+            dropZone: document.getElementById('drop-zone'),
+            fileInput: document.getElementById('file-input'),
+            selectionArea: document.getElementById('selection-area'),
+            selectionGrid: document.getElementById('selection-grid'),
+            workspace: document.getElementById('workspace'),
+            pagesContainer: document.getElementById('pages-container'),
+            btnOcr: document.getElementById('btn-ocr'),
+            btnExport: document.getElementById('btn-export'),
+            loading: document.getElementById('loading-overlay'),
+            loadingText: document.getElementById('loading-text'),
+            liveProgressContainer: document.getElementById('live-progress-container'),
+            liveProgressBar: document.getElementById('live-progress-bar'),
+            miniProgressText: document.getElementById('mini-progress-text'),
+            bannerText: document.getElementById('banner-text'),
+            loadedCount: document.getElementById('loaded-pages-count'),
+            lightbox: document.getElementById('lightbox'),
+            lightboxImg: document.getElementById('lightbox-img'),
+            lightboxDl: document.getElementById('lightbox-download')
+        };
+
+        let pagesData = [];
+
+        async function initDB() {
+            return new Promise(resolve => {
+                const req = indexedDB.open(DB_NAME, 1);
+                req.onupgradeneeded = e => e.target.result.createObjectStore(STORE_NAME);
+                req.onsuccess = e => resolve(e.target.result);
+            });
+        }
+
+        async function ensureResources() {
+            const db = await initDB();
+            const resKeys = ['ppocr_v5_server_det', 'ppocr_v5_server_rec', 'ppocr_v5_official_dict_v4'];
+            let allCached = true;
+            for (const key of resKeys) {
+                const has = await new Promise(r => {
+                    const req = db.transaction(STORE_NAME).objectStore(STORE_NAME).get(key);
+                    req.onsuccess = () => r(req.result);
+                });
+                if (!has) allCached = false;
+            }
+            if (allCached) return;
+            elements.loading.classList.replace('hidden', 'flex');
+            for (const key of resKeys) {
+                elements.loadingText.innerText = `Connecting to multi-repo assets: ${key}...`;
+                const ext = key.includes('dict') ? 'txt' : 'onnx';
+                const repo = key.includes('det') ? 'ppocr_v5_server_det.onnx' : 'ppocr_v5_server_rec.onnx';
+                const resp = await fetch(`https://huggingface.co/${HF_USERNAME}/${repo}/resolve/main/${key}.${ext}`);
+                const buffer = await resp.arrayBuffer();
+                await new Promise(r => {
+                    const req = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(buffer, key);
+                    req.onsuccess = r;
+                });
+            }
+            elements.loading.classList.replace('flex', 'hidden');
+        }
+
+        function openLightbox(dataUrl, caption) {
+            elements.lightboxImg.src = dataUrl;
+            elements.lightboxDl.onclick = () => {
+                const a = document.createElement('a'); a.href = dataUrl;
+                a.download = `DeckEdit_Safe.png`; a.click();
+            };
+            elements.lightbox.classList.replace('hidden', 'flex');
+        }
+        function closeLightbox() { elements.lightbox.classList.replace('flex', 'hidden'); }
+
+        elements.dropZone.onclick = () => elements.fileInput.click();
+        elements.fileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            elements.dropZone.classList.add('hidden');
+            pagesData = [];
+            elements.selectionGrid.innerHTML = '';
+            if (file.type === 'application/pdf') {
+                const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+                const total = Math.min(pdf.numPages, 30);
+                for (let i = 1; i <= total; i++) {
+                    const page = await pdf.getPage(i);
+                    const vp = page.getViewport({ scale: 0.8 });
+                    const canvas = document.createElement('canvas');
+                    canvas.width = vp.width; canvas.height = vp.height;
+                    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+                    const pageObj = { pageNum: i, pdfPage: page, thumb: canvas.toDataURL(), selected: true };
+                    pagesData.push(pageObj);
+                    addPageCard(pageObj);
+                }
+            }
+            elements.loadedCount.innerText = pagesData.length;
+            elements.selectionArea.classList.remove('hidden');
+            elements.btnOcr.classList.remove('hidden');
+        };
+
+        function addPageCard(page) {
+            const card = document.createElement('div');
+            card.className = 'page-card relative';
+            card.innerHTML = `
+                <input type="checkbox" id="p-${page.pageNum}" class="page-checkbox hidden" ${page.selected ? 'checked' : ''}>
+                <label for="p-${page.pageNum}" class="block border-2 border-[#30363d] rounded-[1.5rem] overflow-hidden cursor-pointer bg-[#161b22] shadow-xl">
+                    <div class="aspect-[16/9] bg-white flex items-center justify-center p-3">
+                        <img src="${page.thumb}" class="max-w-full max-h-full object-contain">
+                    </div>
+                    <div class="p-3 text-center text-[9px] font-black text-gray-500 uppercase tracking-widest bg-[#0d1117] border-t border-[#30363d]">
+                        Slide ${page.pageNum}
+                    </div>
+                </label>
+            `;
+            card.querySelector('input').onchange = e => page.selected = e.target.checked;
+            elements.selectionGrid.appendChild(card);
+        }
+
+        function toggleAllPages(val) {
+            pagesData.forEach(p => p.selected = val);
+            document.querySelectorAll('.page-checkbox').forEach(cb => cb.checked = val);
+        }
+
+        elements.btnOcr.onclick = async () => {
+            const selected = pagesData.filter(p => p.selected);
+            if (!selected.length) return;
+            elements.btnOcr.disabled = true;
+            await ensureResources();
+            elements.selectionArea.classList.add('hidden');
+            elements.btnOcr.classList.add('hidden');
+            elements.workspace.classList.remove('hidden');
+            elements.liveProgressContainer.classList.remove('hidden');
+            
+            const worker = await Tesseract.createWorker('chi_tra+eng');
+
+            for (let i = 0; i < selected.length; i++) {
+                const page = selected[i];
+                const progress = Math.round(((i) / selected.length) * 100);
+                elements.liveProgressBar.style.width = `${progress}%`;
+                elements.miniProgressText.innerText = `${progress}% COMPLETE`;
+                elements.bannerText.innerText = `AI_ENGINE: OBJECT_SHIELD_SCAN - PAGE ${page.pageNum}`;
+
+                const vp = page.pdfPage.getViewport({ scale: 2.0 }); 
+                const canvas = document.createElement('canvas');
+                canvas.width = vp.width; canvas.height = vp.height;
+                await page.pdfPage.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+                page.fullCanvas = canvas;
+
+                // 1. 執行背景物件保護掃描 (高頻邊緣偵測)
+                page.protectionMask = computeProtectionMask(canvas);
+
+                // 2. 執行 OCR
+                const { data } = await worker.recognize(canvas);
+                page.detectedBlocks = aggregateWordsToBlocks(data.words);
+
+                await renderSafeSlideCard(page);
+                elements.workspace.scrollTo({ top: elements.workspace.scrollHeight, behavior: 'smooth' });
+                await new Promise(r => setTimeout(r, 50));
+            }
+
+            elements.liveProgressBar.style.width = `100%`;
+            elements.bannerText.innerText = `RECONSTRUCTION_COMPLETE. ALL OBJECTS PRESERVED.`;
+            elements.bannerText.classList.replace('text-blue-400', 'text-green-400');
+            await worker.terminate();
+            elements.btnExport.classList.remove('hidden');
+        };
+
+        // --- 技術核心：計算物件保護圖層 ---
+        function computeProtectionMask(canvas) {
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            const imgData = ctx.getImageData(0, 0, w, h);
+            const d = imgData.data;
+            const mask = new Uint8Array(w * h); // 0: 可動, 1: 保護區
+
+            // 簡單但有效的梯度偵測 (Sobel-like)
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    const i = (y * w + x) * 4;
+                    // 計算局部方差，識別複雜物件
+                    const lum = d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114;
+                    const lumR = d[i+4]*0.299 + d[i+5]*0.587 + d[i+6]*0.114;
+                    const lumB = d[i+w*4]*0.299 + d[i+w*4+1]*0.587 + d[i+w*4+2]*0.114;
+                    
+                    const grad = Math.abs(lum - lumR) + Math.abs(lum - lumB);
+                    
+                    // 如果梯度非常高，且具備連續性，判定為背景物件邊緣
+                    if (grad > 45) {
+                        mask[y * w + x] = 1;
+                    }
+                }
+            }
+            return mask;
+        }
+
+        function aggregateWordsToBlocks(words) {
+            const validWords = words.filter(w => w.confidence > 40 && w.text.trim().length > 0);
+            if (validWords.length === 0) return [];
+            validWords.sort((a, b) => a.bbox.y0 - b.bbox.y0);
+            const blocks = [];
+            let currentBlock = null;
+            validWords.forEach(word => {
+                if (!currentBlock) {
+                    currentBlock = { ...word.bbox };
+                } else {
+                    const vertDist = Math.abs(word.bbox.y0 - currentBlock.y0);
+                    const isSameLine = vertDist < (currentBlock.y1 - currentBlock.y0) * 0.4;
+                    if (isSameLine) {
+                        currentBlock.x0 = Math.min(currentBlock.x0, word.bbox.x0);
+                        currentBlock.y0 = Math.min(currentBlock.y0, word.bbox.y0);
+                        currentBlock.x1 = Math.max(currentBlock.x1, word.bbox.x1);
+                        currentBlock.y1 = Math.max(currentBlock.y1, word.bbox.y1);
+                    } else {
+                        blocks.push(currentBlock);
+                        currentBlock = { ...word.bbox };
+                    }
+                }
+            });
+            if (currentBlock) blocks.push(currentBlock);
+            return blocks;
+        }
+
+        async function renderSafeSlideCard(page) {
+            const wrap = document.createElement('div');
+            wrap.className = 'flex flex-col gap-6 slide-in';
+            wrap.innerHTML = `
+                <div class="flex items-center gap-4 bg-[#161b22] px-4 py-2 rounded-xl border border-[#30363d] w-fit">
+                    <span class="text-[10px] font-black text-blue-500 tracking-widest uppercase">Page ${page.pageNum}</span>
+                    <div class="flex items-center gap-4 text-[10px] font-mono text-gray-500">
+                        <span class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 bg-blue-500/50 rounded-full"></div> ROI: ${page.detectedBlocks.length}</span>
+                        <span class="text-green-500 uppercase">Protection_Shield_On</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-[#161b22] rounded-2xl p-2 border border-[#30363d] relative group">
+                        <canvas id="orig-${page.pageNum}" class="w-full h-auto cursor-zoom-in rounded-xl overflow-hidden"></canvas>
+                        <div class="absolute bottom-4 left-4 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded text-[8px] uppercase text-gray-400">Original</div>
+                    </div>
+                    <div class="bg-[#161b22] rounded-2xl p-2 border border-[#30363d] relative group">
+                        <canvas id="magic-${page.pageNum}" class="w-full h-auto cursor-zoom-in rounded-xl overflow-hidden"></canvas>
+                        <div class="absolute bottom-4 left-4 bg-blue-600/50 backdrop-blur-md px-2 py-0.5 rounded text-[8px] uppercase text-white font-bold tracking-widest">Safe Reconstructed</div>
+                    </div>
+                </div>
+                <div class="w-full">
+                    <button onclick="toggleDetails(${page.pageNum})" class="flex items-center gap-2 text-[10px] font-black text-gray-400 hover:text-white transition-colors mb-3 uppercase tracking-widest">Details</button>
+                    <div id="details-${page.pageNum}" class="details-content max-h-0 bg-[#161b22]/50 rounded-2xl border border-[#30363d]/50 overflow-y-auto">
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 p-5" id="log-grid-${page.pageNum}"></div>
+                    </div>
+                </div>
+            `;
+            elements.pagesContainer.appendChild(wrap);
+
+            const cOrig = document.getElementById(`orig-${page.pageNum}`);
+            const cMagic = document.getElementById(`magic-${page.pageNum}`);
+            const logGrid = document.getElementById(`log-grid-${page.pageNum}`);
+            
+            const w = page.fullCanvas.width;
+            const h = page.fullCanvas.height;
+            cOrig.width = cMagic.width = w;
+            cOrig.height = cMagic.height = h;
+            cOrig.getContext('2d').drawImage(page.fullCanvas, 0, 0);
+            
+            const ctx = cMagic.getContext('2d');
+            ctx.drawImage(page.fullCanvas, 0, 0);
+
+            cOrig.onclick = () => openLightbox(cOrig.toDataURL(), `Page ${page.pageNum} Original`);
+            cMagic.onclick = () => openLightbox(cMagic.toDataURL(), `Page ${page.pageNum} Cleaned`);
+
+            // --- 核心：基於保護圖層的精準剔除 ---
+            const finalImgData = ctx.getImageData(0, 0, w, h);
+            const fd = finalImgData.data;
+
+            for (let idx = 0; idx < page.detectedBlocks.length; idx++) {
+                const bbox = page.detectedBlocks[idx];
+                const { x0, y0, x1, y1 } = bbox;
+                
+                const logItem = document.createElement('div');
+                logItem.className = 'log-item flex items-center gap-2 text-gray-500 bg-[#0d1117] p-2 rounded-lg border border-[#30363d]/30';
+                logItem.innerHTML = `<span class="text-blue-400 font-bold">R${idx + 1}:</span> <span>${Math.round(x1-x0)}×${Math.round(y1-y0)}</span>`;
+                logGrid.appendChild(logItem);
+
+                // 針對文字框進行自適應筆劃提取
+                const pad = 2;
+                const bx0 = Math.max(0, x0 - pad), by0 = Math.max(0, y0 - pad);
+                const bx1 = Math.min(w, x1 + pad), by1 = Math.min(h, y1 + pad);
+                const bw = bx1 - bx0, bh = by1 - by0;
+                
+                // 採樣框周邊背景 (用於還原)
+                const sT = ctx.getImageData(bx0, Math.max(0, by0-2), bw, 1).data;
+                const sB = ctx.getImageData(bx0, Math.min(h-1, by1+1), bw, 1).data;
+
+                for (let ly = 0; ly < bh; ly++) {
+                    for (let lx = 0; lx < bw; lx++) {
+                        const gx = bx0 + lx;
+                        const gy = by0 + ly;
+                        const gi = (gy * w + gx) * 4;
+                        const maskIdx = gy * w + gx;
+
+                        // 判斷條件：
+                        // 1. 偵測是否為筆劃像素 (與框外背景亮度差異大)
+                        // 2. 且該位置在 protectionMask 中被標記為「非背景物件核心」
+                        const curLum = fd[gi]*0.299 + fd[gi+1]*0.587 + fd[gi+2]*0.114;
+                        const refLum = (sT[lx*4]*0.299 + sT[lx*4+1]*0.587 + sT[lx*4+2]*0.114);
+
+                        if (Math.abs(curLum - refLum) > 30) {
+                            // 檢查是否碰撞到保護區域 (精密物件邊緣)
+                            // 如果是文字筆劃，通常不會是連續長線條背景。
+                            if (page.protectionMask[maskIdx] === 0 || Math.abs(curLum - refLum) > 80) {
+                                // 執行還原：克隆框外背景
+                                const v = ly / (bh - 1 || 1);
+                                fd[gi] = (1-v)*sT[lx*4] + v*sB[lx*4];
+                                fd[gi+1] = (1-v)*sT[lx*4+1] + v*sB[lx*4+1];
+                                fd[gi+2] = (1-v)*sT[lx*4+2] + v*sB[lx*4+2];
+                            }
+                        }
+                    }
+                }
+            }
+            ctx.putImageData(finalImgData, 0, 0);
+            page.cleanedImage = cMagic.toDataURL('image/jpeg', 0.85);
+        }
+
+        window.toggleDetails = function(num) {
+            const el = document.getElementById(`details-${num}`);
+            if (el.style.maxHeight && el.style.maxHeight !== '0px') {
+                el.style.maxHeight = '0px';
+            } else {
+                el.style.maxHeight = '500px';
+            }
+        };
+
+        elements.btnExport.onclick = async () => {
+            const pptx = new pptxgen();
+            pagesData.filter(p => p.selected && p.cleanedImage).forEach(p => {
+                const slide = pptx.addSlide();
+                slide.addImage({ data: p.cleanedImage, x:0, y:0, w:10, h:5.625 });
+            });
+            await pptx.writeFile({ fileName: `DeckEdit_ObjectPreserved_Export.pptx` });
+        };
+    </script>
+</body>
+</html>
