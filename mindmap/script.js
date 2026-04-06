@@ -1,8 +1,9 @@
+
 import * as markmapLib from 'https://cdn.jsdelivr.net/npm/markmap-lib@0.18.9/+esm';
 import * as markmapView from 'https://cdn.jsdelivr.net/npm/markmap-view@0.18.9/+esm';
 import * as markmapCommon from 'https://cdn.jsdelivr.net/npm/markmap-common@0.18.9/+esm';
 
-// 合併模組到全域變數
+// 將方法合併到全域變數
 window.markmap = {
     ...markmapCommon,
     ...markmapView,
@@ -12,332 +13,10 @@ window.markmap = {
 const { Transformer, Markmap, loadCSS, loadJS, deriveOptions } = window.markmap;
 const transformer = new Transformer();
 
-// 預設 Markdown 內容 (原 HTML 中的範例)
-const DEFAULT_MARKDOWN = `
----
-title: markmap
-markmap:
-  colorFreezeLevel: 3
-  initialExpandLevel: 3
----
-
-# 臺北榮民總醫院：院長-->副院長(5位)-->主任秘書
-## 業務單位
-### 內科部（61）
-1. 胃腸肝膽科
-2. 血液科
-3. 內分泌新陳代謝科
-4. 過敏免疫風濕科
-5. 腎臟科
-6. 感染科
-7. 一般內科
-8. 輸血醫學科
-9. 全人整合醫學科
-10. 內視鏡診斷治療科
-
-### 外科部（62）
-1. 一般外科
-2. 胸腔外科
-3. 大腸直腸外科
-4. 重建整形外科
-5. 兒童外科
-6. 實驗外科
-7. 移植外科
-8. 乳房外科
-
-### 骨科部（63）
-1. 骨折創傷科
-2. 關節重建科
-3. 運動醫學科
-4. 手外科
-5. 兒童骨科
-6. 脊椎外科
-
-### 胸腔部（64）
-1. 一般胸腔科
-2. 呼吸感染免疫科
-3. 臨床呼吸生理科
-4. 呼吸治療科
-5. 胸腔腫瘤科
-
-### 婦女醫學部（65）
-1. 婦科
-2. 高危險妊娠暨產科
-3. 生殖內分泌不孕症科
-4. 遺傳優生學科
-5. 婦癌科
-
-### 兒童醫學部（66）
-1. 兒童神經暨一般兒科
-2. 兒童心臟科
-3. 兒童胃腸科
-4. 兒童免疫腎臟科
-5. 新生兒科
-6. 兒童遺傳內分泌科
-7. 兒童感染科
-8. 兒童血液腫瘤科
-
-### 復健醫學部（67）
-1. 一般復健科
-2. 神經復健科
-3. 骨骼關節復健科
-
-### 影像診療部（68）
-1. 心肺影像診療科
-2. 血管介入影像診療科
-3. 腹部影像診療科
-4. 肌肉骨骼影像診療科
-5. 神經影像診療科
-6. 兒童暨急診影像診療科
-7. 超音波暨乳房影像診療科
-8. 磁振影像診療科
-
-### 核醫部（69）
-1. 核子醫學科
-2. 放射免疫暨同位素治療科
-3. 放射製藥科
-4. 醫事放射科
-5. 正子影像科
-
-### 營養部（70）
-1. 臨床營養科
-2. 膳食管理科
-
-### 神經醫學中心（71）
-1. 一般神經科
-2. 腦血管科
-3. 週邊神經科
-4. 癲癇科
-5. 一般神經外科
-6. 功能性神經外科
-7. 兒童神經外科
-8. 神經重症加護科
-9. 神經修復科
-
-### 精神醫學部（72）
-1. 成人精神科
-2. 兒童青少年精神科
-3. 老年精神科
-4. 社區復健精神科
-5. 心身醫學科
-
-### 急診部（73）
-1. 急診醫學科
-2. 外傷醫學科
-3. 災難醫學科
-4. 急診加護科
-
-### 口腔醫學部（74）
-1. 贗復牙科
-2. 家庭牙醫科
-3. 牙髓病科
-4. 牙周病科
-5. 兒童牙科暨特殊需要者牙科
-6. 齒顎矯正科
-7. 口腔顎面外科
-
-### 眼科部（75）
-1. 一般眼科
-2. 眼矯形重建科
-3. 眼肌神經科
-4. 青光眼科
-5. 視網my網膜科
-
-### 耳鼻喉頭頸醫學部（76）
-1. 耳科
-2. 鼻頭頸科
-3. 喉頭頸科
-
-### 腫瘤醫學部（77）
-1. 腫瘤內科
-2. 細胞免疫治療科
-3. 癌症防治科
-
-### 皮膚部（78）
-1. 皮膚診斷科
-2. 光化學治療科
-
-### 重症醫學部（79）
-1. 重症加護內科
-2. 重症加護外科
-
-### 病理檢驗部（80）
-1. 一般病理科
-2. 外科病理科
-3. 細胞病理科
-4. 分子病理科
-5. 核心檢驗科
-6. 感染症檢驗科科
-7. 品保科
-
-### 藥學部（81）
-1. 調劑科
-2. 製劑科
-3. 臨床藥學科
-
-### 護理部（82）
-
-
-### 教學部（83）
-1. 醫學圖書組
-2. 教學行政組
-3. 臨床技術訓練科
-4. 教師培育科
-5. 實證醫學科
-
-### 家庭醫學部（84）
-1. 家庭醫學科
-2. 安寧緩和醫學科
-3. 社區醫學科
-
-### 傳統醫學部（85）
-1. 整合醫學科
-2. 一般中醫科
-
-### 醫學研究部（86）
-1. 基礎研究科
-2. 轉譯研究科
-3. 臨床研究科
-4. 臨床試驗科
-5. 技術移轉組
-
-### 健康管理中心（87）
-1. 一般健檢科
-2. 健康管理科
-3. 實驗檢查科
-
-### 麻醉部（88）
-1. 一般麻醉科
-2. 神經麻醉科
-3. 婦幼麻醉科
-4. 胸腔心臟麻醉科
-5. 疼痛控制科
-
-### 感染管制中心（89）
-1. 感染疫情監測科
-2. 環境風險管制科
-3. 感管資訊應用科
-
-### 身障重建中心（90）
-1. 身障醫療科
-2. 臨床輔具科
-3. 推廣組
-
-### 高齡醫學中心（91）
-1. 高齡醫學科
-2. 研發推展科
-
-### 泌尿部（92）
-1. 一般暨泌尿腫瘤科
-2. 婦幼泌尿科
-3. 男性生殖科
-
-### 醫務企管部（93）
-1. 醫務企劃組
-2. 績效管理組
-3. 醫療事務組
-4. 病歷資訊管理組
-5. 醫療費用組
-6. 法務組
-
-### 職業安全衛生室（94）
-1. 環境保護組
-2. 職業安全衛生組
-
-### 品質管理中心(95)
-1. 醫療品質管理科
-2. 病人安全管理科
-3. 品質資訊管理科
-4. 醫學人體研究品質管理科
-5. 醫學倫理品質管理科
-
-### 職業醫學及臨床毒物部(96)
-1. 職業醫學科
-2. 臨床毒物科
-
-### 重粒子及放射腫瘤部(97)
-1. 光子治療科
-2. 重粒子治療科
-3. 實驗放射治療科
-
-### 心臟血管中心(98)
-1. 一般心臟內科
-2. 心血管介入治療科
-3. 心電生理暨心律不整治療科
-4. 心血管急重症暨心臟衰竭科
-5. 結構性心臟疾病治療科
-6. 心臟外科
-7. 主動脈及周邊血管治療科
-
-### 國際醫療中心(99)
-1. 國際醫療服務科
-2. 醫學合作推展科
-3. 國際醫療規劃科
-
-### 社會工作室（60）
-1. 社會工作組
-2. 輔導組
-
-## 輔助單位
-### 公共事務室（02）
-1. 公共關係組
-2. 國會聯絡組
-3. 秘書組
-
-### 工務室（06）
-1. 設計施工組
-2. 公用設備組
-3. 修護保養組
-
-### 補給室（07）
-1. 採購組
-2. 資財組
-3. 配發組
-
-### 醫學工程室（08）
-1. 醫工研展組
-2. 儀器系統組
-3. 儀器保修組
-
-### 總務室（15）
-1. 出納組
-2. 事務組
-3. 文書組
-
-### 資訊室（25）
-1. 應用發展一組
-2. 應用發展二組
-3. 系統操作組
-4. 技術網路組
-5. 資訊安全組
-
-### 人事室（10）
-1. 任免組
-2. 考核組
-3. 資料組
-
-### 主計室（12）
-1. 歲計組
-2. 稽核組
-3. 會計組
-4. 成本組
-
-### 政風室（55）
-1. 政風預防組
-2. 政風查處組
-3. 安全防護組
-
-
-`;
-
 let mm;
 let currentRoot = null;
 let currentOptionsStr = '';
-let isFitted = false;
-let prevTransform = null;
-let isEditorVisible = true;
 
-// UI 元素
 const selExpand = document.getElementById('sel-expand');
 const selColor = document.getElementById('sel-color');
 const btnToggleEditor = document.getElementById('btn-toggle-editor');
@@ -355,14 +34,16 @@ const btnClearEditor = document.getElementById('btn-clear-editor');
 const btnImportFile = document.getElementById('btn-import-file');
 const fileImport = document.getElementById('file-import');
 
-// ==========================================
-// 收合/展開編輯區
-// ==========================================
+let isFitted = false;
+let prevTransform = null;
+let isEditorVisible = true;
+
+// --- 收合/展開編輯區邏輯 ---
 btnToggleEditor.addEventListener('click', () => {
     isEditorVisible = !isEditorVisible;
     editorPane.style.display = isEditorVisible ? '' : 'none';
     resizer.style.display = isEditorVisible ? '' : 'none';
-    
+
     if (isEditorVisible) {
         btnToggleEditor.classList.replace('bg-white/30', 'bg-white/10');
     } else {
@@ -374,18 +55,16 @@ btnToggleEditor.addEventListener('click', () => {
     }
 });
 
-// ==========================================
-// 自訂 Modal
-// ==========================================
+// --- 自訂 Modal 邏輯 ---
 const showModal = (title, message, options = {}) => {
     const modal = document.getElementById('custom-modal');
     const modalInner = modal.querySelector('div.bg-white');
     const btnCancel = document.getElementById('modal-cancel');
     const btnConfirm = document.getElementById('modal-confirm');
-    
+
     document.getElementById('modal-title').innerText = title;
     document.getElementById('modal-message').innerText = message;
-    
+
     btnCancel.style.display = options.isAlert ? 'none' : 'block';
     btnConfirm.innerText = options.confirmText || '確定';
     btnConfirm.className = `px-4 py-2 text-white rounded-xl transition-colors font-medium ${options.confirmColor || 'bg-blue-600 hover:bg-blue-500'}`;
@@ -415,13 +94,10 @@ const showModal = (title, message, options = {}) => {
     });
 };
 
-// ==========================================
-// 狀態儲存邏輯
-// ==========================================
+// --- 視覺狀態 (View State) 儲存邏輯 ---
 let viewStateTimeout;
 const saveViewState = () => {
     if (!mm || !currentRoot) return;
-    
     const getFoldedPaths = (node, path = "0", folded = []) => {
         if (node.payload && node.payload.fold === 1) folded.push(path);
         if (node.children) {
@@ -429,7 +105,6 @@ const saveViewState = () => {
         }
         return folded;
     };
-    
     const state = {
         transform: window.d3.zoomTransform(svgEl),
         foldedPaths: getFoldedPaths(currentRoot),
@@ -445,9 +120,7 @@ const debounceSaveViewState = () => {
 
 svgEl.addEventListener('click', debounceSaveViewState);
 
-// ==========================================
-// Resizer 邏輯
-// ==========================================
+// --- 面板拖曳調整大小 (Resizer) 邏輯 ---
 const mainContainer = document.getElementById('main-container');
 let isResizing = false;
 
@@ -455,7 +128,7 @@ const startResize = (e) => {
     isResizing = true;
     document.body.style.userSelect = 'none';
     document.body.style.cursor = window.innerWidth >= 768 ? 'col-resize' : 'row-resize';
-    
+
     document.addEventListener('mousemove', resizePanel);
     document.addEventListener('touchmove', resizePanel, { passive: false });
     document.addEventListener('mouseup', stopResize);
@@ -464,13 +137,13 @@ const startResize = (e) => {
 
 const resizePanel = (e) => {
     if (!isResizing) return;
-    if (e.type === 'touchmove') e.preventDefault(); 
-    
+    if (e.type === 'touchmove') e.preventDefault();
+
     const isDesktop = window.innerWidth >= 768;
     const containerRect = mainContainer.getBoundingClientRect();
     const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
     const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-    
+
     if (isDesktop) {
         let newWidth = ((clientX - containerRect.left) / containerRect.width) * 100;
         newWidth = Math.max(10, Math.min(newWidth, 90));
@@ -488,8 +161,12 @@ const stopResize = () => {
     isResizing = false;
     document.body.style.userSelect = '';
     document.body.style.cursor = '';
+
     document.removeEventListener('mousemove', resizePanel);
     document.removeEventListener('touchmove', resizePanel);
+    document.removeEventListener('mouseup', stopResize);
+    document.removeEventListener('touchend', stopResize);
+
     if (mm) {
         setTimeout(() => {
             mm.fit();
@@ -501,9 +178,34 @@ const stopResize = () => {
 resizer.addEventListener('mousedown', startResize);
 resizer.addEventListener('touchstart', startResize, { passive: false });
 
-// ==========================================
-// 檔案下載與匯入功能
-// ==========================================
+let lastIsDesktop = window.innerWidth >= 768;
+window.addEventListener('resize', () => {
+    const currentIsDesktop = window.innerWidth >= 768;
+    if (lastIsDesktop !== currentIsDesktop) {
+        editorPane.style.width = '';
+        editorPane.style.height = '';
+        lastIsDesktop = currentIsDesktop;
+    }
+    if (mm) {
+        setTimeout(() => {
+            mm.fit();
+            debounceSaveViewState();
+        }, 200);
+    }
+});
+
+const resetFitState = () => {
+    if (isFitted) {
+        isFitted = false;
+        fitText.innerText = '適應螢幕';
+    }
+    debounceSaveViewState();
+};
+svgEl.addEventListener('mousedown', resetFitState);
+svgEl.addEventListener('wheel', resetFitState);
+svgEl.addEventListener('touchstart', resetFitState);
+
+// --- 匯出與下載功能區塊 ---
 const saveFile = async (blob, suggestedName, description, acceptTypes) => {
     const fallbackDownload = () => {
         const url = URL.createObjectURL(blob);
@@ -529,126 +231,360 @@ const saveFile = async (blob, suggestedName, description, acceptTypes) => {
             fallbackDownload();
         }
     } catch (err) {
-        if (err.name !== 'AbortError') fallbackDownload();
+        if (err.name === 'AbortError') return;
+        console.warn('受限於 iframe 安全政策，退回傳統下載模式:', err.message);
+        fallbackDownload();
     }
 };
 
 btnDownloadMd.addEventListener('click', async () => {
-    const blob = new Blob([editor.value], { type: 'text/markdown;charset=utf-8' });
-    await saveFile(blob, 'mindmap.md', 'Markdown', { 'text/markdown': ['.md'] });
+    const markdownContent = editor.value;
+    const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
+    await saveFile(blob, 'markmap-mindmap.md', 'Markdown 檔案', { 'text/markdown': ['.md', '.markdown'] });
+});
+
+btnDownload.addEventListener('click', async () => {
+    const endTag = '<' + '/script>';
+    const scriptRegex = new RegExp(endTag, 'gi');
+    const uiColor = parseInt(selColor.value, 10);
+    let finalMdForExport = editor.value.replace(scriptRegex, '&lt;/script&gt;').replace(/\xA0/g, ' ');
+
+    const getFoldedPaths = (node, path = "0", folded = []) => {
+        if (node && node.payload && node.payload.fold === 1) folded.push(path);
+        if (node && node.children) {
+            node.children.forEach((c, i) => getFoldedPaths(c, `${path}-${i}`, folded));
+        }
+        return folded;
+    };
+    const currentFoldedPaths = currentRoot ? getFoldedPaths(currentRoot) : [];
+    const foldedPathsJson = JSON.stringify(currentFoldedPaths);
+    const currentTransform = window.d3.zoomTransform(svgEl);
+    const transformJson = JSON.stringify(currentTransform);
+
+    const htmlLines = [
+        '<!DOCTYPE html>',
+        '<html lang="zh-TW">',
+        '<head>',
+        '    <meta charset="UTF-8">',
+        '    <meta name="viewport" content="width=device-width, initial-scale=1.0">',
+        '    <title>Markmap 匯出心智圖</title>',
+        '    <script src="https://cdn.tailwindcss.com">' + endTag,
+        '    <script src="https://cdn.jsdelivr.net/npm/d3@7">' + endTag,
+        '    <style>',
+        '        body { margin: 0; padding: 0; width: 100vw; height: 100vh; font-family: sans-serif; overflow: hidden; background-color: #f8fafc; }',
+        '        svg { width: 100%; height: 100%; }',
+        '        .markmap-link { fill: none; }',
+        '        .markmap-node circle { cursor: pointer; transition: r 0.2s ease; }',
+        '        .markmap-node circle:hover { r: 6px; }',
+        '        #controls { position: absolute; top: 1rem; right: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; background: rgba(255,255,255,0.9); padding: 0.75rem; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); z-index: 10; align-items: center; border: 1px solid #e2e8f0; }',
+        '        button, select { padding: 0.375rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; background: white; cursor: pointer; font-size: 0.875rem; font-weight: 500; color: #334155; transition: all 0.2s; }',
+        '        button:hover, select:hover { background: #f1f5f9; border-color: #94a3b8; }',
+        '    </style>',
+        '</head>',
+        '<body>',
+        '    <div id="controls">',
+        '        <div style="display: flex; align-items: center; gap: 0.5rem;">',
+        '            <label for="sel-expand" style="font-size: 0.875rem; font-weight: 600; color: #475569;">展開層級</label>',
+        '            <select id="sel-expand">',
+        '                <option value="-1" selected>目前視角</option>',
+        '                <option value="999">全部展開</option>',
+        '                <option value="1">第 1 層</option>',
+        '                <option value="2">第 2 層</option>',
+        '                <option value="3">第 3 層</option>',
+        '                <option value="4">第 4 層</option>',
+        '                <option value="5">第 5 層</option>',
+        '            </select>',
+        '        </div>',
+        '        <div style="width: 1px; height: 1.5rem; background: #cbd5e1; margin: 0 0.25rem;"></div>',
+        '        <button id="btn-zoom-in" title="放大">🔍 放大</button>',
+        '        <button id="btn-zoom-out" title="縮小">🔍 縮小</button>',
+        '        <button id="btn-fit" title="適應螢幕">⛶ 適應螢幕</button>',
+        '    </div>',
+        '    <svg id="mindmap"></svg>',
+        '    <script type="text/template" id="md-content">',
+        finalMdForExport,
+        '    ' + endTag,
+        '    <script type="module">',
+        '        import * as markmapLib from "https://cdn.jsdelivr.net/npm/markmap-lib@0.18.9/+esm";',
+        '        import * as markmapView from "https://cdn.jsdelivr.net/npm/markmap-view@0.18.9/+esm";',
+        '        import * as markmapCommon from "https://cdn.jsdelivr.net/npm/markmap-common@0.18.9/+esm";',
+        '',
+        '        const { Transformer, Markmap, loadCSS, loadJS, deriveOptions } = { ...markmapLib, ...markmapView, ...markmapCommon };',
+        '        const transformer = new Transformer();',
+        '        const mdContent = document.getElementById("md-content").textContent;',
+        '        ',
+        '        (async () => {',
+        '            const { root, features, frontmatter } = transformer.transform(mdContent);',
+        '            const { styles, scripts } = transformer.getUsedAssets(features);',
+        '            if (styles) loadCSS(styles);',
+        '            if (scripts) await loadJS(scripts, { getMarkmap: () => ({ ...markmapLib, ...markmapView, ...markmapCommon }) });',
+        '            ',
+        '            const optionsRaw = frontmatter?.markmap || {};',
+        '            let finalOptions = typeof deriveOptions === "function" ? deriveOptions(optionsRaw) : {};',
+        '            const uiColor = ' + uiColor + ';',
+        '            if (!finalOptions.color && (optionsRaw.colorFreezeLevel !== undefined || uiColor !== -1)) {',
+        '                const freezeLevel = uiColor !== -1 ? uiColor : optionsRaw.colorFreezeLevel;',
+        '                const colors = ["#00508C", "#00A0E9", "#00B2A9", "#F39200", "#E60012", "#71C5E8", "#C4D600", "#8A8D8F"];',
+        '                finalOptions.color = (node) => colors[Math.min(node.depth, freezeLevel) % colors.length];',
+        '            }',
+        '            ',
+        '            const foldedPaths = ' + foldedPathsJson + ';',
+        '            const applyFoldedPaths = (node, paths, path = "0") => {',
+        '                if (!node.payload) node.payload = {};',
+        '                node.payload.fold = paths.includes(path) ? 1 : 0;',
+        '                if (node.children) {',
+        '                    node.children.forEach((c, i) => applyFoldedPaths(c, paths, `${path}-${i}`));',
+        '                }',
+        '            };',
+        '            applyFoldedPaths(root, foldedPaths);',
+        '            ',
+        '            const svgEl = document.getElementById("mindmap");',
+        '            const mm = Markmap.create(svgEl, finalOptions, root);',
+        '            ',
+        '            const transformData = ' + transformJson + ';',
+        '            const d3Transform = d3.zoomIdentity.translate(transformData.x, transformData.y).scale(transformData.k);',
+        '            d3.select(svgEl).call(mm.zoom.transform, d3Transform);',
+        '            ',
+        '            document.getElementById("btn-zoom-in").addEventListener("click", () => {',
+        '                d3.select(svgEl).transition().duration(300).call(mm.zoom.scaleBy, 1.2);',
+        '            });',
+        '            document.getElementById("btn-zoom-out").addEventListener("click", () => {',
+        '                d3.select(svgEl).transition().duration(300).call(mm.zoom.scaleBy, 0.8);',
+        '            });',
+        '            document.getElementById("btn-fit").addEventListener("click", () => {',
+        '                mm.fit();',
+        '            });',
+        '            document.getElementById("sel-expand").addEventListener("change", (e) => {',
+        '                const level = parseInt(e.target.value, 10);',
+        '                const applyExpand = (node, currentDepth) => {',
+        '                    if (!node.payload) node.payload = {};',
+        '                    node.payload.fold = currentDepth >= level ? 1 : 0;',
+        '                    if (node.children) {',
+        '                        node.children.forEach(c => applyExpand(c, currentDepth + 1));',
+        '                    }',
+        '                };',
+        '                applyExpand(root, 0);',
+        '                mm.setData(root);',
+        '                mm.fit();',
+        '            });',
+        '        })();',
+        '    ' + endTag,
+        '</body>',
+        '</html>'
+    ];
+    const htmlContent = htmlLines.join('\n');
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    await saveFile(blob, 'markmap-mindmap.html', 'HTML 網頁檔案', { 'text/html': ['.html'] });
 });
 
 btnDownloadSvg.addEventListener('click', async () => {
+    if (!svgEl) return;
     const clone = svgEl.cloneNode(true);
     const style = document.createElement('style');
-    style.textContent = `.markmap-link { fill: none; } .markmap-node circle { cursor: pointer; }`;
+    style.textContent = `
+                .markmap-link { fill: none; }
+                .markmap-node circle { cursor: pointer; }
+                foreignObject { overflow: visible; }
+                svg { background-color: #ffffff; color: #1f2937; font-family: sans-serif; }
+                code { background-color: #f3f4f6; border-radius: 4px; padding: 2px 4px; }
+            `;
     clone.insertBefore(style, clone.firstChild);
+    if (!clone.getAttribute('xmlns')) {
+        clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    }
     const svgData = new XMLSerializer().serializeToString(clone);
     const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    await saveFile(blob, 'mindmap.svg', 'SVG', { 'image/svg+xml': ['.svg'] });
+    await saveFile(blob, 'markmap-mindmap.svg', 'SVG 圖片檔案', { 'image/svg+xml': ['.svg'] });
 });
 
-btnClearEditor.addEventListener('click', async () => {
-    const confirmed = await showModal('清除內容', '確定要清除所有內容嗎？', { confirmColor: 'bg-red-500 hover:bg-red-600' });
-    if (confirmed) {
-        editor.value = '';
-        debounceUpdate('');
-    }
-});
-
-btnImportFile.addEventListener('click', () => fileImport.click());
-fileImport.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-        editor.value = ev.target.result;
-        debounceUpdate(editor.value);
-    };
-    reader.readAsText(file);
-});
-
-// ==========================================
-// 更新心智圖核心邏輯
-// ==========================================
+// --- 核心更新函數 ---
 const updateMindmap = async (markdown, isInitialLoad = false) => {
     try {
         const safeMarkdown = markdown.replace(/\xA0/g, ' ');
         const { root, features, frontmatter } = transformer.transform(safeMarkdown);
         currentRoot = root;
-        
+
         const { styles, scripts } = transformer.getUsedAssets(features);
         if (styles) loadCSS(styles);
-        if (scripts) await loadJS(scripts, { getMarkmap: () => window.markmap });
-        
+        if (scripts) {
+            await loadJS(scripts, { getMarkmap: () => window.markmap });
+        }
+
         const optionsRaw = frontmatter?.markmap || {};
         const uiExpand = parseInt(selExpand.value, 10);
         const uiColor = parseInt(selColor.value, 10);
-        
+
         if (uiExpand !== -1) optionsRaw.initialExpandLevel = uiExpand;
         if (uiColor !== -1) optionsRaw.colorFreezeLevel = uiColor;
-        
+
         const optionsStr = JSON.stringify(optionsRaw);
         const optionsChanged = currentOptionsStr !== optionsStr;
+
         let finalOptions = typeof deriveOptions === 'function' ? deriveOptions(optionsRaw) : {};
 
-        let savedViewState = isInitialLoad ? JSON.parse(localStorage.getItem('vghtpe_markmap_viewstate') || 'null') : null;
+        let savedViewState = null;
+        if (isInitialLoad) {
+            const stateStr = localStorage.getItem('vghtpe_markmap_viewstate');
+            if (stateStr) {
+                try {
+                    savedViewState = JSON.parse(stateStr);
+                } catch (e) {
+                    console.error('無法解析儲存的視角狀態', e);
+                }
+            }
+        }
 
-        if (isInitialLoad && savedViewState?.foldedPaths) {
-            const applyFolded = (node, paths, path = "0") => {
+        if (isInitialLoad && savedViewState && savedViewState.foldedPaths) {
+            const applyFoldedPaths = (node, foldedPaths, path = "0") => {
                 if (!node.payload) node.payload = {};
-                node.payload.fold = paths.includes(path) ? 1 : 0;
-                if (node.children) node.children.forEach((c, i) => applyFolded(c, paths, `${path}-${i}`));
+                node.payload.fold = foldedPaths.includes(path) ? 1 : 0;
+                if (node.children) {
+                    node.children.forEach((c, i) => applyFoldedPaths(c, foldedPaths, `${path}-${i}`));
+                }
             };
-            applyFolded(root, savedViewState.foldedPaths);
-        } else if (optionsRaw.initialExpandLevel !== undefined) {
+            applyFoldedPaths(root, savedViewState.foldedPaths);
+        } else if (optionsRaw.initialExpandLevel !== undefined && (optionsChanged || !mm)) {
             const level = optionsRaw.initialExpandLevel;
-            const applyExpand = (node, depth) => {
+            const applyExpand = (node, currentDepth) => {
                 if (!node.payload) node.payload = {};
-                node.payload.fold = depth >= level ? 1 : 0;
-                if (node.children) node.children.forEach(c => applyExpand(c, depth + 1));
+                node.payload.fold = currentDepth >= level ? 1 : 0;
+                if (node.children) {
+                    node.children.forEach((c, i) => applyExpand(c, currentDepth + 1));
+                }
             };
             applyExpand(root, 0);
         }
 
-        if (!mm || optionsChanged) {
-            if (mm) mm.destroy();
-            svgEl.innerHTML = '';
+        if (!finalOptions.color && optionsRaw.colorFreezeLevel !== undefined) {
+            const freezeLevel = optionsRaw.colorFreezeLevel;
+            const colors = ['#00508C', '#00A0E9', '#00B2A9', '#F39200', '#E60012', '#71C5E8', '#C4D600', '#8A8D8F'];
+            finalOptions.color = (node) => colors[Math.min(node.depth, freezeLevel) % colors.length];
+        }
+
+        if (!mm) {
             currentOptionsStr = optionsStr;
             mm = Markmap.create(svgEl, finalOptions, root);
-            
-            if (isInitialLoad && savedViewState?.transform) {
+
+            if (isInitialLoad && savedViewState && savedViewState.transform) {
                 const t = savedViewState.transform;
-                const d3T = window.d3.zoomIdentity.translate(t.x, t.y).scale(t.k);
-                setTimeout(() => window.d3.select(svgEl).call(mm.zoom.transform, d3T), 50);
+                const d3Transform = window.d3.zoomIdentity.translate(t.x, t.y).scale(t.k);
+                setTimeout(() => {
+                    window.d3.select(svgEl).call(mm.zoom.transform, d3Transform);
+                }, 50);
+
+                isFitted = savedViewState.isFitted || false;
+                fitText.innerText = isFitted ? '恢復視角' : '適應螢幕';
+                if (!isFitted) prevTransform = t;
             } else {
                 mm.fit();
+                isFitted = true;
+                fitText.innerText = '恢復視角';
             }
+        } else if (optionsChanged) {
+            currentOptionsStr = optionsStr;
+            mm.destroy();
+            svgEl.innerHTML = '';
+            mm = Markmap.create(svgEl, finalOptions, root);
+            mm.fit();
+            isFitted = true;
+            fitText.innerText = '恢復視角';
+            prevTransform = null;
         } else {
             mm.setData(root);
         }
     } catch (error) {
-        console.error("渲染錯誤:", error);
+        console.error("渲染心智圖時發生錯誤:", error);
     }
 };
 
 let timeout;
+let saveTimeout;
 const debounceUpdate = (markdown, isInitialLoad = false) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => {
         updateMindmap(markdown, isInitialLoad);
+
         if (!isInitialLoad) {
             localStorage.setItem('vghtpe_markmap_content', markdown);
-            saveStatus.classList.remove('opacity-0');
-            setTimeout(() => saveStatus.classList.add('opacity-0'), 2000);
+            if (saveStatus) {
+                saveStatus.classList.remove('opacity-0');
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(() => {
+                    saveStatus.classList.add('opacity-0');
+                }, 2000);
+            }
         }
     }, isInitialLoad ? 0 : 300);
 };
 
-// 鍵盤輸入事件
-editor.addEventListener('input', (e) => debounceUpdate(e.target.value));
+editor.addEventListener('input', (e) => {
+    debounceUpdate(e.target.value);
+});
 
-// 適應螢幕
+if (btnClearEditor) {
+    btnClearEditor.addEventListener('click', async () => {
+        const confirmed = await showModal(
+            '清除內容',
+            '確定要清除編輯區的所有內容嗎？（清除後您可以重新輸入）',
+            { confirmText: '確定清除', confirmColor: 'bg-red-500 hover:bg-red-600' }
+        );
+        if (confirmed) {
+            editor.value = '';
+            debounceUpdate('');
+            editor.focus();
+        }
+    });
+}
+
+if (btnImportFile && fileImport) {
+    btnImportFile.addEventListener('click', () => {
+        fileImport.click();
+    });
+
+    fileImport.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const content = event.target.result;
+            if (editor.value.trim() !== '') {
+                const confirmed = await showModal(
+                    '匯入檔案',
+                    '匯入檔案將會覆蓋當前編輯區的所有內容，是否繼續？',
+                    { confirmText: '確定覆蓋', confirmColor: 'bg-indigo-500 hover:bg-indigo-600' }
+                );
+                if (!confirmed) {
+                    fileImport.value = '';
+                    return;
+                }
+            }
+            editor.value = content;
+            debounceUpdate(content);
+            fileImport.value = '';
+        };
+        reader.onerror = async (error) => {
+            console.error('檔案讀取失敗:', error);
+            await showModal('錯誤', '檔案讀取失敗，請重試！', { isAlert: true, confirmColor: 'bg-red-500 hover:bg-red-600' });
+        };
+        reader.readAsText(file);
+    });
+}
+
+selExpand.addEventListener('change', () => debounceUpdate(editor.value));
+selColor.addEventListener('change', () => debounceUpdate(editor.value));
+
+editor.addEventListener('keydown', function (e) {
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = this.selectionStart;
+        const end = this.selectionEnd;
+        this.value = this.value.substring(0, start) + "  " + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = start + 2;
+        debounceUpdate(this.value);
+    }
+});
+
 btnFit.addEventListener('click', () => {
     if (!mm) return;
     if (isFitted && prevTransform) {
@@ -664,7 +600,33 @@ btnFit.addEventListener('click', () => {
     debounceSaveViewState();
 });
 
-// 初始化載入內容：優先讀取暫存，若無則使用 DEFAULT_MARKDOWN
-const savedContent = localStorage.getItem('vghtpe_markmap_content');
-editor.value = savedContent || DEFAULT_MARKDOWN;
-debounceUpdate(editor.value, true);
+// --- 啟動邏輯：改為讀取 sample.md ---
+const initEditor = () => {
+    const savedContent = localStorage.getItem('vghtpe_markmap_content');
+    if (savedContent) {
+        // 如果本地有暫存，優先使用暫存
+        editor.value = savedContent;
+        debounceUpdate(editor.value, true);
+    } else {
+        // 嘗試使用 fetch 讀取同目錄下的 sample.md
+        fetch('sample.md')
+            .then(response => {
+                if (!response.ok) throw new Error('找不到檔案或網路錯誤');
+                return response.text();
+            })
+            .then(text => {
+                editor.value = text;
+                debounceUpdate(text, true);
+            })
+            .catch(err => {
+                console.warn('無法讀取 sample.md (可能受限於本地測試環境的 CORS 或預覽框架限制)。', err);
+                // 防呆機制：若 fetch 失敗（例如直接點擊 html 檔案而未起 server 時），給予基礎提示文字
+                const fallbackText = "# 臺北榮民總醫院\n## 載入失敗\n1. 請確認 `sample.md` 與此檔案放在同一個資料夾。\n2. 若您是直接點開 HTML 檔案，瀏覽器可能會阻擋讀取本地檔案。請透過 Live Server 等伺服器方式開啟。\n3. 您也可以直接在此編輯或點擊右上方「匯入檔案」。";
+                editor.value = fallbackText;
+                debounceUpdate(fallbackText, true);
+            });
+    }
+};
+
+// 執行啟動
+initEditor();
