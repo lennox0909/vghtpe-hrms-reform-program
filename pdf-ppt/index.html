@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeckEdit - 專業版 AI 簡報解析器 (物件保護模式)</title>
+    <title>DeckEdit - 專業版 AI 簡報解析器 (終極物件保護版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -32,17 +32,17 @@
 </head>
 <body class="min-h-screen font-sans flex flex-col no-scrollbar selection:bg-blue-500/30">
 
-    <!-- 頂部導航列 -->
     <header class="bg-[#161b22] border-b border-[#30363d] px-8 py-5 flex justify-between items-center sticky top-0 z-40 backdrop-blur-xl bg-opacity-80">
         <div class="flex items-center gap-3">
             <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
-            <h1 class="text-xl font-black text-white tracking-tighter uppercase italic">DeckEdit <span class="text-blue-500 not-italic text-[10px] font-mono ml-1">OBJECT_SAFE_AI</span></h1>
+            <h1 class="text-xl font-black text-white tracking-tighter uppercase italic text-[16px]">DeckEdit <span class="text-blue-500 not-italic text-[10px] font-mono ml-1">ULTIMATE_RECON</span></h1>
         </div>
         <div class="flex gap-4">
-            <button id="btn-ocr" class="hidden bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold shadow-xl transition-all text-sm active:scale-95">
-                執行物件保護辨識
+            <button id="btn-ocr" class="hidden bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold shadow-xl transition-all text-sm active:scale-95 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                啟動視覺重構
             </button>
             <button id="btn-export" class="hidden bg-[#238636] hover:bg-[#2ea043] text-white px-6 py-2.5 rounded-xl font-bold shadow-xl transition-all text-sm active:scale-95">
                 匯出 PPTX
@@ -50,32 +50,29 @@
         </div>
     </header>
 
-    <!-- 工作進度條 -->
     <div id="live-progress-container" class="h-1 w-full bg-[#30363d] sticky top-[73px] z-40 hidden">
         <div id="live-progress-bar" class="h-full bg-blue-500 progress-glow transition-all duration-300 w-0"></div>
     </div>
 
     <main class="flex-1 p-8 flex flex-col items-center overflow-hidden relative">
-        <!-- 初始上傳區 -->
         <div id="drop-zone" class="w-full max-w-3xl border-2 border-dashed border-[#30363d] rounded-[2.5rem] bg-[#161b22] flex flex-col items-center justify-center p-24 transition-all hover:border-blue-500 group cursor-pointer mt-12">
             <div class="bg-[#0d1117] p-8 rounded-full mb-8 group-hover:scale-110 transition-transform duration-500 shadow-inner">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
             </div>
-            <h3 class="text-2xl font-black text-white tracking-tight">匯入精密圖稿，執行保護式修復</h3>
+            <h3 class="text-2xl font-black text-white tracking-tight">AI 視覺解構，保留核心物件</h3>
             <p class="text-sm text-gray-400 mt-4 text-center max-w-sm leading-relaxed">
-                演算法會先鎖定攝影機等背景物件，<br><span class="text-blue-400 font-bold">確保在去除文字時不會影響原始圖像。</span>
+                自動鎖定連續物件區塊（防鏤空），<br>移除雜訊與浮水印，<span class="text-blue-400 font-bold">並以主題色還原純淨背景。</span>
             </p>
             <input type="file" id="file-input" class="hidden" accept=".pdf, image/png, image/jpeg">
         </div>
 
-        <!-- 頁面選擇區域 -->
         <div id="selection-area" class="hidden w-full max-w-6xl flex flex-col overflow-hidden animate-in fade-in duration-700">
             <div class="flex justify-between items-center mb-8 bg-[#161b22] p-6 rounded-3xl border border-[#30363d] shadow-2xl">
                 <div class="flex items-center gap-5">
                     <div class="bg-blue-500/20 text-blue-400 w-12 h-12 rounded-full flex items-center justify-center font-black border border-blue-500/30" id="loaded-pages-count">0</div>
                     <div>
-                        <h4 class="text-white font-bold tracking-tight">已偵測頁面</h4>
-                        <p class="text-[10px] text-gray-500 mt-1 uppercase font-mono tracking-widest">Awaiting background preservation scan</p>
+                        <h4 class="text-white font-bold tracking-tight">準備執行重構</h4>
+                        <p class="text-[10px] text-gray-500 mt-1 uppercase font-mono tracking-widest text-[10px]">Connected object preservation scan initialized</p>
                     </div>
                 </div>
                 <div class="flex gap-3">
@@ -86,45 +83,43 @@
             <div id="selection-grid" class="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 p-4 no-scrollbar"></div>
         </div>
 
-        <!-- 分析結果區 -->
         <div id="workspace" class="hidden w-full max-w-6xl h-full flex flex-col overflow-auto no-scrollbar pb-32 pt-4">
             <div id="status-banner" class="mb-10 flex items-center justify-between bg-blue-500/5 border border-blue-500/20 p-5 rounded-3xl">
                 <div class="flex items-center gap-4">
                     <div class="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.8)]"></div>
-                    <span id="banner-text" class="text-sm font-bold text-blue-400 font-mono uppercase tracking-tighter text-[11px]">AI_ENGINE: OBJECT_SHIELD_ACTIVE...</span>
+                    <span id="banner-text" class="text-sm font-bold text-blue-400 font-mono uppercase tracking-tighter text-[11px]">AI_ENGINE: 2D_CONNECTIVITY_MAPPING...</span>
                 </div>
                 <div id="mini-progress-text" class="text-xs font-mono text-blue-500/70 uppercase">0% Completed</div>
             </div>
             <div id="pages-container" class="w-full flex flex-col gap-24"></div>
         </div>
 
-        <!-- 模型下載 Overlay -->
         <div id="loading-overlay" class="fixed inset-0 bg-[#0d1117]/95 backdrop-blur-2xl z-50 hidden flex-col items-center justify-center">
             <div class="relative w-28 h-28 mb-12">
                 <div class="absolute inset-0 border-[6px] border-blue-500/10 rounded-full"></div>
                 <div class="absolute inset-0 border-[6px] border-t-blue-500 rounded-full animate-spin"></div>
             </div>
-            <h3 class="text-2xl font-black text-white tracking-[0.3em] uppercase">Syncing AI Hub</h3>
-            <p id="loading-text" class="text-sm text-gray-500 mt-4 font-mono text-center tracking-tight">Fetching character mapping tables...</p>
+            <h3 class="text-2xl font-black text-white tracking-[0.3em] uppercase">Syncing AI Assets</h3>
+            <p id="loading-text" class="text-sm text-gray-500 mt-4 font-mono text-center tracking-tight">Fetching models from Hugging Face...</p>
             <div class="w-72 bg-[#161b22] rounded-full h-1 mt-10 overflow-hidden shadow-inner">
                 <div id="initial-progress-bar" class="bg-blue-500 h-full w-0 transition-all duration-300 progress-glow"></div>
             </div>
         </div>
 
-        <!-- Lightbox 燈箱 -->
         <div id="lightbox" onclick="closeLightbox()" class="fixed inset-0 bg-[#0d1117]/95 backdrop-blur-2xl z-[100] hidden flex-col items-center justify-center p-6 animate-in fade-in duration-300 cursor-pointer">
-            <button onclick="closeLightbox()" class="absolute top-10 right-10 text-gray-400 hover:text-white transition-all transform hover:scale-110 active:scale-95 z-50">
+            <button onclick="closeLightbox()" class="absolute top-10 right-10 text-gray-400 hover:text-white z-50 transition-all transform hover:scale-110">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
             <div onclick="event.stopPropagation()" class="max-w-[90vw] max-h-[80vh] bg-[#161b22] rounded-[2.5rem] p-4 shadow-[0_40px_80px_rgba(0,0,0,0.8)] border border-[#30363d] relative group cursor-default">
                 <img id="lightbox-img" src="" class="max-w-full max-h-[75vh] block rounded-[1.8rem] object-contain shadow-2xl">
                 <div class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[1.8rem]">
-                    <button id="lightbox-download" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-full font-black shadow-2xl flex items-center gap-3 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 active:scale-95">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" x2="12" y2="3"/></svg>
-                        下載此張圖檔 (PNG)
+                    <button id="lightbox-download" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-full font-black shadow-2xl flex items-center gap-3 active:scale-95 transition-all transform translate-y-4 group-hover:translate-y-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                        下載重構後的圖檔 (PNG)
                     </button>
                 </div>
             </div>
+            <div id="lightbox-caption" class="mt-8 text-xs font-black text-blue-500 uppercase tracking-[0.4em] cursor-default" onclick="event.stopPropagation()"></div>
         </div>
     </main>
 
@@ -132,8 +127,16 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
         const HF_USERNAME = 'leno99';
-        const DB_NAME = 'ppocr-object-safe-v1';
+        const DB_NAME = 'ppocr-ultimate-v1';
         const STORE_NAME = 'cache';
+
+        // 配置真實下載路徑：包含 4 個核心檔案
+        const RESOURCES = [
+            { key: 'ppocr_v5_server_det', repo: 'ppocr_v5_server_det.onnx', ext: 'onnx' },
+            { key: 'ppocr_v5_server_rec', repo: 'ppocr_v5_server_rec.onnx', ext: 'onnx' },
+            { key: 'ppocr_v5_official_dict_v4', repo: 'ppocr_v5_server_rec.onnx', ext: 'txt' },
+            { key: 'english-words-enable-173k-v1', repo: 'ppocr_v5_server_rec.onnx', ext: 'txt' }
+        ];
 
         const elements = {
             dropZone: document.getElementById('drop-zone'),
@@ -146,6 +149,7 @@
             btnExport: document.getElementById('btn-export'),
             loading: document.getElementById('loading-overlay'),
             loadingText: document.getElementById('loading-text'),
+            initProgress: document.getElementById('initial-progress-bar'),
             liveProgressContainer: document.getElementById('live-progress-container'),
             liveProgressBar: document.getElementById('live-progress-bar'),
             miniProgressText: document.getElementById('mini-progress-text'),
@@ -153,6 +157,7 @@
             loadedCount: document.getElementById('loaded-pages-count'),
             lightbox: document.getElementById('lightbox'),
             lightboxImg: document.getElementById('lightbox-img'),
+            lightboxCap: document.getElementById('lightbox-caption'),
             lightboxDl: document.getElementById('lightbox-download')
         };
 
@@ -168,36 +173,38 @@
 
         async function ensureResources() {
             const db = await initDB();
-            const resKeys = ['ppocr_v5_server_det', 'ppocr_v5_server_rec', 'ppocr_v5_official_dict_v4'];
             let allCached = true;
-            for (const key of resKeys) {
+            for (const res of RESOURCES) {
                 const has = await new Promise(r => {
-                    const req = db.transaction(STORE_NAME).objectStore(STORE_NAME).get(key);
+                    const req = db.transaction(STORE_NAME).objectStore(STORE_NAME).get(res.key);
                     req.onsuccess = () => r(req.result);
                 });
                 if (!has) allCached = false;
             }
             if (allCached) return;
+
             elements.loading.classList.replace('hidden', 'flex');
-            for (const key of resKeys) {
-                elements.loadingText.innerText = `Connecting to multi-repo assets: ${key}...`;
-                const ext = key.includes('dict') ? 'txt' : 'onnx';
-                const repo = key.includes('det') ? 'ppocr_v5_server_det.onnx' : 'ppocr_v5_server_rec.onnx';
-                const resp = await fetch(`https://huggingface.co/${HF_USERNAME}/${repo}/resolve/main/${key}.${ext}`);
+            let completed = 0;
+            for (const res of RESOURCES) {
+                elements.loadingText.innerText = `下載模型資源: ${res.key}.${res.ext}...`;
+                const resp = await fetch(`https://huggingface.co/${HF_USERNAME}/${res.repo}/resolve/main/${res.key}.${res.ext}`);
                 const buffer = await resp.arrayBuffer();
                 await new Promise(r => {
-                    const req = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(buffer, key);
+                    const req = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put(buffer, res.key);
                     req.onsuccess = r;
                 });
+                completed++;
+                elements.initProgress.style.width = `${(completed / RESOURCES.length) * 100}%`;
             }
             elements.loading.classList.replace('flex', 'hidden');
         }
 
         function openLightbox(dataUrl, caption) {
             elements.lightboxImg.src = dataUrl;
+            elements.lightboxCap.innerText = caption;
             elements.lightboxDl.onclick = () => {
                 const a = document.createElement('a'); a.href = dataUrl;
-                a.download = `DeckEdit_Safe.png`; a.click();
+                a.download = `DeckEdit_${caption.replace(/\s+/g, '_')}.png`; a.click();
             };
             elements.lightbox.classList.replace('hidden', 'flex');
         }
@@ -212,7 +219,7 @@
             elements.selectionGrid.innerHTML = '';
             if (file.type === 'application/pdf') {
                 const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
-                const total = Math.min(pdf.numPages, 30);
+                const total = Math.min(pdf.numPages, 50);
                 for (let i = 1; i <= total; i++) {
                     const page = await pdf.getPage(i);
                     const vp = page.getViewport({ scale: 0.8 });
@@ -256,7 +263,8 @@
             const selected = pagesData.filter(p => p.selected);
             if (!selected.length) return;
             elements.btnOcr.disabled = true;
-            await ensureResources();
+            await ensureResources(); // 觸發從 Hugging Face 下載並快取 4 個檔案
+            
             elements.selectionArea.classList.add('hidden');
             elements.btnOcr.classList.add('hidden');
             elements.workspace.classList.remove('hidden');
@@ -269,7 +277,7 @@
                 const progress = Math.round(((i) / selected.length) * 100);
                 elements.liveProgressBar.style.width = `${progress}%`;
                 elements.miniProgressText.innerText = `${progress}% COMPLETE`;
-                elements.bannerText.innerText = `AI_ENGINE: OBJECT_SHIELD_SCAN - PAGE ${page.pageNum}`;
+                elements.bannerText.innerText = `AI_ENGINE: 2D_CONNECTIVITY_SCAN - PAGE ${page.pageNum}`;
 
                 const vp = page.pdfPage.getViewport({ scale: 2.0 }); 
                 const canvas = document.createElement('canvas');
@@ -277,106 +285,106 @@
                 await page.pdfPage.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
                 page.fullCanvas = canvas;
 
-                // 1. 執行背景物件保護掃描 (高頻邊緣偵測)
-                page.protectionMask = computeProtectionMask(canvas);
-
-                // 2. 執行 OCR
+                // 1. OCR 偵測文字區域 (用於避讓，確保文字不會被當作保護物件)
                 const { data } = await worker.recognize(canvas);
-                page.detectedBlocks = aggregateWordsToBlocks(data.words);
+                page.detectedWords = data.words.filter(w => w.confidence > 40);
 
-                await renderSafeSlideCard(page);
+                // 2. 分析物件並產生 2D 連通保護遮罩
+                const analysis = analyzeObjectsAndTheme(canvas, page.detectedWords);
+                page.themeColor = analysis.theme;
+                page.protectionMask = analysis.mask;
+
+                await renderReconstructedSlide(page);
                 elements.workspace.scrollTo({ top: elements.workspace.scrollHeight, behavior: 'smooth' });
                 await new Promise(r => setTimeout(r, 50));
             }
 
             elements.liveProgressBar.style.width = `100%`;
-            elements.bannerText.innerText = `RECONSTRUCTION_COMPLETE. ALL OBJECTS PRESERVED.`;
+            elements.bannerText.innerText = `RECONSTRUCTION_COMPLETE. OBJECTS PRESERVED & BACKGROUND PURGED.`;
             elements.bannerText.classList.replace('text-blue-400', 'text-green-400');
             await worker.terminate();
             elements.btnExport.classList.remove('hidden');
         };
 
-        // --- 技術核心：計算物件保護圖層 ---
-        function computeProtectionMask(canvas) {
+        // --- 核心演算法：防鏤空的 2D 連通性保護與主題提取 ---
+        function analyzeObjectsAndTheme(canvas, words) {
             const ctx = canvas.getContext('2d');
-            const w = canvas.width;
-            const h = canvas.height;
+            const w = canvas.width, h = canvas.height;
             const imgData = ctx.getImageData(0, 0, w, h);
             const d = imgData.data;
-            const mask = new Uint8Array(w * h); // 0: 可動, 1: 保護區
 
-            // 簡單但有效的梯度偵測 (Sobel-like)
+            // A. 主題色提取 (採樣四角與邊緣)
+            const colorCounts = {};
+            const sampleEdges = (x, y) => {
+                const i = (y * w + x) * 4;
+                const rgb = `${d[i]},${d[i+1]},${d[i+2]}`;
+                colorCounts[rgb] = (colorCounts[rgb] || 0) + 1;
+            };
+            for(let x=0; x<w; x+=15) { sampleEdges(x, 10); sampleEdges(x, h-10); }
+            for(let y=0; y<h; y+=15) { sampleEdges(10, y); sampleEdges(w-10, y); }
+            const themeKey = Object.keys(colorCounts).sort((a,b) => colorCounts[b] - colorCounts[a])[0];
+            const theme = themeKey.split(',').map(Number);
+
+            // B. 建立保護遮罩 (初次梯度偵測)
+            const mask = new Uint8Array(w * h);
             for (let y = 1; y < h - 1; y++) {
                 for (let x = 1; x < w - 1; x++) {
                     const i = (y * w + x) * 4;
-                    // 計算局部方差，識別複雜物件
                     const lum = d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114;
                     const lumR = d[i+4]*0.299 + d[i+5]*0.587 + d[i+6]*0.114;
                     const lumB = d[i+w*4]*0.299 + d[i+w*4+1]*0.587 + d[i+w*4+2]*0.114;
-                    
                     const grad = Math.abs(lum - lumR) + Math.abs(lum - lumB);
-                    
-                    // 如果梯度非常高，且具備連續性，判定為背景物件邊緣
-                    if (grad > 45) {
-                        mask[y * w + x] = 1;
-                    }
+                    if (grad > 40) mask[y * w + x] = 1; // 發現物件邊緣
                 }
             }
-            return mask;
-        }
 
-        function aggregateWordsToBlocks(words) {
-            const validWords = words.filter(w => w.confidence > 40 && w.text.trim().length > 0);
-            if (validWords.length === 0) return [];
-            validWords.sort((a, b) => a.bbox.y0 - b.bbox.y0);
-            const blocks = [];
-            let currentBlock = null;
-            validWords.forEach(word => {
-                if (!currentBlock) {
-                    currentBlock = { ...word.bbox };
-                } else {
-                    const vertDist = Math.abs(word.bbox.y0 - currentBlock.y0);
-                    const isSameLine = vertDist < (currentBlock.y1 - currentBlock.y0) * 0.4;
-                    if (isSameLine) {
-                        currentBlock.x0 = Math.min(currentBlock.x0, word.bbox.x0);
-                        currentBlock.y0 = Math.min(currentBlock.y0, word.bbox.y0);
-                        currentBlock.x1 = Math.max(currentBlock.x1, word.bbox.x1);
-                        currentBlock.y1 = Math.max(currentBlock.y1, word.bbox.y1);
-                    } else {
-                        blocks.push(currentBlock);
-                        currentBlock = { ...word.bbox };
+            // C. 排除文字區域 (文字筆劃不進入保護區)
+            words.forEach(wrd => {
+                const b = wrd.bbox;
+                const pad = 2; // 文字周圍預留一點緩衝不保護
+                for(let y = Math.max(0, b.y0 - pad); y < Math.min(h, b.y1 + pad); y++){
+                    for(let x = Math.max(0, b.x0 - pad); x < Math.min(w, b.x1 + pad); x++){
+                        mask[y * w + x] = 0;
                     }
                 }
             });
-            if (currentBlock) blocks.push(currentBlock);
-            return blocks;
+
+            // D. 形態學閉合運算 (Dilation/Closing): 將 2D 連續物件內部的洞補齊，防鏤空
+            const maskFinal = new Uint8Array(w * h);
+            const radius = 5; // 擴張半徑，半徑越大，攝影機內部的平滑區域越不容易被鏤空
+            for (let y = radius; y < h - radius; y++) {
+                for (let x = radius; x < w - radius; x++) {
+                    if (mask[y * w + x] === 1) {
+                        for(let dy=-radius; dy<=radius; dy++){
+                            for(let dx=-radius; dx<=radius; dx++){
+                                maskFinal[(y+dy)*w + (x+dx)] = 1;
+                            }
+                        }
+                    }
+                }
+            }
+            return { theme, mask: maskFinal };
         }
 
-        async function renderSafeSlideCard(page) {
+        async function renderReconstructedSlide(page) {
             const wrap = document.createElement('div');
             wrap.className = 'flex flex-col gap-6 slide-in';
             wrap.innerHTML = `
-                <div class="flex items-center gap-4 bg-[#161b22] px-4 py-2 rounded-xl border border-[#30363d] w-fit">
+                <div class="flex items-center gap-4 bg-[#161b22] px-4 py-2 rounded-xl border border-[#30363d] w-fit shadow-2xl">
                     <span class="text-[10px] font-black text-blue-500 tracking-widest uppercase">Page ${page.pageNum}</span>
                     <div class="flex items-center gap-4 text-[10px] font-mono text-gray-500">
-                        <span class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 bg-blue-500/50 rounded-full"></div> ROI: ${page.detectedBlocks.length}</span>
-                        <span class="text-green-500 uppercase">Protection_Shield_On</span>
+                        <span class="text-green-500 flex items-center gap-1.5"><div class="w-1.5 h-1.5 bg-green-500 rounded-full"></div> Core Objects Preserved</span>
+                        <span class="text-blue-400">Background Reconstructed</span>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-[#161b22] rounded-2xl p-2 border border-[#30363d] relative group">
-                        <canvas id="orig-${page.pageNum}" class="w-full h-auto cursor-zoom-in rounded-xl overflow-hidden"></canvas>
-                        <div class="absolute bottom-4 left-4 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded text-[8px] uppercase text-gray-400">Original</div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <div class="bg-[#161b22] rounded-3xl p-2 border border-[#30363d] shadow-2xl relative group">
+                        <canvas id="orig-${page.pageNum}" class="w-full h-auto cursor-zoom-in rounded-2xl overflow-hidden"></canvas>
+                        <div class="absolute bottom-4 left-4 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded text-[8px] uppercase text-gray-400 font-bold tracking-widest">Input</div>
                     </div>
-                    <div class="bg-[#161b22] rounded-2xl p-2 border border-[#30363d] relative group">
-                        <canvas id="magic-${page.pageNum}" class="w-full h-auto cursor-zoom-in rounded-xl overflow-hidden"></canvas>
-                        <div class="absolute bottom-4 left-4 bg-blue-600/50 backdrop-blur-md px-2 py-0.5 rounded text-[8px] uppercase text-white font-bold tracking-widest">Safe Reconstructed</div>
-                    </div>
-                </div>
-                <div class="w-full">
-                    <button onclick="toggleDetails(${page.pageNum})" class="flex items-center gap-2 text-[10px] font-black text-gray-400 hover:text-white transition-colors mb-3 uppercase tracking-widest">Details</button>
-                    <div id="details-${page.pageNum}" class="details-content max-h-0 bg-[#161b22]/50 rounded-2xl border border-[#30363d]/50 overflow-y-auto">
-                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 p-5" id="log-grid-${page.pageNum}"></div>
+                    <div class="bg-[#161b22] rounded-3xl p-2 border border-blue-500/20 shadow-2xl relative group">
+                        <canvas id="magic-${page.pageNum}" class="w-full h-auto cursor-zoom-in rounded-2xl overflow-hidden"></canvas>
+                        <div class="absolute bottom-4 left-4 bg-blue-600/60 backdrop-blur-md px-2 py-0.5 rounded text-[8px] uppercase text-white font-bold tracking-widest">Reconstructed</div>
                     </div>
                 </div>
             `;
@@ -384,82 +392,44 @@
 
             const cOrig = document.getElementById(`orig-${page.pageNum}`);
             const cMagic = document.getElementById(`magic-${page.pageNum}`);
-            const logGrid = document.getElementById(`log-grid-${page.pageNum}`);
-            
-            const w = page.fullCanvas.width;
-            const h = page.fullCanvas.height;
+            const w = page.fullCanvas.width, h = page.fullCanvas.height;
             cOrig.width = cMagic.width = w;
             cOrig.height = cMagic.height = h;
+
             cOrig.getContext('2d').drawImage(page.fullCanvas, 0, 0);
-            
             const ctx = cMagic.getContext('2d');
-            ctx.drawImage(page.fullCanvas, 0, 0);
+            
+            const rawData = cOrig.getContext('2d').getImageData(0, 0, w, h).data;
+            const newImg = ctx.createImageData(w, h);
+            const nd = newImg.data;
+            const [tr, tg, tb] = page.themeColor;
 
-            cOrig.onclick = () => openLightbox(cOrig.toDataURL(), `Page ${page.pageNum} Original`);
-            cMagic.onclick = () => openLightbox(cMagic.toDataURL(), `Page ${page.pageNum} Cleaned`);
+            // 定義右下角 NotebookLM 標籤清除區 (強制不保護)
+            const labelX0 = w * 0.80, labelY0 = h * 0.90;
 
-            // --- 核心：基於保護圖層的精準剔除 ---
-            const finalImgData = ctx.getImageData(0, 0, w, h);
-            const fd = finalImgData.data;
+            for (let i = 0; i < rawData.length; i += 4) {
+                const x = (i/4) % w, y = Math.floor((i/4) / w);
+                const maskIdx = y * w + x;
 
-            for (let idx = 0; idx < page.detectedBlocks.length; idx++) {
-                const bbox = page.detectedBlocks[idx];
-                const { x0, y0, x1, y1 } = bbox;
-                
-                const logItem = document.createElement('div');
-                logItem.className = 'log-item flex items-center gap-2 text-gray-500 bg-[#0d1117] p-2 rounded-lg border border-[#30363d]/30';
-                logItem.innerHTML = `<span class="text-blue-400 font-bold">R${idx + 1}:</span> <span>${Math.round(x1-x0)}×${Math.round(y1-y0)}</span>`;
-                logGrid.appendChild(logItem);
+                const isLabelArea = x > labelX0 && y > labelY0;
+                const isProtected = page.protectionMask[maskIdx] === 1;
 
-                // 針對文字框進行自適應筆劃提取
-                const pad = 2;
-                const bx0 = Math.max(0, x0 - pad), by0 = Math.max(0, y0 - pad);
-                const bx1 = Math.min(w, x1 + pad), by1 = Math.min(h, y1 + pad);
-                const bw = bx1 - bx0, bh = by1 - by0;
-                
-                // 採樣框周邊背景 (用於還原)
-                const sT = ctx.getImageData(bx0, Math.max(0, by0-2), bw, 1).data;
-                const sB = ctx.getImageData(bx0, Math.min(h-1, by1+1), bw, 1).data;
-
-                for (let ly = 0; ly < bh; ly++) {
-                    for (let lx = 0; lx < bw; lx++) {
-                        const gx = bx0 + lx;
-                        const gy = by0 + ly;
-                        const gi = (gy * w + gx) * 4;
-                        const maskIdx = gy * w + gx;
-
-                        // 判斷條件：
-                        // 1. 偵測是否為筆劃像素 (與框外背景亮度差異大)
-                        // 2. 且該位置在 protectionMask 中被標記為「非背景物件核心」
-                        const curLum = fd[gi]*0.299 + fd[gi+1]*0.587 + fd[gi+2]*0.114;
-                        const refLum = (sT[lx*4]*0.299 + sT[lx*4+1]*0.587 + sT[lx*4+2]*0.114);
-
-                        if (Math.abs(curLum - refLum) > 30) {
-                            // 檢查是否碰撞到保護區域 (精密物件邊緣)
-                            // 如果是文字筆劃，通常不會是連續長線條背景。
-                            if (page.protectionMask[maskIdx] === 0 || Math.abs(curLum - refLum) > 80) {
-                                // 執行還原：克隆框外背景
-                                const v = ly / (bh - 1 || 1);
-                                fd[gi] = (1-v)*sT[lx*4] + v*sB[lx*4];
-                                fd[gi+1] = (1-v)*sT[lx*4+1] + v*sB[lx*4+1];
-                                fd[gi+2] = (1-v)*sT[lx*4+2] + v*sB[lx*4+2];
-                            }
-                        }
-                    }
+                if (!isLabelArea && isProtected) {
+                    // 保留連續的重點物件像素
+                    nd[i] = rawData[i]; nd[i+1] = rawData[i+1]; nd[i+2] = rawData[i+2]; nd[i+3] = 255;
+                } else {
+                    // 其餘全部以主題背景色覆蓋 (包含文字、格線、右下角 Logo)
+                    nd[i] = tr; nd[i+1] = tg; nd[i+2] = tb; nd[i+3] = 255;
                 }
             }
-            ctx.putImageData(finalImgData, 0, 0);
+            
+            ctx.putImageData(newImg, 0, 0);
+            
+            cOrig.onclick = () => openLightbox(cOrig.toDataURL(), `Page ${page.pageNum} - Original`);
+            cMagic.onclick = () => openLightbox(cMagic.toDataURL(), `Page ${page.pageNum} - Reconstructed`);
+            
             page.cleanedImage = cMagic.toDataURL('image/jpeg', 0.85);
         }
-
-        window.toggleDetails = function(num) {
-            const el = document.getElementById(`details-${num}`);
-            if (el.style.maxHeight && el.style.maxHeight !== '0px') {
-                el.style.maxHeight = '0px';
-            } else {
-                el.style.maxHeight = '500px';
-            }
-        };
 
         elements.btnExport.onclick = async () => {
             const pptx = new pptxgen();
@@ -467,7 +437,7 @@
                 const slide = pptx.addSlide();
                 slide.addImage({ data: p.cleanedImage, x:0, y:0, w:10, h:5.625 });
             });
-            await pptx.writeFile({ fileName: `DeckEdit_ObjectPreserved_Export.pptx` });
+            await pptx.writeFile({ fileName: `DeckEdit_Recon_${Date.now()}.pptx` });
         };
     </script>
 </body>
