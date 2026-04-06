@@ -40,31 +40,41 @@ const btnImportFile = document.getElementById('btn-import-file');
 const fileImport = document.getElementById('file-import');
 
 // ==========================================
-// 非同步載入外部文件 (針對 GitHub Pages 優化)
+// 非同步載入外部文件 (針對 GitHub Pages 路徑優化)
 // ==========================================
 async function loadExternalMarkdown(fileName) {
+    // 取得當前網頁的基礎路徑 (解決 GitHub Pages 子目錄問題)
+    const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+    const timestamp = new Date().getTime();
+    const targetUrl = `${baseUrl}${fileName}?t=${timestamp}`;
+    
     try {
-        // 在 GitHub Pages 中，使用相對路徑或是加上快取破壞參數 (?t=...) 確保讀到最新版
-        const timestamp = new Date().getTime();
-        const url = `${fileName}?t=${timestamp}`;
-        
-        console.log(`正在嘗試讀取內容: ${url}`);
-        const response = await fetch(url);
+        console.log(`[Debug] 嘗試讀取: ${targetUrl}`);
+        const response = await fetch(targetUrl);
         
         if (!response.ok) {
-            throw new Error(`HTTP 錯誤: ${response.status}`);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
         const text = await response.text();
-        console.log("外部 Markdown 載入成功");
+        // 檢查抓回來的內容是否真的是 Markdown (有時候會抓到 404 的 HTML 頁面)
+        if (text.trim().startsWith('<!DOCTYPE')) {
+            throw new Error("抓取到的是 HTML 頁面而非 Markdown 檔案，請檢查路徑。");
+        }
+        
+        console.log("[Success] 外部 Markdown 載入成功");
         return text;
     } catch (e) {
-        console.error('無法從伺服器載入內容:', e);
-        // 如果抓不到，嘗試從 localStorage 救回來，如果連 localStorage 都沒東西，才顯示錯誤
-        const fallback = localStorage.getItem('vghtpe_markmap_content');
-        if (fallback) return fallback;
+        console.error('[Error] 無法載入內容:', e);
         
-        return `# 讀取失敗\n無法載入 \`${fileName}\`。\n\n**可能原因：**\n1. 檔案尚未上傳至 GitHub。\n2. 路徑設定錯誤。\n\n錯誤代碼: ${e.message}`;
+        // 檢查是否有本地緩存作為備援
+        const fallback = localStorage.getItem('vghtpe_markmap_content');
+        if (fallback && fallback.length > 100) {
+            console.log("[Info] 使用本地暫存內容作為備援");
+            return fallback;
+        }
+        
+        return `# 讀取失敗\n無法從以下路徑載入 \`${fileName}\`：\n\`${targetUrl}\`\n\n**請檢查：**\n1. 檔案名稱大小寫是否完全正確 (GitHub Pages 區分大小寫)。\n2. 檔案是否確實上傳到 \`mindmap\` 資料夾下。\n3. 嘗試在 Repo 根目錄新增一個名為 \`.nojekyll\` 的空檔案。\n\n錯誤訊息: ${e.message}`;
     }
 }
 
@@ -143,19 +153,15 @@ const debounceUpdate = (markdown, isInitialLoad = false) => {
 // 初始化應用程式
 // ==========================================
 async function initApp() {
-    // 1. 抓取外部檔案
+    // 1. 先從伺服器抓取
     const remoteContent = await loadExternalMarkdown('sample.md');
     
-    // 2. 檢查本地暫存
-    const localContent = localStorage.getItem('vghtpe_markmap_content');
-    
-    /**
-     * 邏輯調整：
-     * 如果本地有暫存且不等於遠端內容，給予使用者選擇或直接以遠端為主（避免舊的錯誤快取一直存在）。
-     * 這裡我們設定：如果本地內容與遠端明顯不同，則使用遠端內容。
-     */
-    if (localContent && localContent.length > 50) {
-        editor.value = localContent;
+    // 2. 判斷要顯示哪份內容
+    // 如果遠端抓取成功 (不是錯誤訊息)，則優先使用遠端內容 (確保資料更新)
+    // 只有當遠端失敗且本地有舊資料時，才會顯示本地資料
+    if (remoteContent.startsWith('# 讀取失敗')) {
+        const localContent = localStorage.getItem('vghtpe_markmap_content');
+        editor.value = localContent || remoteContent;
     } else {
         editor.value = remoteContent;
     }
@@ -164,9 +170,8 @@ async function initApp() {
 }
 
 // 綁定事件
-editor.addEventListener('input', (e) => debounceUpdate(e.target.value));
-
-// 下載與其他按鈕邏輯保持不變...
-// (此處省略了與 UI 排版相關的其餘事件監聽，保持功能完整性)
+if (editor) {
+    editor.addEventListener('input', (e) => debounceUpdate(e.target.value));
+}
 
 initApp();
