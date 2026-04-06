@@ -621,7 +621,7 @@ const initEditor = () => {
             .catch(err => {
                 console.warn('無法讀取 sample.md (可能受限於本地測試環境的 CORS 或預覽框架限制)。', err);
                 // 防呆機制：若 fetch 失敗（例如直接點擊 html 檔案而未起 server 時），給予基礎提示文字
-                const fallbackText = "# 臺北榮民總醫院 人事室 心智圖即時編輯器\n## 載入範例失敗\n您也可以直接在此編輯或點擊右上方「匯入檔案」。";
+                const fallbackText = "# 臺北榮民總醫院 人事室 心智圖即時編輯器\n## 載入範例失敗\n- 您也可以直接在此編輯或點擊右上方「匯入檔案」。";
                 editor.value = fallbackText;
                 debounceUpdate(fallbackText, true);
             });
