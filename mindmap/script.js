@@ -600,33 +600,35 @@ btnFit.addEventListener('click', () => {
     debounceSaveViewState();
 });
 
-// --- 啟動邏輯：改為讀取 sample.md ---
-const initEditor = () => {
+
+// --- 非同步載入外部預設內容 ---
+async function loadDefaultContent() {
+    try {
+        const response = await fetch('mindmap_sample.md');
+        if (!response.ok) throw new Error('無法讀取 mindmap_sample.md');
+        return await response.text();
+    } catch (err) {
+        console.error('載入預設內容失敗:', err);
+        return '# 載入失敗\n請確認您的伺服器環境中是否存在 `mindmap_sample.md` 檔案，或檢查 CORS 設定。';
+    }
+}
+
+
+
+
+// --- 啟動邏輯：改為讀取 mindmap_sample.md ---
+async function initEditor() {
     const savedContent = localStorage.getItem('vghtpe_markmap_content');
     if (savedContent) {
         // 如果本地有暫存，優先使用暫存
         editor.value = savedContent;
         debounceUpdate(editor.value, true);
     } else {
-        // 嘗試使用 fetch 讀取同目錄下的 sample.md
-        fetch('sample.md')
-            .then(response => {
-                if (!response.ok) throw new Error('找不到檔案或網路錯誤');
-                return response.text();
-            })
-            .then(text => {
-                editor.value = text;
-                debounceUpdate(text, true);
-            })
-            .catch(err => {
-                console.warn('無法讀取 sample.md (可能受限於本地測試環境的 CORS 或預覽框架限制)。', err);
-                // 防呆機制：若 fetch 失敗（例如直接點擊 html 檔案而未起 server 時），給予基礎提示文字
-                const fallbackText = "# 臺北榮民總醫院 人事室 心智圖即時編輯器\n## 載入範例失敗\n- 您也可以直接在此編輯\n- 或點擊右上方「匯入檔案」。";
-                editor.value = fallbackText;
-                debounceUpdate(fallbackText, true);
-            });
+        editor.value = await loadDefaultContent();
+        debounceUpdate(editor.value, true);
     }
-};
+}
 
 // 執行啟動
 initEditor();
+
