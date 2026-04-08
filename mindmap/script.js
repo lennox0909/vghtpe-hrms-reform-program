@@ -604,7 +604,7 @@ btnFit.addEventListener('click', () => {
 // --- 非同步載入外部預設內容 ---
 async function loadDefaultContent() {
     try {
-        const response = await fetch('sample.md');
+        const response = await fetch('assets/sample.md');
         if (!response.ok) throw new Error('無法讀取 sample.md');
         return await response.text();
     } catch (err) {
