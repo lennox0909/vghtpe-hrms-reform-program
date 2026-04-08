@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mermaid 視覺化建構器</title>
+    <!-- 引入 Mermaid.js -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Mermaid 視覺化建構器</h1>
+        <h6>version 0.0.2 (測試版)</h6>
+
+        <button class="primary" id="addNodeBtn">+ 新增節點</button>
+        <button id="clearStorageBtn">清除暫存</button>
+        <select id="diagramType">
+            <optgroup label="視覺化節點型流程圖">
+                <option value="graph TD">1. 流程圖 (從上到下 Graph TD)</option>
+                <option value="graph LR">2. 流程圖 (由左至右 Graph LR)</option>
+                <option value="stateDiagram-v2">3. 狀態圖 (State Diagram)</option>
+                <option value="classDiagram">4. 類別圖 (Class Diagram)</option>
+                <option value="erDiagram">5. 實體關聯圖 (ER Diagram)</option>
+                <option value="mindmap">6. 心智圖 (Mindmap)</option>
+                <option value="block-beta">7. 區塊圖 (Block Diagram)</option>
+                <option value="architecture-beta">8. 架構圖 (Architecture)</option>
+                <option value="sankey-beta">9. 桑基圖 (Sankey)</option>
+                <option value="flowchart TD">10. 進階流程圖 (Flowchart)</option>
+            </optgroup>
+        </select>
+        <button class="danger" id="deleteBtn" disabled>刪除選取物件</button>
+        <span style="font-size:0.8rem; color:var(--text-muted); margin-left:auto;">
+            💡 節點長按編輯，連線雙擊加入文字標籤
+        </span>
+    </header>
+
+    <div class="main-container">
+        <!-- 左側畫布 -->
+        <div class="workspace-wrapper" id="workspaceWrapper">
+            <div class="overlay-msg" id="overlayMsg">此圖表類型不支援視覺化拖拉，<br>請在右側直接修改範本語法。</div>
+            <div id="workspace">
+                <svg id="svg-layer">
+                    <defs>
+                        <!-- 定義預設箭頭 -->
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#8be9fd" />
+                        </marker>
+                        <marker id="arrowhead-selected" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#bd93f9" />
+                        </marker>
+                        <!-- 類別圖箭頭 (空心三角) -->
+                        <marker id="triangle-hollow" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto">
+                            <polygon points="1 1, 11 5, 1 9" fill="#282a36" stroke="#8be9fd" stroke-width="1.5" />
+                        </marker>
+                        <marker id="triangle-hollow-selected" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto">
+                            <polygon points="1 1, 11 5, 1 9" fill="#282a36" stroke="#bd93f9" stroke-width="1.5" />
+                        </marker>
+                        <!-- ER圖箭頭 (Crow's foot) -->
+                        <marker id="crows-foot" markerWidth="14" markerHeight="14" refX="13" refY="7" orient="auto">
+                            <circle cx="5" cy="7" r="3" fill="none" stroke="#8be9fd" stroke-width="1.5"/>
+                            <line x1="8" y1="7" x2="13" y2="2" stroke="#8be9fd" stroke-width="1.5"/>
+                            <line x1="8" y1="7" x2="13" y2="7" stroke="#8be9fd" stroke-width="1.5"/>
+                            <line x1="8" y1="7" x2="13" y2="12" stroke="#8be9fd" stroke-width="1.5"/>
+                        </marker>
+                        <marker id="crows-foot-selected" markerWidth="14" markerHeight="14" refX="13" refY="7" orient="auto">
+                            <circle cx="5" cy="7" r="3" fill="none" stroke="#bd93f9" stroke-width="1.5"/>
+                            <line x1="8" y1="7" x2="13" y2="2" stroke="#bd93f9" stroke-width="1.5"/>
+                            <line x1="8" y1="7" x2="13" y2="7" stroke="#bd93f9" stroke-width="1.5"/>
+                            <line x1="8" y1="7" x2="13" y2="12" stroke="#bd93f9" stroke-width="1.5"/>
+                        </marker>
+                    </defs>
+                    <!-- 連線會放在這裡 -->
+                </svg>
+                <!-- 節點會放在這裡 -->
+            </div>
+        </div>
+
+        <!-- 右側預覽 -->
+        <div class="sidebar">
+            <div class="panel-title">
+                即時 Mermaid 語法
+                <button id="copyBtn" style="padding: 2px 8px; font-size: 0.8rem;">複製程式碼</button>
+            </div>
+            <textarea id="mermaidCode" spellcheck="false"></textarea>
+            
+            <div class="panel-title" style="border-top: 1px solid var(--node-border);">
+                圖表渲染預覽
+            </div>
+            <div class="preview-container" id="previewContainer">
+                <div id="mermaidPreview"></div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
