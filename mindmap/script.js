@@ -604,19 +604,19 @@ btnFit.addEventListener('click', () => {
 // --- 非同步載入外部預設內容 ---
 async function loadDefaultContent() {
     try {
-        const response = await fetch('mindmap_sample.md');
-        if (!response.ok) throw new Error('無法讀取 mindmap_sample.md');
+        const response = await fetch('sample.md');
+        if (!response.ok) throw new Error('無法讀取 sample.md');
         return await response.text();
     } catch (err) {
         console.error('載入預設內容失敗:', err);
-        return '# 載入失敗\n請確認您的伺服器環境中是否存在 `mindmap_sample.md` 檔案，或檢查 CORS 設定。';
+        return '# 載入失敗\n請確認您的伺服器環境中是否存在 `sample.md` 檔案，或檢查 CORS 設定。';
     }
 }
 
 
 
 
-// --- 啟動邏輯：改為讀取 mindmap_sample.md ---
+// --- 啟動邏輯：改為讀取 sample.md ---
 async function initEditor() {
     const savedContent = localStorage.getItem('vghtpe_markmap_content');
     if (savedContent) {
