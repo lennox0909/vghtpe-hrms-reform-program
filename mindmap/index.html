@@ -5,16 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>臺北榮民總醫院人事室 心智圖即時編輯器</title>
     
-    <!-- 引入 Tailwind CSS 進行快速樣式排版 引入 D3.js (Markmap 核心依賴) -->
+    <!-- 引入 Tailwind CSS & D3.js (Markmap 核心依賴) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-gray-50 h-screen flex flex-col font-sans text-gray-800 transition-colors duration-300 overflow-hidden">
 
-    <!-- ========================================== -->
-    <!-- [HTML 區塊] 網頁結構                        -->
-    <!-- ========================================== -->
     <!-- 頂部導覽列 (整合設定按鈕與響應式排版) -->
     <header class="bg-blue-800 text-white p-3 md:p-4 shadow-md flex flex-wrap justify-between items-center z-10 transition-colors duration-300 flex-shrink-0 gap-3">
         
@@ -124,7 +121,7 @@
                     </button>
                 </div>
             </div>
-            <!-- 已將原本預設寫死的文本清空，改由 JS fetch 讀取 -->
+            <!-- 由 JS fetch 讀取 -->
             <textarea id="editor" class="flex-1 p-5 w-full h-full resize-none font-mono text-base md:text-lg leading-relaxed text-gray-700 bg-white transition-colors duration-300" spellcheck="false"></textarea>
         </section>
 
