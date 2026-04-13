@@ -60,35 +60,70 @@
             <span id="speedVal" class="w-8 font-mono font-bold text-yellow-400 text-right">15</span>
         </div>
 
-        <!-- 規則設定區 (拉桿) -->
-        <div class="w-full bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col md:flex-row gap-6 justify-center text-sm border border-gray-700">
-            <div class="flex-1 space-y-3">
-                <h3 class="text-blue-400 font-bold border-b border-gray-700 pb-1">存活條件 (活細胞保持存活的鄰居數)</h3>
-                <div class="flex items-center gap-3">
-                    <label class="w-12 text-right text-gray-300">最少:</label>
-                    <input type="range" id="surviveMin" min="0" max="8" value="2" class="flex-1 accent-blue-500">
-                    <span id="surviveMinVal" class="w-4 font-mono font-bold text-blue-400">2</span>
+        <!-- 規則設定區 (折疊拉桿) -->
+        <details class="w-full bg-gray-800 rounded-lg shadow-lg border border-gray-700 group">
+            <summary class="cursor-pointer p-4 font-bold text-gray-200 flex justify-between items-center select-none outline-none hover:bg-gray-700/50 transition-colors rounded-lg">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span>自訂演化規則參數 (點擊展開)</span>
                 </div>
-                <div class="flex items-center gap-3">
-                    <label class="w-12 text-right text-gray-300">最多:</label>
-                    <input type="range" id="surviveMax" min="0" max="8" value="3" class="flex-1 accent-blue-500">
-                    <span id="surviveMaxVal" class="w-4 font-mono font-bold text-blue-400">3</span>
+                <svg class="w-5 h-5 transition-transform duration-300 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </summary>
+            
+            <div class="p-5 border-t border-gray-700 flex flex-col md:flex-row gap-8 justify-center text-sm bg-gray-800/30 rounded-b-lg">
+                <!-- 生存與死亡規則 -->
+                <div class="flex-1 space-y-4">
+                    <h3 class="text-blue-400 font-bold border-b border-gray-700 pb-2 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        穩定存續 (Survival) 區間
+                    </h3>
+                    <p class="text-xs text-gray-400 mb-2 leading-relaxed">設定細胞能「穩定存續」的鄰居數範圍。超出此範圍即觸發死亡規則。</p>
+                    
+                    <div class="flex flex-col gap-2">
+                        <label class="text-gray-300 flex justify-between items-center">
+                            <span><span class="text-red-400 font-semibold">人口過少 (Underpopulation)</span> 門檻:</span>
+                            <span id="surviveMinVal" class="font-mono font-bold text-blue-400 bg-gray-900 px-2 py-0.5 rounded">2</span>
+                        </label>
+                        <input type="range" id="surviveMin" min="0" max="8" value="2" class="w-full accent-blue-500 cursor-pointer">
+                        <span class="text-xs text-gray-500 text-right">鄰居低於此值將因孤單死亡</span>
+                    </div>
+                    
+                    <div class="flex flex-col gap-2 mt-4">
+                        <label class="text-gray-300 flex justify-between items-center">
+                            <span><span class="text-red-400 font-semibold">人口過剩 (Overpopulation)</span> 門檻:</span>
+                            <span id="surviveMaxVal" class="font-mono font-bold text-blue-400 bg-gray-900 px-2 py-0.5 rounded">3</span>
+                        </label>
+                        <input type="range" id="surviveMax" min="0" max="8" value="3" class="w-full accent-blue-500 cursor-pointer">
+                        <span class="text-xs text-gray-500 text-right">鄰居高於此值將因資源匱乏死亡</span>
+                    </div>
+                </div>
+                
+                <!-- 繁殖規則 -->
+                <div class="flex-1 space-y-4">
+                    <h3 class="text-green-400 font-bold border-b border-gray-700 pb-2 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                        繁殖 (Reproduction) 條件
+                    </h3>
+                    <p class="text-xs text-gray-400 mb-2 leading-relaxed">設定死細胞周圍需要多少活鄰居，才能在下一代變為活細胞。</p>
+                    
+                    <div class="flex flex-col gap-2">
+                        <label class="text-gray-300 flex justify-between items-center">
+                            <span><span class="text-blue-300 font-semibold">繁殖所需最少鄰居</span> (下限):</span>
+                            <span id="reproduceMinVal" class="font-mono font-bold text-green-400 bg-gray-900 px-2 py-0.5 rounded">3</span>
+                        </label>
+                        <input type="range" id="reproduceMin" min="0" max="8" value="3" class="w-full accent-green-500 cursor-pointer">
+                    </div>
+                    
+                    <div class="flex flex-col gap-2 mt-4">
+                        <label class="text-gray-300 flex justify-between items-center">
+                            <span><span class="text-blue-300 font-semibold">繁殖容許最多鄰居</span> (上限):</span>
+                            <span id="reproduceMaxVal" class="font-mono font-bold text-green-400 bg-gray-900 px-2 py-0.5 rounded">3</span>
+                        </label>
+                        <input type="range" id="reproduceMax" min="0" max="8" value="3" class="w-full accent-green-500 cursor-pointer">
+                    </div>
                 </div>
             </div>
-            <div class="flex-1 space-y-3">
-                <h3 class="text-green-400 font-bold border-b border-gray-700 pb-1">繁殖條件 (死細胞變為活細胞的鄰居數)</h3>
-                <div class="flex items-center gap-3">
-                    <label class="w-12 text-right text-gray-300">最少:</label>
-                    <input type="range" id="reproduceMin" min="0" max="8" value="3" class="flex-1 accent-green-500">
-                    <span id="reproduceMinVal" class="w-4 font-mono font-bold text-green-400">3</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <label class="w-12 text-right text-gray-300">最多:</label>
-                    <input type="range" id="reproduceMax" min="0" max="8" value="3" class="flex-1 accent-green-500">
-                    <span id="reproduceMaxVal" class="w-4 font-mono font-bold text-green-400">3</span>
-                </div>
-            </div>
-        </div>
+        </details>
 
         <!-- 分隔線 -->
         <hr class="w-full border-gray-700 my-8">
