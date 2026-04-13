@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>John Conway's Game of Life</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            overscroll-behavior-y: contain; /* 防止手機下拉重整 */
+        }
+        canvas {
+            image-rendering: pixelated;
+            touch-action: none; /* 防止觸控滑動時捲動頁面 */
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 font-sans">
+
+    <div class="max-w-4xl w-full flex flex-col items-center gap-6">
+        <div class="text-center">
+            <h1 class="text-3xl md:text-4xl font-bold mb-2 text-green-400">John Conway's Game of Life</h1>
+            <p class="text-gray-400 text-sm md:text-base">點擊或拖曳網格繪製細胞，觀察它們的演化生命週期。</p>
+        </div>
+        
+        <!-- 畫布容器 -->
+        <div id="canvas-container" class="w-full aspect-video bg-black border-2 border-gray-700 rounded-lg shadow-2xl overflow-hidden relative">
+            <canvas id="gameCanvas" class="w-full h-full cursor-crosshair"></canvas>
+        </div>
+        
+        <!-- 控制面板 -->
+        <div class="flex flex-wrap justify-center gap-3 w-full">
+            <button id="startBtn" class="flex-1 min-w-[120px] bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg">
+                開始 / 暫停
+            </button>
+            <button id="stepBtn" class="flex-1 min-w-[120px] bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg">
+                單步執行
+            </button>
+            <button id="randomBtn" class="flex-1 min-w-[120px] bg-purple-600 hover:bg-purple-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg">
+                隨機生成
+            </button>
+            <button id="clearBtn" class="flex-1 min-w-[120px] bg-red-600 hover:bg-red-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg">
+                清除畫布
+            </button>
+        </div>
+
+        <!-- 規則設定區 (拉桿) -->
+        <div class="w-full bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col md:flex-row gap-6 justify-center text-sm border border-gray-700">
+            <div class="flex-1 space-y-3">
+                <h3 class="text-blue-400 font-bold border-b border-gray-700 pb-1">存活條件 (活細胞保持存活的鄰居數)</h3>
+                <div class="flex items-center gap-3">
+                    <label class="w-12 text-right text-gray-300">最少:</label>
+                    <input type="range" id="surviveMin" min="0" max="8" value="2" class="flex-1 accent-blue-500">
+                    <span id="surviveMinVal" class="w-4 font-mono font-bold text-blue-400">2</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="w-12 text-right text-gray-300">最多:</label>
+                    <input type="range" id="surviveMax" min="0" max="8" value="3" class="flex-1 accent-blue-500">
+                    <span id="surviveMaxVal" class="w-4 font-mono font-bold text-blue-400">3</span>
+                </div>
+            </div>
+            <div class="flex-1 space-y-3">
+                <h3 class="text-green-400 font-bold border-b border-gray-700 pb-1">繁殖條件 (死細胞變為活細胞的鄰居數)</h3>
+                <div class="flex items-center gap-3">
+                    <label class="w-12 text-right text-gray-300">最少:</label>
+                    <input type="range" id="reproduceMin" min="0" max="8" value="3" class="flex-1 accent-green-500">
+                    <span id="reproduceMinVal" class="w-4 font-mono font-bold text-green-400">3</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="w-12 text-right text-gray-300">最多:</label>
+                    <input type="range" id="reproduceMax" min="0" max="8" value="3" class="flex-1 accent-green-500">
+                    <span id="reproduceMaxVal" class="w-4 font-mono font-bold text-green-400">3</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function () {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const container = document.getElementById('canvas-container');
+            
+            // 遊戲設定
+            const resolution = 7.5; // 每個細胞的像素大小 (原為 15，縮小一半使總格子數變 4 倍)
+            let cols, rows;
+            let grid;
+            let isPlaying = false;
+            let animationId;
+            let isDrawing = false;
+            let lastDrawPos = { col: -1, row: -1 };
+
+            // 規則拉桿設定
+            const sMinInput = document.getElementById('surviveMin');
+            const sMaxInput = document.getElementById('surviveMax');
+            const rMinInput = document.getElementById('reproduceMin');
+            const rMaxInput = document.getElementById('reproduceMax');
+
+            function updateRuleLabels(e) {
+                // 確保拉桿數值的「最少」不會大於「最多」
+                if (e && e.target === sMinInput && parseInt(sMinInput.value) > parseInt(sMaxInput.value)) sMaxInput.value = sMinInput.value;
+                if (e && e.target === sMaxInput && parseInt(sMaxInput.value) < parseInt(sMinInput.value)) sMinInput.value = sMaxInput.value;
+                if (e && e.target === rMinInput && parseInt(rMinInput.value) > parseInt(rMaxInput.value)) rMaxInput.value = rMinInput.value;
+                if (e && e.target === rMaxInput && parseInt(rMaxInput.value) < parseInt(rMinInput.value)) rMinInput.value = rMaxInput.value;
+
+                document.getElementById('surviveMinVal').textContent = sMinInput.value;
+                document.getElementById('surviveMaxVal').textContent = sMaxInput.value;
+                document.getElementById('reproduceMinVal').textContent = rMinInput.value;
+                document.getElementById('reproduceMaxVal').textContent = rMaxInput.value;
+            }
+
+            [sMinInput, sMaxInput, rMinInput, rMaxInput].forEach(input => {
+                input.addEventListener('input', updateRuleLabels);
+            });
+
+            // 初始化畫布尺寸與網格
+            function init() {
+                // 根據容器寬高比計算實際像素，保持響應式
+                const rect = container.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                
+                cols = Math.ceil(canvas.width / resolution);
+                rows = Math.ceil(canvas.height / resolution);
+                
+                grid = buildGrid();
+                randomizeGrid();
+                drawGrid();
+            }
+
+            // 建立空網格
+            function buildGrid() {
+                return new Array(cols).fill(null).map(() => new Array(rows).fill(0));
+            }
+
+            // 隨機填充網格
+            function randomizeGrid() {
+                for (let c = 0; c < cols; c++) {
+                    for (let r = 0; r < rows; r++) {
+                        grid[c][r] = Math.random() > 0.85 ? 1 : 0;
+                    }
+                }
+            }
+
+            // 繪製畫面
+            function drawGrid() {
+                // 背景填黑
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // 繪製活細胞
+                ctx.fillStyle = '#4ADE80'; // Tailwind green-400
+                for (let c = 0; c < cols; c++) {
+                    for (let r = 0; r < rows; r++) {
+                        if (grid[c][r] === 1) {
+                            ctx.fillRect(c * resolution, r * resolution, resolution - 1, resolution - 1);
+                        }
+                    }
+                }
+            }
+
+            // 計算下一代
+            function nextGen() {
+                const nextGrid = buildGrid();
+                const sMin = parseInt(sMinInput.value);
+                const sMax = parseInt(sMaxInput.value);
+                const rMin = parseInt(rMinInput.value);
+                const rMax = parseInt(rMaxInput.value);
+
+                for (let c = 0; c < cols; c++) {
+                    for (let r = 0; r < rows; r++) {
+                        const state = grid[c][r];
+                        let neighbors = countNeighbors(grid, c, r);
+
+                        // 動態核心規則：依據拉桿數值判斷
+                        if (state === 0 && neighbors >= rMin && neighbors <= rMax) {
+                            nextGrid[c][r] = 1; // 繁殖
+                        } else if (state === 1 && (neighbors < sMin || neighbors > sMax)) {
+                            nextGrid[c][r] = 0; // 死亡 (孤獨或擁擠)
+                        } else {
+                            nextGrid[c][r] = state; // 保持
+                        }
+                    }
+                }
+                grid = nextGrid;
+            }
+
+            // 計算鄰居數量 (包含邊界環繞邏輯)
+            function countNeighbors(grid, x, y) {
+                let sum = 0;
+                for (let i = -1; i < 2; i++) {
+                    for (let j = -1; j < 2; j++) {
+                        const col = (x + i + cols) % cols;
+                        const row = (y + j + rows) % rows;
+                        sum += grid[col][row];
+                    }
+                }
+                sum -= grid[x][y];
+                return sum;
+            }
+
+            // 遊戲迴圈 (控制更新速度)
+            let lastTime = 0;
+            const fps = 15; // 每秒演化次數
+            const interval = 1000 / fps;
+
+            function update(time) {
+                if (!isPlaying) return;
+                
+                if (time - lastTime > interval) {
+                    nextGen();
+                    drawGrid();
+                    lastTime = time;
+                }
+                animationId = requestAnimationFrame(update);
+            }
+
+            // --- 互動邏輯 (支援滑鼠與觸控) ---
+            
+            function getEventPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                // 處理觸控事件
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                // 將畫面座標轉換為畫布內部像素座標
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                
+                const x = (clientX - rect.left) * scaleX;
+                const y = (clientY - rect.top) * scaleY;
+                
+                return {
+                    col: Math.floor(x / resolution),
+                    row: Math.floor(y / resolution)
+                };
+            }
+
+            function handleDraw(e) {
+                if (!isDrawing) return;
+                e.preventDefault(); // 防止手機滾動
+                
+                const pos = getEventPos(e);
+                
+                // 確保在網格範圍內，且不重複繪製同一個格子
+                if (pos.col >= 0 && pos.col < cols && pos.row >= 0 && pos.row < rows) {
+                    if (pos.col !== lastDrawPos.col || pos.row !== lastDrawPos.row) {
+                        grid[pos.col][pos.row] = 1; // 畫筆強制填入活細胞
+                        drawGrid();
+                        lastDrawPos = pos;
+                    }
+                }
+            }
+
+            function startDraw(e) {
+                isDrawing = true;
+                lastDrawPos = { col: -1, row: -1 }; // 重置最後繪製位置
+                handleDraw(e);
+            }
+
+            function endDraw() {
+                isDrawing = false;
+            }
+
+            // 滑鼠事件
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', handleDraw);
+            window.addEventListener('mouseup', endDraw); // 移出畫布也能停止
+
+            // 觸控事件
+            canvas.addEventListener('touchstart', startDraw, { passive: false });
+            canvas.addEventListener('touchmove', handleDraw, { passive: false });
+            window.addEventListener('touchend', endDraw);
+
+            // --- 按鈕事件綁定 ---
+            const startBtn = document.getElementById('startBtn');
+            
+            startBtn.addEventListener('click', () => {
+                isPlaying = !isPlaying;
+                startBtn.textContent = isPlaying ? '暫停' : '開始 / 暫停';
+                startBtn.className = isPlaying 
+                    ? "flex-1 min-w-[120px] bg-yellow-600 hover:bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg"
+                    : "flex-1 min-w-[120px] bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg";
+                
+                if (isPlaying) {
+                    lastTime = performance.now();
+                    animationId = requestAnimationFrame(update);
+                } else {
+                    cancelAnimationFrame(animationId);
+                }
+            });
+
+            document.getElementById('stepBtn').addEventListener('click', () => {
+                if (isPlaying) {
+                    isPlaying = false; // 先暫停
+                    startBtn.textContent = '開始 / 暫停';
+                    startBtn.className = "flex-1 min-w-[120px] bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg";
+                    cancelAnimationFrame(animationId);
+                }
+                nextGen();
+                drawGrid();
+            });
+
+            document.getElementById('randomBtn').addEventListener('click', () => {
+                randomizeGrid();
+                drawGrid();
+            });
+
+            document.getElementById('clearBtn').addEventListener('click', () => {
+                isPlaying = false;
+                startBtn.textContent = '開始 / 暫停';
+                startBtn.className = "flex-1 min-w-[120px] bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg";
+                cancelAnimationFrame(animationId);
+                grid = buildGrid();
+                drawGrid();
+            });
+
+            // 視窗大小改變時重新調整畫布 (保留原有畫面比例並居中)
+            window.addEventListener('resize', () => {
+                // 若要保持內容不丟失會比較複雜，這裡採取重新初始化的簡單作法
+                const oldGrid = grid;
+                const oldCols = cols;
+                const oldRows = rows;
+                
+                init(); // 會產生新網格並清空
+                
+                // 嘗試將舊細胞複製到新網格（從左上角開始對齊）
+                for (let c = 0; c < Math.min(cols, oldCols); c++) {
+                    for (let r = 0; r < Math.min(rows, oldRows); r++) {
+                        grid[c][r] = oldGrid[c][r];
+                    }
+                }
+                drawGrid();
+            });
+
+            // 啟動
+            init();
+        };
+    </script>
+</body>
+</html>
