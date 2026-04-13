@@ -222,7 +222,8 @@ window.onload = function () {
 
     startBtn.addEventListener('click', () => {
         isPlaying = !isPlaying;
-        startBtn.textContent = isPlaying ? '暫停' : '開始 / 暫停';
+        // startBtn.textContent = isPlaying ? '暫停' : '開始 / 暫停';
+        startBtn.textContent = isPlaying ? 'Pause' : 'Auto / Pause';
         startBtn.className = isPlaying
             ? "flex-1 min-w-[120px] bg-yellow-600 hover:bg-yellow-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg"
             : "flex-1 min-w-[120px] bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg";
@@ -238,7 +239,8 @@ window.onload = function () {
     document.getElementById('stepBtn').addEventListener('click', () => {
         if (isPlaying) {
             isPlaying = false; // 先暫停
-            startBtn.textContent = '開始 / 暫停';
+            // startBtn.textContent = '開始 / 暫停';
+            startBtn.textContent = 'Auto / Pause';
             startBtn.className = "flex-1 min-w-[120px] bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg";
             cancelAnimationFrame(animationId);
         }
@@ -253,7 +255,8 @@ window.onload = function () {
 
     document.getElementById('clearBtn').addEventListener('click', () => {
         isPlaying = false;
-        startBtn.textContent = '開始 / 暫停';
+        // startBtn.textContent = '開始 / 暫停';
+        startBtn.textContent = 'Auto / Pause';
         startBtn.className = "flex-1 min-w-[120px] bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg";
         cancelAnimationFrame(animationId);
         grid = buildGrid();
