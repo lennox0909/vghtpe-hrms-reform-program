@@ -11,6 +11,7 @@ window.onload = function () {
     let animationId;
     let isDrawing = false;
     let lastDrawPos = { col: -1, row: -1 };
+    let drawMode = 1; // 1: 畫筆, 0: 橡皮擦 (Debug優化: 支援擦除)
 
     // 規則拉桿設定
     const sMinInput = document.getElementById('surviveMin');
@@ -36,8 +37,8 @@ window.onload = function () {
     });
 
     // 初始化畫布尺寸與網格
-    function init() {
-        // 根據容器寬高比計算實際像素，保持響應式
+    // (Debug優化: 加入 isInitial 參數，防止 resize 時意外洗掉畫面)
+    function init(isInitial = false) {
         const rect = container.getBoundingClientRect();
         canvas.width = rect.width;
         canvas.height = rect.height;
@@ -46,7 +47,9 @@ window.onload = function () {
         rows = Math.ceil(canvas.height / resolution);
 
         grid = buildGrid();
-        randomizeGrid();
+        if (isInitial) {
+            randomizeGrid();
+        }
         drawGrid();
     }
 
@@ -150,9 +153,11 @@ window.onload = function () {
 
     function getEventPos(e) {
         const rect = canvas.getBoundingClientRect();
-        // 處理觸控事件
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        // 處理觸控事件 (防止沒有觸控點時報錯)
+        const clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+        const clientY = (e.touches && e.touches.length > 0) ? e.touches[0].clientY : e.clientY;
+
+        if (clientX === undefined || clientY === undefined) return null;
 
         // 將畫面座標轉換為畫布內部像素座標
         const scaleX = canvas.width / rect.width;
@@ -167,26 +172,34 @@ window.onload = function () {
         };
     }
 
-    function handleDraw(e) {
-        if (!isDrawing) return;
-        e.preventDefault(); // 防止手機滾動
+    function startDraw(e) {
+        isDrawing = true;
+        lastDrawPos = { col: -1, row: -1 };
 
         const pos = getEventPos(e);
+        if (pos && pos.col >= 0 && pos.col < cols && pos.row >= 0 && pos.row < rows) {
+            // 動態偵測畫筆模式：若點在活細胞上，則設定為橡皮擦模式；反之為畫筆
+            drawMode = grid[pos.col][pos.row] === 1 ? 0 : 1;
+        }
+
+        handleDraw(e);
+    }
+
+    function handleDraw(e) {
+        if (!isDrawing) return;
+        if (e.cancelable) e.preventDefault(); // 防止手機滾動
+
+        const pos = getEventPos(e);
+        if (!pos) return;
 
         // 確保在網格範圍內，且不重複繪製同一個格子
         if (pos.col >= 0 && pos.col < cols && pos.row >= 0 && pos.row < rows) {
             if (pos.col !== lastDrawPos.col || pos.row !== lastDrawPos.row) {
-                grid[pos.col][pos.row] = 1; // 畫筆強制填入活細胞
+                grid[pos.col][pos.row] = drawMode; // 使用當前的繪製/擦除模式
                 drawGrid();
                 lastDrawPos = pos;
             }
         }
-    }
-
-    function startDraw(e) {
-        isDrawing = true;
-        lastDrawPos = { col: -1, row: -1 }; // 重置最後繪製位置
-        handleDraw(e);
     }
 
     function endDraw() {
@@ -202,6 +215,7 @@ window.onload = function () {
     canvas.addEventListener('touchstart', startDraw, { passive: false });
     canvas.addEventListener('touchmove', handleDraw, { passive: false });
     window.addEventListener('touchend', endDraw);
+    window.addEventListener('touchcancel', endDraw);
 
     // --- 按鈕事件綁定 ---
     const startBtn = document.getElementById('startBtn');
@@ -248,14 +262,14 @@ window.onload = function () {
 
     // 視窗大小改變時重新調整畫布 (保留原有畫面比例並居中)
     window.addEventListener('resize', () => {
-        // 若要保持內容不丟失會比較複雜，這裡採取重新初始化的簡單作法
         const oldGrid = grid;
         const oldCols = cols;
         const oldRows = rows;
 
-        init(); // 會產生新網格並清空
+        // (Debug修復): 傳入 false 確保不會在調整視窗大小時隨機生成細胞洗掉畫面
+        init(false);
 
-        // 嘗試將舊細胞複製到新網格（從左上角開始對齊）
+        // 將舊細胞複製到新網格（從左上角開始對齊）
         for (let c = 0; c < Math.min(cols, oldCols); c++) {
             for (let r = 0; r < Math.min(rows, oldRows); r++) {
                 grid[c][r] = oldGrid[c][r];
@@ -264,6 +278,6 @@ window.onload = function () {
         drawGrid();
     });
 
-    // 啟動
-    init();
+    // 啟動 (傳入 true 讓第一次載入時產生隨機圖案)
+    init(true);
 };
