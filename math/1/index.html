@@ -29,7 +29,8 @@
         <!-- 標題與遊戲區塊 -->
         <div class="text-center">
             <h1 class="text-3xl md:text-4xl font-bold mb-2 text-green-400">John Conway's Game of Life</h1>
-            <p class="text-gray-400 text-sm md:text-base">點擊或拖曳網格繪製細胞（點擊活細胞可變為橡皮擦），觀察它們的演化。</p>
+            <p class="text-gray-400 text-sm md:text-base">Visualize Celluar Evolution: Click or Drag to Make/Erase Cells.</p>
+            <!-- <p class="text-gray-400 text-sm md:text-base">點擊或拖曳網格繪製細胞（點擊活細胞可變為橡皮擦），觀察它們的演化。</p> -->
         </div>
         
         <!-- 畫布容器 -->
@@ -40,22 +41,29 @@
         <!-- 控制面板 -->
         <div class="flex flex-wrap justify-center gap-3 w-full">
             <button id="startBtn" class="flex-1 min-w-[120px] bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg">
-                開始 / 暫停
+                <!-- 開始 / 暫停 -->
+                 Auto / Pause
             </button>
             <button id="stepBtn" class="flex-1 min-w-[120px] bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg">
-                單步執行
+                <!-- 單步執行 -->
+                 Step
             </button>
             <button id="randomBtn" class="flex-1 min-w-[120px] bg-purple-600 hover:bg-purple-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg">
-                隨機生成
+                <!-- 隨機生成 -->
+                Random Cells
             </button>
             <button id="clearBtn" class="flex-1 min-w-[120px] bg-red-600 hover:bg-red-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-lg">
-                清除畫布
+                <!-- 清除畫布 -->
+                Clear Canvas
             </button>
         </div>
 
         <!-- 速度設定區 -->
         <div class="w-full bg-gray-800 p-4 rounded-lg shadow-lg flex items-center gap-4 text-sm border border-gray-700">
-            <label class="font-bold text-yellow-400 whitespace-nowrap">演化速度 (FPS):</label>
+            <label class="font-bold text-yellow-400 whitespace-nowrap">
+                <!-- 演化速度 (FPS): -->
+                Speed (FPS):
+            </label>
             <input type="range" id="speedSlider" min="1" max="60" value="15" class="flex-1 accent-yellow-500">
             <span id="speedVal" class="w-8 font-mono font-bold text-yellow-400 text-right">15</span>
         </div>
@@ -65,7 +73,10 @@
             <summary class="cursor-pointer p-4 font-bold text-gray-200 flex justify-between items-center select-none outline-none hover:bg-gray-700/50 transition-colors rounded-lg">
                 <div class="flex items-center gap-2">
                     <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    <span>自訂演化規則參數 (點擊展開)</span>
+                    <span>
+                        <!-- 自訂演化規則參數 (點擊展開) -->
+                        Parameter Settings
+                    </span>
                 </div>
                 <svg class="w-5 h-5 transition-transform duration-300 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </summary>
@@ -76,6 +87,7 @@
                     <h3 class="text-blue-400 font-bold border-b border-gray-700 pb-2 flex items-center gap-2">
                         <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         穩定存續 (Survival) 區間
+                        <!-- Survival -->
                     </h3>
                     <p class="text-xs text-gray-400 mb-2 leading-relaxed">設定細胞能「穩定存續」的鄰居數範圍。超出此範圍即觸發死亡規則。</p>
                     
@@ -103,6 +115,7 @@
                     <h3 class="text-green-400 font-bold border-b border-gray-700 pb-2 flex items-center gap-2">
                         <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                         繁殖 (Reproduction) 條件
+                        <!-- Reproduction -->
                     </h3>
                     <p class="text-xs text-gray-400 mb-2 leading-relaxed">設定死細胞周圍需要多少活鄰居，才能在下一代變為活細胞。</p>
                     
