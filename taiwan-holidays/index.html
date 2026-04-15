@@ -107,6 +107,19 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Yearly Summary Block (2017-2026) -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-bar text-indigo-500"></i> 歷年工作日總覽 (2017-2026)
+                    </h3>
+                    <div id="yearly-summary-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                        <!-- Cards injected via JS -->
+                        <div class="col-span-full text-center py-4 text-slate-400 text-sm">
+                            <i class="fa-solid fa-circle-notch fa-spin mr-1"></i> 計算中...
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Right Column: Calculators -->
@@ -273,6 +286,7 @@
                     statusEl.innerHTML = '<i class="fa-solid fa-check-circle text-emerald-500 mr-1"></i> 資料載入完成 <span class="text-[10px] sm:text-xs text-slate-400 font-normal">(來自快取)</span>';
                     populateYearSelect();
                     renderCalendar();
+                    renderYearlySummary();
                     return;
                 } catch (e) {
                     console.warn('快取解析失敗，將重新取得資料。');
@@ -294,6 +308,7 @@
                 
                 populateYearSelect();
                 renderCalendar();
+                renderYearlySummary();
             } catch (error) {
                 console.error("Error fetching holiday data:", error);
                 statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-500 mr-1"></i> 無法取得最新假日資料，將依基本週末進行計算';
@@ -301,6 +316,7 @@
                 isDataLoaded = true; 
                 populateYearSelect();
                 renderCalendar();
+                renderYearlySummary();
             }
         }
 
@@ -705,6 +721,58 @@
             // 手機版：計算完成後自動將畫面滾動到結果區塊
             if (window.innerWidth < 1024) {
                 document.getElementById('calc-results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // --- Render Yearly Summary (2017-2026) ---
+        function renderYearlySummary() {
+            const grid = document.getElementById('yearly-summary-grid');
+            if (!grid) return;
+            
+            grid.innerHTML = ''; // Clear loading state
+            
+            for (let year = 2017; year <= 2026; year++) {
+                let workDays = 0;
+                
+                // 檢查是否有快取的年度計算結果
+                const startStr = `${year}-01-01`;
+                const endStr = `${year}-12-31`;
+                const calcKey = `${startStr}_${endStr}`;
+                
+                if (calcCache[calcKey]) {
+                    workDays = calcCache[calcKey].workDays;
+                } else {
+                    // 若無快取則即時運算
+                    let currentDate = new Date(year, 0, 1);
+                    const endDate = new Date(year, 11, 31);
+                    while (currentDate <= endDate) {
+                        const status = checkDateStatus(currentDate);
+                        if (!status.isHoliday) workDays++;
+                        currentDate.setDate(currentDate.getDate() + 1);
+                    }
+                }
+
+                // 建立卡片 UI
+                const card = document.createElement('div');
+                card.className = 'bg-blue-50/50 hover:bg-blue-50 p-3 sm:p-4 rounded-2xl border border-blue-100 text-center flex flex-col justify-center transition-colors cursor-default';
+                
+                const yearLabel = document.createElement('div');
+                yearLabel.className = 'text-xs sm:text-sm text-slate-500 font-medium mb-1.5';
+                yearLabel.textContent = `${year} 年`;
+                
+                const dayCount = document.createElement('div');
+                dayCount.className = 'text-2xl sm:text-3xl font-black text-blue-600 tracking-tight';
+                dayCount.textContent = workDays;
+                
+                const label = document.createElement('div');
+                label.className = 'text-[10px] text-blue-400 mt-1 font-medium';
+                label.textContent = '工作日';
+
+                card.appendChild(yearLabel);
+                card.appendChild(dayCount);
+                card.appendChild(label);
+                
+                grid.appendChild(card);
             }
         }
 
