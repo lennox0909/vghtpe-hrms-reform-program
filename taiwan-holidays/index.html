@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>台灣政府行政機關辦公日曆與計算機</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 1px;
+            background-color: #e5e7eb;
+            border: 1px solid #e5e7eb;
+        }
+        .calendar-cell {
+            background-color: white;
+            /* 高度與內邊距改由 Tailwind class 動態控制以符合 RWD */
+        }
+        .calendar-cell.holiday { background-color: #fee2e2; } /* 淺紅色背景 */
+        .calendar-cell.makeup-work { background-color: #e0f2fe; } /* 淺藍色背景 */
+        .calendar-cell.other-month { background-color: #f9fafb; color: #9ca3af; }
+        .holiday-text { color: #dc2626; } /* 紅色字體 */
+        
+        /* 隱藏原生捲軸但保持可捲動 */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Modal 動畫 */
+        .modal-enter { opacity: 0; transform: scale(0.95); }
+        .modal-enter-active { opacity: 1; transform: scale(1); transition: all 0.2s ease-out; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-2 sm:p-4 md:p-8 text-slate-800">
+
+    <div class="max-w-6xl mx-auto space-y-4 sm:space-y-8">
+        
+        <!-- Header -->
+        <header class="bg-white rounded-2xl shadow-sm p-4 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between border border-slate-100 gap-4 md:gap-0">
+            <div class="flex items-center gap-3 sm:gap-4 w-full">
+                <div class="bg-blue-600 text-white p-2.5 sm:p-3 rounded-xl shadow-inner shrink-0">
+                    <i class="fa-regular fa-calendar-days text-xl sm:text-2xl"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <h1 class="text-xl sm:text-2xl font-bold text-slate-800 truncate">台灣辦公日曆與計算機</h1>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-1" id="data-status">
+                        <i class="fa-solid fa-circle-notch fa-spin mr-1"></i> 資料載入中...
+                    </p>
+                </div>
+            </div>
+            <div class="text-xs sm:text-sm text-slate-500 flex flex-wrap gap-3 sm:gap-4 w-full md:w-auto">
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-red-100 border border-red-200 inline-block"></span> 放假日</span>
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-100 border border-blue-200 inline-block"></span> 補班日</span>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            
+            <!-- Left Column: Calendar -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <!-- Calendar Header -->
+                    <div class="p-3 sm:p-4 md:p-6 flex items-center justify-between bg-slate-800 text-white">
+                        <button onclick="changeMonth(-1)" class="p-2 sm:p-3 hover:bg-slate-700 rounded-lg transition-colors touch-manipulation">
+                            <i class="fa-solid fa-chevron-left text-lg sm:text-base"></i>
+                        </button>
+                        <div class="text-center">
+                            <h2 class="text-xl sm:text-2xl font-bold tracking-wider" id="calendar-title-gregorian">2024 年 1 月</h2>
+                            <p class="text-slate-300 text-xs sm:text-sm mt-0.5 sm:mt-1" id="calendar-title-roc">中華民國 113 年</p>
+                        </div>
+                        <button onclick="changeMonth(1)" class="p-2 sm:p-3 hover:bg-slate-700 rounded-lg transition-colors touch-manipulation">
+                            <i class="fa-solid fa-chevron-right text-lg sm:text-base"></i>
+                        </button>
+                    </div>
+
+                    <!-- Calendar Body -->
+                    <div class="p-2 sm:p-4 md:p-6">
+                        <div class="calendar-grid rounded-xl overflow-hidden border border-slate-200">
+                            <!-- Weekdays -->
+                            <div class="bg-slate-100 text-center py-1.5 sm:py-2 font-semibold text-slate-600 text-[10px] sm:text-sm">日</div>
+                            <div class="bg-slate-100 text-center py-1.5 sm:py-2 font-semibold text-slate-600 text-[10px] sm:text-sm">一</div>
+                            <div class="bg-slate-100 text-center py-1.5 sm:py-2 font-semibold text-slate-600 text-[10px] sm:text-sm">二</div>
+                            <div class="bg-slate-100 text-center py-1.5 sm:py-2 font-semibold text-slate-600 text-[10px] sm:text-sm">三</div>
+                            <div class="bg-slate-100 text-center py-1.5 sm:py-2 font-semibold text-slate-600 text-[10px] sm:text-sm">四</div>
+                            <div class="bg-slate-100 text-center py-1.5 sm:py-2 font-semibold text-slate-600 text-[10px] sm:text-sm">五</div>
+                            <div class="bg-slate-100 text-center py-1.5 sm:py-2 font-semibold text-slate-600 text-[10px] sm:text-sm">六</div>
+                            
+                            <!-- Days Grid (Injected via JS) -->
+                            <div id="calendar-days" class="contents"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Calculators -->
+            <div class="space-y-6">
+                
+                <!-- Annual Calculator -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 sm:p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-calculator text-blue-500"></i> 年度工作日計算
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex flex-col sm:flex-row items-center gap-2">
+                            <select id="calc-year-start" class="w-full sm:flex-1 rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-center sm:text-left bg-white">
+                                <!-- Options injected via JS -->
+                            </select>
+                            <span class="text-slate-500 font-medium py-1 sm:py-0">到</span>
+                            <select id="calc-year-end" class="w-full sm:flex-1 rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-center sm:text-left bg-white">
+                                <!-- Options injected via JS -->
+                            </select>
+                        </div>
+                        <button onclick="calculateYear()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 sm:py-2.5 rounded-lg font-medium transition-colors shadow-sm touch-manipulation active:scale-[0.98]">
+                            計算
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Range Calculator -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 sm:p-6">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-range text-emerald-500"></i> 自訂區間計算
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">開始日期</label>
+                            <input type="date" id="calc-start-date" class="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">結束日期</label>
+                            <input type="date" id="calc-end-date" class="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all bg-white">
+                        </div>
+                        <button onclick="calculateRange()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 sm:py-2.5 rounded-lg font-medium transition-colors shadow-sm touch-manipulation active:scale-[0.98]">
+                            計算區間
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Calculation Results -->
+                <div id="calc-results" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 sm:p-6 hidden">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">計算結果明細</h3>
+                    
+                    <div class="grid grid-cols-3 gap-2 sm:gap-3 text-center mb-6">
+                        <div class="bg-slate-50 p-2 sm:p-3 rounded-lg border border-slate-100">
+                            <div class="text-[10px] sm:text-xs text-slate-500 mb-1">總天數</div>
+                            <div class="text-lg sm:text-xl font-bold text-slate-800" id="res-total">0</div>
+                        </div>
+                        <div class="bg-blue-50 p-2 sm:p-3 rounded-lg border border-blue-100">
+                            <div class="text-[10px] sm:text-xs text-blue-600 mb-1">工作日</div>
+                            <div class="text-lg sm:text-xl font-bold text-blue-700" id="res-work">0</div>
+                        </div>
+                        <div class="bg-red-50 p-2 sm:p-3 rounded-lg border border-red-100">
+                            <div class="text-[10px] sm:text-xs text-red-600 mb-1">放假日</div>
+                            <div class="text-lg sm:text-xl font-bold text-red-700" id="res-holiday">0</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-1 sm:gap-0">
+                        <h4 class="text-sm font-bold text-slate-700">特殊日期明細 <span class="font-normal text-slate-500">(國定假日/補班)</span></h4>
+                        <span class="text-[10px] sm:text-xs text-slate-400" id="res-period-label"></span>
+                    </div>
+                    
+                    <div class="custom-scrollbar max-h-60 overflow-y-auto border border-slate-100 rounded-lg p-2 bg-slate-50 text-sm">
+                        <ul id="res-details-list" class="space-y-2">
+                            <!-- Details injected via JS -->
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Alert Modal -->
+    <div id="alert-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 transition-opacity px-4">
+        <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full transform transition-transform" id="alert-modal-content">
+            <div class="flex items-center gap-3 mb-4 text-amber-500">
+                <i class="fa-solid fa-circle-exclamation text-2xl"></i>
+                <h3 class="text-lg font-bold text-slate-800">提示</h3>
+            </div>
+            <p id="alert-message" class="text-slate-600 mb-6 text-sm sm:text-base"></p>
+            <div class="flex justify-end">
+                <button onclick="closeAlert()" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors w-full sm:w-auto touch-manipulation">
+                    確定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State ---
+        const DATA_URL = 'https://lennox0909.github.io/taiwan-holidays/data/holiday_data.csv';
+        let holidayData = {}; // Format: { 'YYYY-MM-DD': { isHoliday: boolean, desc: string } }
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth(); // 0-11
+        let isDataLoaded = false;
+
+        // --- 快取設定 ---
+        const CACHE_KEY_DATA = 'tw_holiday_data';
+        const CACHE_KEY_TIME = 'tw_holiday_last_fetch';
+        const CACHE_KEY_CALC = 'tw_holiday_calc_results';
+        const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24小時快取時間
+        let calcCache = JSON.parse(localStorage.getItem(CACHE_KEY_CALC) || '{}');
+
+        // --- Init ---
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchHolidayData();
+            
+            // Set default dates for range calculator
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            
+            document.getElementById('calc-start-date').value = formatDateStr(firstDay);
+            document.getElementById('calc-end-date').value = formatDateStr(lastDay);
+        });
+
+        // --- Data Fetching & Parsing ---
+        async function fetchHolidayData() {
+            const statusEl = document.getElementById('data-status');
+            const now = Date.now();
+            const cachedTime = localStorage.getItem(CACHE_KEY_TIME);
+            const cachedData = localStorage.getItem(CACHE_KEY_DATA);
+
+            // 檢查是否擁有有效的 API 快取 (24 小時內)
+            if (cachedTime && cachedData && (now - parseInt(cachedTime) < CACHE_DURATION_MS)) {
+                try {
+                    holidayData = JSON.parse(cachedData);
+                    isDataLoaded = true;
+                    statusEl.innerHTML = '<i class="fa-solid fa-check-circle text-emerald-500 mr-1"></i> 資料載入完成 <span class="text-[10px] sm:text-xs text-slate-400 font-normal">(來自快取)</span>';
+                    populateYearSelect();
+                    renderCalendar();
+                    return;
+                } catch (e) {
+                    console.warn('快取解析失敗，將重新取得資料。');
+                }
+            }
+
+            try {
+                const response = await fetch(DATA_URL);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const csvText = await response.text();
+                parseCSV(csvText);
+                
+                // 儲存至快取
+                localStorage.setItem(CACHE_KEY_DATA, JSON.stringify(holidayData));
+                localStorage.setItem(CACHE_KEY_TIME, now.toString());
+                
+                isDataLoaded = true;
+                statusEl.innerHTML = '<i class="fa-solid fa-check-circle text-emerald-500 mr-1"></i> 資料載入完成';
+                
+                populateYearSelect();
+                renderCalendar();
+            } catch (error) {
+                console.error("Error fetching holiday data:", error);
+                statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-500 mr-1"></i> 無法取得最新假日資料，將依基本週末進行計算';
+                // Even if it fails, we render the calendar using basic weekend logic
+                isDataLoaded = true; 
+                populateYearSelect();
+                renderCalendar();
+            }
+        }
+
+        // CSV Parser for standard format (西元日期, 星期, 是否放假, 備註)
+        function parseCSV(text) {
+            const lines = text.split(/\r?\n/);
+            if (lines.length < 2) return;
+
+            // Parse headers
+            const headers = parseCsvLine(lines[0]);
+            const dateIdx = headers.findIndex(h => h.includes('日期') || h.includes('date'));
+            const holidayIdx = headers.findIndex(h => h.includes('放假') || h.includes('holiday'));
+            const descIdx = headers.findIndex(h => h.includes('備註') || h.includes('description'));
+
+            if (dateIdx === -1 || holidayIdx === -1) {
+                console.error("CSV Headers missing required columns.");
+                return;
+            }
+
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const row = parseCsvLine(lines[i]);
+                if (row.length <= Math.max(dateIdx, holidayIdx)) continue;
+
+                const rawDate = row[dateIdx];
+                const isHolFlag = row[holidayIdx]; // 0: 上班, 2: 放假
+                const desc = descIdx !== -1 && row[descIdx] ? row[descIdx] : '';
+
+                const formattedDate = standardizeDateString(rawDate);
+                if (!formattedDate) continue;
+
+                holidayData[formattedDate] = {
+                    isHoliday: isHolFlag === '2',
+                    isWorkday: isHolFlag === '0',
+                    desc: desc
+                };
+            }
+        }
+
+        // Handle CSV lines with potential quotes
+        function parseCsvLine(text) {
+            let p = '', row = [''], i = 0, r = 0, s = !0, l;
+            for (l of text) {
+                if ('"' === l) {
+                    if (s && l === p) row[i] += l;
+                    s = !s;
+                } else if (',' === l && s) l = row[++i] = '';
+                else row[i] += l;
+                p = l;
+            }
+            return row.map(v => v.trim());
+        }
+
+        // Convert various date formats (e.g. 20240101, 2024/1/1) to YYYY-MM-DD
+        function standardizeDateString(raw) {
+            if (!raw) return null;
+            raw = raw.replace(/['"]/g, '').trim();
+            if (raw.length === 8 && /^\d+$/.test(raw)) {
+                return `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+            }
+            const parts = raw.split(/[\/\-]/);
+            if (parts.length === 3) {
+                return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+            }
+            return null;
+        }
+
+        // Format Date object to YYYY-MM-DD string
+        function formatDateStr(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        // Check if a specific date is a holiday
+        function checkDateStatus(dateObj) {
+            const dateStr = formatDateStr(dateObj);
+            const dayOfWeek = dateObj.getDay(); // 0 (Sun) to 6 (Sat)
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+            if (holidayData[dateStr]) {
+                return {
+                    isHoliday: holidayData[dateStr].isHoliday,
+                    desc: holidayData[dateStr].desc,
+                    isMakeupWork: holidayData[dateStr].isWorkday && isWeekend, // It's a weekend but marked as workday
+                    dateStr: dateStr
+                };
+            } else {
+                // Fallback: Use standard weekend if not in dataset
+                return {
+                    isHoliday: isWeekend,
+                    desc: isWeekend ? '週末' : '',
+                    isMakeupWork: false,
+                    dateStr: dateStr
+                };
+            }
+        }
+
+        // --- Calendar Rendering ---
+        function populateYearSelect() {
+            const selectStart = document.getElementById('calc-year-start');
+            const selectEnd = document.getElementById('calc-year-end');
+            selectStart.innerHTML = '';
+            selectEnd.innerHTML = '';
+            
+            // Get min and max years from data, fallback to +/- 5 years
+            let years = new Set();
+            for (let date in holidayData) {
+                years.add(date.substring(0, 4));
+            }
+            let yearArr = Array.from(years).map(Number).sort((a,b)=>a-b);
+            
+            if (yearArr.length === 0) {
+                const cy = new Date().getFullYear();
+                for(let i=cy-2; i<=cy+2; i++) yearArr.push(i);
+            }
+
+            yearArr.forEach(y => {
+                const optStart = document.createElement('option');
+                optStart.value = y;
+                optStart.textContent = `${y} 年 / 民國 ${y - 1911} 年`;
+                
+                const optEnd = document.createElement('option');
+                optEnd.value = y;
+                optEnd.textContent = `${y} 年 / 民國 ${y - 1911} 年`;
+
+                if (y === new Date().getFullYear()) {
+                    optStart.selected = true;
+                    optEnd.selected = true;
+                }
+                
+                selectStart.appendChild(optStart);
+                selectEnd.appendChild(optEnd);
+            });
+        }
+
+        function changeMonth(delta) {
+            currentMonth += delta;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            } else if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const titleGregorian = document.getElementById('calendar-title-gregorian');
+            const titleRoc = document.getElementById('calendar-title-roc');
+            const daysContainer = document.getElementById('calendar-days');
+
+            const rocYear = currentYear - 1911;
+            titleGregorian.textContent = `${currentYear} 年 ${currentMonth + 1} 月`;
+            titleRoc.textContent = `中華民國 ${rocYear} 年`;
+
+            daysContainer.innerHTML = '';
+
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            
+            const startDayOfWeek = firstDay.getDay(); // 0-6
+            const totalDays = lastDay.getDate();
+
+            const todayStr = formatDateStr(new Date());
+
+            // Padding previous month days
+            for (let i = 0; i < startDayOfWeek; i++) {
+                const prevDate = new Date(currentYear, currentMonth, 0 - (startDayOfWeek - 1 - i));
+                const cell = createDayCell(prevDate, true);
+                daysContainer.appendChild(cell);
+            }
+
+            // Current month days
+            for (let i = 1; i <= totalDays; i++) {
+                const currentDate = new Date(currentYear, currentMonth, i);
+                const cell = createDayCell(currentDate, false, todayStr);
+                daysContainer.appendChild(cell);
+            }
+
+            // Padding next month days to complete grid
+            const totalCells = startDayOfWeek + totalDays;
+            const remainingCells = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+            for (let i = 1; i <= remainingCells; i++) {
+                const nextDate = new Date(currentYear, currentMonth + 1, i);
+                const cell = createDayCell(nextDate, true);
+                daysContainer.appendChild(cell);
+            }
+        }
+
+        function createDayCell(dateObj, isOtherMonth, todayStr = '') {
+            const dateStr = formatDateStr(dateObj);
+            const status = checkDateStatus(dateObj);
+            const isToday = dateStr === todayStr;
+            
+            const cell = document.createElement('div');
+            // 行動裝置優化：動態設定高度與內邊距，而非綁死在 CSS
+            cell.className = 'calendar-cell flex flex-col min-h-[56px] sm:min-h-[80px] p-1 sm:p-2 border-b border-r border-slate-200 relative group transition-colors duration-200';
+            
+            if (isOtherMonth) {
+                cell.classList.add('other-month');
+            } else if (status.isHoliday) {
+                cell.classList.add('holiday');
+            } else if (status.isMakeupWork) {
+                cell.classList.add('makeup-work');
+            } else {
+                cell.classList.add('hover:bg-slate-50');
+            }
+
+            // Day Number
+            const numSpan = document.createElement('span');
+            numSpan.className = `text-sm sm:text-lg font-medium ${status.isHoliday ? 'holiday-text' : 'text-slate-700'}`;
+            if (isToday && !isOtherMonth) {
+                numSpan.className += ' bg-blue-600 text-white w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-full -mt-0.5 -ml-0.5 shadow-sm text-xs sm:text-base';
+            } else {
+                 numSpan.textContent = dateObj.getDate();
+            }
+            
+            if(isToday && !isOtherMonth) {
+                const todayWrapper = document.createElement('div');
+                todayWrapper.textContent = dateObj.getDate();
+                numSpan.appendChild(todayWrapper);
+            }
+
+            cell.appendChild(numSpan);
+
+            // Description / Badge
+            if (status.desc && !isOtherMonth) {
+                const descDiv = document.createElement('div');
+                descDiv.className = `mt-1 sm:mt-auto text-[9px] sm:text-xs font-semibold truncate px-0.5 sm:px-1 py-0.5 rounded leading-tight sm:leading-normal ${status.isHoliday ? 'text-red-700 bg-red-100/70 sm:bg-red-100/50' : 'text-blue-700 bg-blue-100/70 sm:bg-blue-100/50'}`;
+                descDiv.textContent = status.desc;
+                descDiv.title = status.desc; // tooltip
+                cell.appendChild(descDiv);
+            } else if (status.isMakeupWork && !isOtherMonth) {
+                const descDiv = document.createElement('div');
+                descDiv.className = 'mt-1 sm:mt-auto text-[9px] sm:text-xs font-semibold truncate px-0.5 sm:px-1 py-0.5 rounded leading-tight sm:leading-normal text-blue-700 bg-blue-100/70 sm:bg-blue-100/50';
+                descDiv.textContent = '補班日';
+                cell.appendChild(descDiv);
+            }
+
+            return cell;
+        }
+
+
+        // --- Calculators ---
+        function calculateYear() {
+            const startYear = parseInt(document.getElementById('calc-year-start').value, 10);
+            const endYear = parseInt(document.getElementById('calc-year-end').value, 10);
+            
+            if (!startYear || !endYear) return;
+
+            if (startYear > endYear) {
+                showAlert('開始年份不能大於結束年份。');
+                return;
+            }
+
+            const startDate = `${startYear}-01-01`;
+            const endDate = `${endYear}-12-31`;
+            
+            if (startYear === endYear) {
+                document.getElementById('res-period-label').textContent = `${startYear} 全年度`;
+            } else {
+                document.getElementById('res-period-label').textContent = `${startYear} ~ ${endYear} 全年度`;
+            }
+            
+            performCalculation(new Date(startDate), new Date(endDate));
+        }
+
+        function calculateRange() {
+            const startVal = document.getElementById('calc-start-date').value;
+            const endVal = document.getElementById('calc-end-date').value;
+
+            if (!startVal || !endVal) {
+                showAlert('請選擇完整的開始與結束日期。');
+                return;
+            }
+
+            const startDate = new Date(startVal);
+            const endDate = new Date(endVal);
+
+            if (startDate > endDate) {
+                showAlert('開始日期不能大於結束日期。');
+                return;
+            }
+
+            document.getElementById('res-period-label').textContent = `${startVal} ~ ${endVal}`;
+            performCalculation(startDate, endDate);
+        }
+
+        function performCalculation(startDate, endDate) {
+            const startStr = formatDateStr(startDate);
+            const endStr = formatDateStr(endDate);
+            const calcKey = `${startStr}_${endStr}`;
+
+            // 1. 檢查是否有該區間的計算結果快取
+            if (calcCache[calcKey]) {
+                displayCalculationResults(calcCache[calcKey]);
+                return;
+            }
+
+            // 2. 若無快取，進行全新計算
+            let totalDays = 0;
+            let workDays = 0;
+            let holidays = 0;
+            let details = [];
+
+            let currentDate = new Date(startDate);
+            
+            // Loop through each day
+            while (currentDate <= endDate) {
+                totalDays++;
+                const status = checkDateStatus(currentDate);
+
+                if (status.isHoliday) {
+                    holidays++;
+                    // Only log explicitly defined holidays or weekends with descriptions
+                    if (status.desc && status.desc !== '週末') {
+                         details.push({ date: status.dateStr, type: 'holiday', text: status.desc });
+                    }
+                } else {
+                    workDays++;
+                    if (status.isMakeupWork || status.desc) {
+                        details.push({ date: status.dateStr, type: 'work', text: status.desc || '補班日' });
+                    }
+                }
+
+                // Increment day by 1
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            const result = { totalDays, workDays, holidays, details };
+            
+            // 3. 儲存計算結果至快取 (記憶體與 localStorage)
+            calcCache[calcKey] = result;
+            try {
+                localStorage.setItem(CACHE_KEY_CALC, JSON.stringify(calcCache));
+            } catch(e) {
+                console.warn('無法儲存計算結果至 localStorage。', e);
+            }
+
+            // Update UI
+            displayCalculationResults(result);
+        }
+
+        // 將呈現結果的邏輯獨立出來，讓快取讀取與重新計算都能共用
+        function displayCalculationResults(result) {
+            document.getElementById('res-total').textContent = result.totalDays;
+            document.getElementById('res-work').textContent = result.workDays;
+            document.getElementById('res-holiday').textContent = result.holidays;
+
+            const detailsList = document.getElementById('res-details-list');
+            detailsList.innerHTML = '';
+            
+            if (result.details.length === 0) {
+                detailsList.innerHTML = '<li class="text-slate-400 text-center py-4 italic text-sm">此區間無特殊國定假日或補班日</li>';
+            } else {
+                result.details.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-2 sm:p-2.5 rounded border border-slate-100 shadow-sm gap-1 sm:gap-0';
+                    
+                    const dateSpan = document.createElement('span');
+                    dateSpan.className = 'font-mono text-slate-600 text-xs sm:text-sm';
+                    dateSpan.textContent = item.date;
+
+                    const textSpan = document.createElement('span');
+                    textSpan.className = `px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold ${item.type === 'holiday' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`;
+                    textSpan.textContent = item.text;
+
+                    li.appendChild(dateSpan);
+                    li.appendChild(textSpan);
+                    detailsList.appendChild(li);
+                });
+            }
+
+            // Show results container
+            document.getElementById('calc-results').classList.remove('hidden');
+            
+            // 手機版：計算完成後自動將畫面滾動到結果區塊
+            if (window.innerWidth < 1024) {
+                document.getElementById('calc-results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // --- Custom Alert Modal ---
+        function showAlert(message) {
+            document.getElementById('alert-message').textContent = message;
+            const modal = document.getElementById('alert-modal');
+            const content = document.getElementById('alert-modal-content');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Trigger reflow for animation
+            void modal.offsetWidth;
+            content.classList.add('modal-enter-active');
+            content.classList.remove('modal-enter');
+        }
+
+        function closeAlert() {
+            const modal = document.getElementById('alert-modal');
+            const content = document.getElementById('alert-modal-content');
+            
+            content.classList.add('modal-enter');
+            content.classList.remove('modal-enter-active');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 200);
+        }
+    </script>
+</body>
+</html>
