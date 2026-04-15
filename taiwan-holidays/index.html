@@ -68,13 +68,26 @@
                         <button onclick="changeMonth(-1)" class="p-2 sm:p-3 hover:bg-slate-700 rounded-lg transition-colors touch-manipulation">
                             <i class="fa-solid fa-chevron-left text-lg sm:text-base"></i>
                         </button>
-                        <div class="text-center">
-                            <h2 class="text-xl sm:text-2xl font-bold tracking-wider" id="calendar-title-gregorian">2024 年 1 月</h2>
+                        
+                        <div class="text-center cursor-pointer hover:bg-slate-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl transition-colors group" onclick="openDatePicker()" title="快速選擇年月">
+                            <h2 class="text-xl sm:text-2xl font-bold tracking-wider flex items-center justify-center gap-2">
+                                <span id="calendar-title-gregorian">2024 年 1 月</span>
+                                <i class="fa-solid fa-caret-down text-xs sm:text-sm opacity-60 group-hover:opacity-100 transition-opacity"></i>
+                            </h2>
                             <p class="text-slate-300 text-xs sm:text-sm mt-0.5 sm:mt-1" id="calendar-title-roc">中華民國 113 年</p>
                         </div>
-                        <button onclick="changeMonth(1)" class="p-2 sm:p-3 hover:bg-slate-700 rounded-lg transition-colors touch-manipulation">
-                            <i class="fa-solid fa-chevron-right text-lg sm:text-base"></i>
-                        </button>
+
+                        <div class="flex items-center gap-1 sm:gap-2">
+                            <button onclick="goToCurrentMonth()" class="hidden sm:flex px-3 py-1.5 text-sm bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors touch-manipulation items-center gap-1.5 font-medium" title="回到本月">
+                                <i class="fa-solid fa-calendar-day"></i> 本月
+                            </button>
+                            <button onclick="goToCurrentMonth()" class="sm:hidden p-2 hover:bg-slate-700 rounded-lg transition-colors touch-manipulation text-slate-300" title="回到本月">
+                                <i class="fa-solid fa-calendar-day text-lg"></i>
+                            </button>
+                            <button onclick="changeMonth(1)" class="p-2 sm:p-3 hover:bg-slate-700 rounded-lg transition-colors touch-manipulation">
+                                <i class="fa-solid fa-chevron-right text-lg sm:text-base"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Calendar Body -->
@@ -187,6 +200,32 @@
                 <button onclick="closeAlert()" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors w-full sm:w-auto touch-manipulation">
                     確定
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Year/Month Picker Modal -->
+    <div id="datepicker-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 transition-opacity px-4">
+        <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full transform transition-transform modal-enter" id="datepicker-modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-800">快速選擇年月</h3>
+                <button onclick="closeDatePicker()" class="text-slate-400 hover:text-slate-600 p-1 bg-slate-100 hover:bg-slate-200 rounded-full w-8 h-8 flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-600 mb-1">年份</label>
+                <select id="picker-year-select" class="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white text-center font-medium">
+                    <!-- Options injected via JS -->
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-slate-600 mb-2">月份</label>
+                <div class="grid grid-cols-3 sm:grid-cols-4 gap-2" id="picker-month-grid">
+                    <!-- Months injected via JS -->
+                </div>
             </div>
         </div>
     </div>
@@ -365,8 +404,11 @@
         function populateYearSelect() {
             const selectStart = document.getElementById('calc-year-start');
             const selectEnd = document.getElementById('calc-year-end');
+            const pickerYearSelect = document.getElementById('picker-year-select');
+            
             selectStart.innerHTML = '';
             selectEnd.innerHTML = '';
+            if(pickerYearSelect) pickerYearSelect.innerHTML = '';
             
             // Get min and max years from data, fallback to +/- 5 years
             let years = new Set();
@@ -389,6 +431,10 @@
                 optEnd.value = y;
                 optEnd.textContent = `${y} 年 / 民國 ${y - 1911} 年`;
 
+                const optPicker = document.createElement('option');
+                optPicker.value = y;
+                optPicker.textContent = `${y} 年 / 民國 ${y - 1911} 年`;
+
                 if (y === new Date().getFullYear()) {
                     optStart.selected = true;
                     optEnd.selected = true;
@@ -396,7 +442,22 @@
                 
                 selectStart.appendChild(optStart);
                 selectEnd.appendChild(optEnd);
+                if(pickerYearSelect) pickerYearSelect.appendChild(optPicker);
             });
+            
+            initPickerMonths();
+        }
+
+        function initPickerMonths() {
+            const monthGrid = document.getElementById('picker-month-grid');
+            if (!monthGrid || monthGrid.childElementCount > 0) return;
+            
+            for (let i = 0; i < 12; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = `${i + 1} 月`;
+                btn.onclick = () => selectYearMonth(i);
+                monthGrid.appendChild(btn);
+            }
         }
 
         function changeMonth(delta) {
@@ -673,6 +734,57 @@
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
             }, 200);
+        }
+
+        // --- Date Picker Methods ---
+        function openDatePicker() {
+            document.getElementById('picker-year-select').value = currentYear;
+            
+            const monthButtons = document.getElementById('picker-month-grid').children;
+            for (let i = 0; i < 12; i++) {
+                if (i === currentMonth) {
+                    monthButtons[i].className = 'py-2 rounded-lg bg-blue-600 text-white font-medium shadow-sm touch-manipulation';
+                } else {
+                    monthButtons[i].className = 'py-2 rounded-lg border border-slate-200 hover:bg-blue-50 hover:border-blue-200 transition-colors text-slate-700 font-medium touch-manipulation bg-white';
+                }
+            }
+
+            const modal = document.getElementById('datepicker-modal');
+            const content = document.getElementById('datepicker-modal-content');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            void modal.offsetWidth;
+            content.classList.add('modal-enter-active');
+            content.classList.remove('modal-enter');
+        }
+
+        function closeDatePicker() {
+            const modal = document.getElementById('datepicker-modal');
+            const content = document.getElementById('datepicker-modal-content');
+            
+            content.classList.add('modal-enter');
+            content.classList.remove('modal-enter-active');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 200);
+        }
+
+        function selectYearMonth(monthIndex) {
+            currentYear = parseInt(document.getElementById('picker-year-select').value, 10);
+            currentMonth = monthIndex;
+            renderCalendar();
+            closeDatePicker();
+        }
+
+        function goToCurrentMonth() {
+            const today = new Date();
+            currentYear = today.getFullYear();
+            currentMonth = today.getMonth();
+            renderCalendar();
         }
     </script>
 </body>
