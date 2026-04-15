@@ -44,7 +44,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
                 
-                <!-- Employee Attribute Switch -->
+                <!-- 員工屬性切換 -->
                 <div class="col-span-1 md:col-span-2 bg-gray-50 p-5 rounded-xl border border-gray-200 mb-2">
                     <label class="block text-sm font-bold text-gray-700 mb-4"><i class="fa-solid fa-user-clock mr-2 text-teal-600"></i>員工屬性 <span class="text-red-500">*</span></label>
                     <div class="flex flex-col md:flex-row gap-4 md:gap-6 flex-wrap">
@@ -66,7 +66,7 @@
                         </label>
                     </div>
 
-                    <!-- Actual Working Hours (Part-Time Only) -->
+                    <!-- 實際工時 (部分工時專用) -->
                     <div id="partTimeContainer" class="hidden mt-5 pt-5 border-t border-gray-200 fade-in">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                             <div>
@@ -77,17 +77,17 @@
                             <div>
                                 <label for="workHours" class="block text-sm font-bold text-gray-700 mb-2">該年度實際工時 (不含加班) <span class="text-red-500">*</span></label>
                                 <div class="flex flex-col md:flex-row md:items-center gap-3">
-                                    <input type="number" id="workHours" min="0" max="2500" inputmode="numeric" pattern="[0-9]*" class="w-full p-3.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 text-lg shadow-sm" placeholder="例如: 1044">
-                                    <span id="baselineText" class="text-gray-600 font-medium whitespace-nowrap">/ 1960 小時 (全時)</span>
+                                    <input type="number" id="workHours" min="0" max="2100" inputmode="numeric" pattern="[0-9]*" class="w-full p-3.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 text-lg shadow-sm" placeholder="例如: 1044">
+                                    <span id="baselineText" class="text-gray-600 font-medium whitespace-nowrap">/ 2088 小時 (全時)</span>
                                 </div>
                             </div>
                         </div>
                         <p class="text-xs text-teal-800 mt-3 bg-teal-100/50 p-3 rounded-lg border border-teal-100">
-                            <i class="fa-solid fa-circle-info mr-1 text-teal-600"></i> 依據比例核給：(實際工時 ÷ <span id="formulaBaseline">1960</span>) × 依年資核給之天數 × 8小時
+                            <i class="fa-solid fa-circle-info mr-1 text-teal-600"></i> 依據比例核給：(實際工時 ÷ <span id="formulaBaseline">2088</span>) × 依年資核給之天數 × 8小時
                         </p>
                     </div>
 
-                    <!-- Multiple Transition Setup (Mixed Mode Only) -->
+                    <!-- 多次轉換設定區 (混合年資專用) -->
                     <div id="mixedContainer" class="hidden mt-5 pt-5 border-t border-gray-200 fade-in">
                         <div class="bg-purple-50/70 p-4 md:p-5 rounded-lg border border-purple-200 shadow-inner">
                             <div class="mb-5 border-b border-purple-200 pb-4">
@@ -105,7 +105,7 @@
                                 </button>
                             </div>
                             <div id="transitionList" class="space-y-3">
-                                <!-- Transition records will be dynamically generated here -->
+                                <!-- 轉換紀錄列會動態產生於此 -->
                             </div>
                             <p class="text-xs text-purple-700 mt-4 bg-white/60 p-2 rounded border border-purple-100">
                                 * 系統將逐日比對目標年度的日曆天，精確計算全日與半日期間佔比以換算最終特休時數。
@@ -147,7 +147,7 @@
             <h3 class="font-bold text-blue-800 mb-3 text-lg"><i class="fa-solid fa-circle-info mr-2"></i>填表說明與注意事項</h3>
             <ul class="list-disc pl-5 space-y-2 text-sm md:text-base text-gray-700">
                 <li><strong>曆年制：</strong>每年一月一日至十二月三十一日之期間。系統採勞動部規則：先計算至小數第2位，再判斷小數第2位若大於1則進位。</li>
-                <li><strong>部分工時 (時薪制)：</strong>依比例換算，全時正常工時依據該年度人事室公告之實際工作日數乘以 8 小時計算（例如：2026年工作日數 245 天，全時基準即為 1960 小時）。</li>
+                <li><strong>部分工時 (時薪制)：</strong>依比例換算，全時正常工時平年為 2088 小時，閏年為 2096 小時。</li>
                 <li><strong>全/半日多次轉換：</strong>依據勞基法，身分轉換但未離職者年資應合併計算（給假天數不變）。本系統會依據您輸入的轉換歷程，精確計算目標年度中全日與半日的歷經天數比例，加權換算當年度應給予的特休時數。</li>
                 <li>本試算系統依勞動部公式設計，為預設同仁全年在職之推估結果。若同仁曾有留職停薪等因素導致年資中斷，請依人事室最終精確核算結果為準。</li>
             </ul>
@@ -156,9 +156,6 @@
     </div>
 
     <script>
-        // --- Dynamic Data Source fetched from CSV ---
-        let WORKING_DAYS_DATA = {};
-
         // --- Storage Keys ---
         const STORAGE_KEY_DATE = 'tpvgh_restdays_startDate_cal';
         const STORAGE_KEY_TYEAR = 'tpvgh_restdays_targetYear_cal';
@@ -178,32 +175,6 @@
         };
         const formatRoc = (date) => `${date.getFullYear() - 1911}年${(date.getMonth() + 1).toString().padStart(2, '0')}月${date.getDate().toString().padStart(2, '0')}日`;
         const formatRocShort = (date) => `${date.getFullYear() - 1911}/${date.getMonth() + 1}/${date.getDate()}`;
-
-        // --- Fetch Data Logic ---
-        async function loadWorkingDaysData() {
-            try {
-                const response = await fetch('./data/working_days.csv');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const text = await response.text();
-                const lines = text.split('\n');
-                
-                // Skip header (i=1), parse year and days
-                for (let i = 1; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (line) {
-                        const [year, days] = line.split(',');
-                        if(year && days) {
-                            WORKING_DAYS_DATA[parseInt(year)] = parseInt(days);
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to load working_days.csv:', error);
-                showError('系統無法讀取工作日資料檔案 (./data/working_days.csv)，可能尚未上傳或路徑錯誤。已自動改為系統預設公式 (平年 2088 / 閏年 2096) 計算。');
-            }
-        }
 
         // --- Transitions Logic (Mixed Mode) ---
         let transitions = [];
@@ -283,39 +254,16 @@
         };
 
         function isLeapYear(year) { return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0); }
-
-        function getBaselineHours(year) {
-            // Fetch working days from dynamic CSV map if available
-            if (WORKING_DAYS_DATA[year]) {
-                return WORKING_DAYS_DATA[year] * 8;
-            }
-            // Fallback for years not present in the CSV or if fetch failed
-            return isLeapYear(year) ? 2096 : 2088;
-        }
+        function getBaselineHours(year) { return isLeapYear(year) ? 2096 : 2088; }
 
         function populateYears() {
             const ptYearSelect = document.getElementById('ptYear');
             if(ptYearSelect.options.length > 0) return;
-            
-            const years = Object.keys(WORKING_DAYS_DATA).map(Number).sort((a, b) => a - b);
-            
-            if (years.length > 0) {
-                // Populate select options strictly based on the CSV dataset keys
-                years.forEach(y => {
-                    let option = document.createElement('option');
-                    option.value = y; 
-                    option.text = `${y}年 (全時基準: ${getBaselineHours(y)}小時)`;
-                    ptYearSelect.appendChild(option);
-                });
-            } else {
-                // Fallback option if fetch completely failed
-                const currentYear = new Date().getFullYear();
-                for (let y = currentYear - 5; y <= currentYear + 5; y++) {
-                    let option = document.createElement('option');
-                    option.value = y; 
-                    option.text = `${y}年 (預設全時基準: ${getBaselineHours(y)}小時)`;
-                    ptYearSelect.appendChild(option);
-                }
+            const currentYear = new Date().getFullYear();
+            for (let y = currentYear - 5; y <= currentYear + 5; y++) {
+                let option = document.createElement('option');
+                option.value = y; option.text = `${y}年 (全時基準: ${getBaselineHours(y)}小時)`;
+                ptYearSelect.appendChild(option);
             }
         }
 
@@ -327,13 +275,8 @@
         }
 
         // --- UI Interactions & Storage ---
-        document.addEventListener('DOMContentLoaded', async () => {
-            // 1. Wait for CSV fetch before initializing UI
-            await loadWorkingDaysData();
-            
-            // 2. Initialize UI dependent on data
+        document.addEventListener('DOMContentLoaded', () => {
             populateYears();
-            
             const savedDate = localStorage.getItem(STORAGE_KEY_DATE);
             const savedTYear = localStorage.getItem(STORAGE_KEY_TYEAR);
             const savedEmpType = localStorage.getItem(STORAGE_KEY_EMPTYPE);
@@ -350,15 +293,8 @@
             else document.getElementById('targetYear').value = new Date().getFullYear();
 
             if (savedEmpType) { document.querySelector(`input[name="empType"][value="${savedEmpType}"]`).checked = true; }
-            
-            if (savedPtYear) { 
-                document.getElementById('ptYear').value = savedPtYear; 
-            } else { 
-                const currentYear = new Date().getFullYear();
-                if (WORKING_DAYS_DATA[currentYear]) {
-                    document.getElementById('ptYear').value = currentYear;
-                }
-            }
+            if (savedPtYear) { document.getElementById('ptYear').value = savedPtYear; } 
+            else { document.getElementById('ptYear').value = new Date().getFullYear(); }
             updateBaseline();
 
             if (savedHours) document.getElementById('workHours').value = savedHours;
@@ -400,13 +336,7 @@
             document.getElementById('targetYear').value = new Date().getFullYear();
             document.querySelector('input[name="empType"][value="fullTime"]').checked = true;
             document.getElementById('workHours').value = '';
-            
-            const currentYear = new Date().getFullYear();
-            if (WORKING_DAYS_DATA[currentYear]) {
-                document.getElementById('ptYear').value = currentYear;
-            } else {
-                document.getElementById('ptYear').value = currentYear;
-            }
+            document.getElementById('ptYear').value = new Date().getFullYear();
             updateBaseline();
             
             document.getElementById('initialStatus').value = 'full';
@@ -559,12 +489,12 @@
                 let fullHours = calTotalDays * (mixedFullCount / mixedTotalDaysInYear) * 8;
                 let halfHours = calTotalDays * (mixedHalfCount / mixedTotalDaysInYear) * 4;
                 finalValue = Math.round((fullHours + halfHours) * 10) / 10;
-                dispStr = (val) => val + '日'; 
+                dispStr = (val) => val + '日'; // SVG keep rendering in Days for mixed mode baseline
             } else if (empType === 'partTime') {
                 finalValue = toHours(calTotalDays);
             } else if (empType === 'halfDay') {
                 finalValue = Math.round(calTotalDays * 4 * 10) / 10;
-                dispStr = (val) => val + '日'; 
+                dispStr = (val) => val + '日'; // SVG baseline
             }
 
             let calFormulaText = targetCal.yearsSinceStart === 0 
