@@ -1,4 +1,4 @@
-# 歡迎使用 VGHTPE-HR Markdown & Mermai
+# 歡迎使用 VGHTPE-HR Markdown & Mermaid
 
 這是一個即時編輯器，可以將您的 Markdown 內容與 Mermaid 圖表程式碼轉換為視覺化的畫面。
 以下完整收錄了 Mermaid 官方內建支援的 **20 種各式圖表範例**：
