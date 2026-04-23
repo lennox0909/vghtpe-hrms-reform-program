@@ -480,7 +480,7 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function downloadCSV() {
+        async function downloadCSV() {
             if (!latestReportData) {
                 showError('請先點擊「產出試算報告」產生結果後，再下載 CSV！');
                 return;
@@ -500,14 +500,53 @@
                 csvContent += `換算公式細節,"${latestReportData.formulaDetail.replace(/"/g, '""')}"\n`;
             }
 
+            // 產生時間戳記 (yyyymmdd_hhmmss)
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const hh = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            const ss = String(now.getSeconds()).padStart(2, '0');
+            const timestamp = `${yyyy}${mm}${dd}_${hh}${min}${ss}`;
+            
+            const defaultFilename = `特別休假試算_${latestReportData.targetYear}年度_${timestamp}.csv`;
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+            try {
+                // 優先使用 File System Access API (支援選擇路徑與檔名)
+                if ('showSaveFilePicker' in window) {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: defaultFilename,
+                        types: [{
+                            description: 'CSV 檔案',
+                            accept: {'text/csv': ['.csv']},
+                        }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    return; // 成功儲存後結束
+                }
+            } catch (err) {
+                // 如果使用者點擊取消，則直接結束
+                if (err.name === 'AbortError') return; 
+                console.warn('File System Access API failed, using fallback.', err);
+            }
+
+            // Fallback：舊版瀏覽器或環境限制時，透過 prompt 詢問檔名後預設下載
+            let userInputName = prompt("請確認或修改儲存檔名：\n(您的環境可能無法選擇儲存路徑，將下載至預設資料夾)", defaultFilename);
+            if (userInputName === null) return; // 使用者點擊取消
+            if (!userInputName.toLowerCase().endsWith('.csv')) userInputName += '.csv';
+
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.setAttribute("href", url);
-            link.setAttribute("download", `特別休假試算報告_${latestReportData.targetYear}年度.csv`);
+            link.setAttribute("download", userInputName);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
 
         function calculate(isManualClick = true) {
