@@ -38,10 +38,21 @@
             <i class="fa-solid fa-diagram-project text-blue-600 text-xl md:text-2xl"></i>
             <div>
                 <h1 class="text-lg md:text-xl font-bold text-slate-800">臺北榮總人事室 系統架構圖編輯器</h1>
-                <p class="text-[10px] text-slate-500 tracking-wider font-semibold">by Leno Tsai version 0.2</p>
+                <p class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">by Leno Tsai</p>
             </div>
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- 新增：匯入與全部清除按鈕 -->
+            <button @click="importCode" class="px-3 md:px-4 py-2.5 rounded-lg text-sm font-medium bg-white border border-slate-300 text-slate-700 hover:text-blue-600 hover:bg-blue-50 transition-all shadow-sm flex items-center">
+                <i class="fa-solid fa-file-import mr-1 md:mr-2"></i><span class="hidden md:inline">匯入</span>
+            </button>
+            <button @click="confirmClearAll" class="px-3 md:px-4 py-2.5 rounded-lg text-sm font-medium bg-white border border-slate-300 text-red-600 hover:text-red-700 hover:bg-red-50 transition-all shadow-sm flex items-center">
+                <i class="fa-solid fa-trash-can mr-1 md:mr-2"></i><span class="hidden md:inline">全部清除</span>
+            </button>
+            
+            <div class="w-px h-6 bg-slate-300 mx-1 hidden sm:block"></div>
+            
+            <!-- 模式切換按鈕 -->
             <button @click="switchMode('builder')" :class="mode === 'builder' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-3 md:px-5 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center">
                 <i class="fa-solid fa-sliders mr-2"></i><span class="hidden md:inline">表單建構模式</span><span class="md:hidden">表單</span>
             </button>
@@ -119,6 +130,13 @@
                                         <option value="cylinder">圓柱/資料庫 (Cylinder)</option>
                                         <option value="diamond">菱形/判斷 (Diamond)</option>
                                         <option value="circle">圓形 (Circle)</option>
+                                        <option value="stadium_bracket">體育場/藥丸 (Stadium)</option>
+                                        <option value="double_circle_bracket">雙圓/停止 ((( )))</option>
+                                        <option value="hexagon">六角形 (Hexagon)</option>
+                                        <option value="parallelogram">平行四邊形 (Parallelogram)</option>
+                                        <option value="parallelogram_alt">反平行四邊形 (Parallelogram Alt)</option>
+                                        <option value="trapezoid">梯形 (Trapezoid)</option>
+                                        <option value="trapezoid_alt">反梯形 (Trapezoid Alt)</option>
                                         <option value="docs">多重文件 (Docs)</option>
                                     </select>
                                 </div>
@@ -247,6 +265,48 @@
         
     </main>
 
+    <!-- 切換模式防呆警告 (Modal) -->
+    <div v-if="showConfirmModal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-3">
+                <div class="bg-amber-100 p-2 rounded-full"><i class="fa-solid fa-triangle-exclamation text-amber-500 text-xl"></i></div>
+                警告：即將遺失手動修改
+            </h3>
+            <p class="text-slate-600 text-base mb-8 leading-relaxed">
+                表單建構器無法完全將您手動修改的語法反向寫回表單。<br><br>若切換回「表單建構模式」，您剛才手動編輯的部分內容可能會遺失。確定要繼續嗎？
+            </p>
+            <div class="flex flex-col sm:flex-row justify-end gap-3">
+                <button @click="showConfirmModal = false" class="px-5 py-2.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-sm font-bold transition-colors w-full sm:w-auto text-center">
+                    取消，保留修改
+                </button>
+                <button @click="confirmSwitchMode" class="px-5 py-2.5 bg-red-600 text-white hover:bg-red-700 rounded-lg text-sm font-bold transition-colors shadow-sm w-full sm:w-auto text-center">
+                    確定並嘗試解析
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 全部清除確認警告 (Modal) -->
+    <div v-if="showClearConfirmModal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 border border-slate-200">
+            <h3 class="text-xl font-bold text-red-600 mb-4 flex items-center gap-3">
+                <div class="bg-red-100 p-2 rounded-full"><i class="fa-solid fa-trash-can text-red-500 text-xl"></i></div>
+                確認清除全部內容？
+            </h3>
+            <p class="text-slate-600 text-base mb-8 leading-relaxed">
+                這個操作將會清空所有的區塊、節點與連線資料，且無法復原。<br><br>確定要全部清除嗎？
+            </p>
+            <div class="flex flex-col sm:flex-row justify-end gap-3">
+                <button @click="showClearConfirmModal = false" class="px-5 py-2.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-sm font-bold transition-colors w-full sm:w-auto text-center">
+                    取消
+                </button>
+                <button @click="executeClearAll" class="px-5 py-2.5 bg-red-600 text-white hover:bg-red-700 rounded-lg text-sm font-bold transition-colors shadow-sm w-full sm:w-auto text-center">
+                    確定清除
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- 自訂提示訊息 (Toast) -->
     <transition name="fade">
         <div v-if="toastMsg" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-slate-800/95 backdrop-blur text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 z-50 font-medium">
@@ -259,7 +319,7 @@
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
         
-        // 最佳化配置：強制使用 linear 曲線並加大間距，徹底解決 Dagre 佈局引擎「計算合適控制點」的崩潰臭蟲
+        // 最佳化配置：強制使用 linear 曲線並加大間距，解決 Dagre 引擎佈局臭蟲
         mermaid.initialize({ 
             startOnLoad: false, 
             theme: 'default',
@@ -267,9 +327,9 @@
             fontFamily: 'ui-sans-serif, system-ui, sans-serif, "Font Awesome 6 Free"',
             flowchart: {
                 htmlLabels: true,
-                curve: 'linear', // 強制使用直線，避免貝茲曲線距離計算發生 NaN
-                rankSpacing: 100, // 加大層級間距
-                nodeSpacing: 80   // 加大節點間距
+                curve: 'linear', 
+                rankSpacing: 100, 
+                nodeSpacing: 80   
             }
         });
 
@@ -286,12 +346,16 @@
                 const isDragging = ref(false);
                 const zoomPercentage = ref(100);
 
+                const showConfirmModal = ref(false);
+                const showClearConfirmModal = ref(false);
+                const pendingMode = ref('');
+
                 const zoomIn = () => { zoomPercentage.value = Math.min(zoomPercentage.value + 20, 500); };
                 const zoomOut = () => { zoomPercentage.value = Math.max(zoomPercentage.value - 20, 20); };
                 const zoomReset = () => { zoomPercentage.value = 100; };
                 const handleWheelZoom = (e) => { e.deltaY < 0 ? zoomIn() : zoomOut(); };
 
-                // 原始資料狀態 (修改預設形狀與連線避免觸發 v11 邊界計算錯誤)
+                // 原始資料狀態
                 const state = ref({
                     direction: 'TB',
                     subgraphs: [
@@ -301,7 +365,6 @@
                         { id: 'sg4', title: '人事室承辦人' }
                     ],
                     nodes: [
-                        // 將原本的 docs 改為 rect 保證絕對穩定
                         { id: 'od', label: '考核組差勤法規庫', shape: 'rect', subgraph: 'sg1' },
                         { id: 'od2', label: '資料組法規庫', shape: 'rect', subgraph: 'sg1' },
                         { id: 'od3', label: '任免組差勤法規庫', shape: 'rect', subgraph: 'sg1' },
@@ -324,7 +387,6 @@
                         { id: 'e_link1', from: 'od4', to: 'od5', text: '', type: '---', animated: false },
                         { id: 'e5', from: 'od5', to: 'di', text: '自然語言查詢', type: '-->', animated: true },
                         { id: 'e_link2', from: 'od6', to: 'od7', text: '', type: '---', animated: false },
-                        // 將 == 改為 -- 保證動畫解析器不會壞掉
                         { id: 'e6', from: 'od7', to: 'di', text: '查詢向量資料庫', type: '-->', animated: true },
                         { id: 'e7', from: 'e', to: 'od5', text: '', type: '-->', animated: true },
                         { id: 'e_link3', from: 'od8', to: 'od', text: '', type: '-->', animated: false },
@@ -332,11 +394,84 @@
                         { id: 'e_link5', from: 'od10', to: 'od3', text: '', type: '-->', animated: false }
                     ],
                     classes: [
-                        // 移除尾隨的分號
                         { name: 'green', def: 'fill:#9f6,stroke:#333,stroke-width:2px' },
                         { name: 'orange', def: 'fill:#f96,stroke:#333,stroke-width:4px' }
                     ]
                 });
+
+                // --- 新增：全部清除邏輯 ---
+                const confirmClearAll = () => {
+                    showClearConfirmModal.value = true;
+                };
+
+                const executeClearAll = () => {
+                    state.value = {
+                        direction: 'TB',
+                        subgraphs: [],
+                        nodes: [],
+                        edges: [],
+                        classes: []
+                    };
+                    manualCode.value = 'graph TB\n';
+                    showClearConfirmModal.value = false;
+                    showToast('已清空所有內容');
+                };
+
+                // --- 新增：檔案匯入邏輯 ---
+                const importCode = async () => {
+                    try {
+                        let fileContent = '';
+                        if (window.showOpenFilePicker) {
+                            const [fileHandle] = await window.showOpenFilePicker({
+                                types: [{
+                                    description: 'Mermaid 或 Markdown 檔案',
+                                    accept: { 'text/plain': ['.txt', '.md', '.mermaid'] }
+                                }]
+                            });
+                            const file = await fileHandle.getFile();
+                            fileContent = await file.text();
+                        } else {
+                            fileContent = await new Promise((resolve) => {
+                                const input = document.createElement('input');
+                                input.type = 'file';
+                                input.accept = '.md,.txt,.mermaid';
+                                input.onchange = (e) => {
+                                    const file = e.target.files[0];
+                                    if (!file) { resolve(''); return; }
+                                    const reader = new FileReader();
+                                    reader.onload = (evt) => resolve(evt.target.result);
+                                    reader.readAsText(file);
+                                };
+                                input.click();
+                            });
+                        }
+
+                        if (!fileContent) return;
+
+                        // 檢查是否有 Markdown 的 ```mermaid 區塊
+                        let extractedCode = fileContent;
+                        const mdMatch = fileContent.match(/```mermaid\s*\n([\s\S]*?)```/);
+                        if (mdMatch) {
+                            extractedCode = mdMatch[1];
+                        }
+
+                        manualCode.value = extractedCode;
+                        
+                        try {
+                            const parsedState = parseMermaidToState(extractedCode);
+                            state.value = parsedState;
+                            showToast('匯入成功！已還原至表單');
+                        } catch (e) {
+                            console.error("解析失敗:", e);
+                            showToast('檔案內容已載入，但部分語法無法轉回表單');
+                        }
+                    } catch (err) {
+                        if (err.name !== 'AbortError') {
+                            console.error('匯入失敗:', err);
+                            alert('匯入失敗或瀏覽器不支援此功能');
+                        }
+                    }
+                };
 
                 // --- 雙向解析邏輯：將 Mermaid 原始碼反向轉為表單 State ---
                 const parseMermaidToState = (code) => {
@@ -361,7 +496,8 @@
 
                         if (line === 'end') { currentSubgraph = ''; continue; }
 
-                        const sgMatch = line.match(/^subgraph\s+([a-zA-Z0-9_]+)(?:\s+\[(.*?)\])?/);
+                        // 修正 1：支援含有中文、減號等各種字元的子圖標題
+                        const sgMatch = line.match(/^subgraph\s+([^\s\[]+)(?:\s+\[(.*?)\])?/);
                         if (sgMatch) {
                             const sgId = sgMatch[1];
                             const sgTitle = sgMatch[2] || sgId;
@@ -372,13 +508,16 @@
 
                         const classDefMatch = line.match(/^classDef\s+([a-zA-Z0-9_-]+)\s+(.+)/);
                         if (classDefMatch) {
-                            newState.classes.push({ name: classDefMatch[1], def: classDefMatch[2] });
+                            newState.classes.push({ name: classDefMatch[1], def: classDefMatch[2].replace(/;$/, '') });
                             continue;
                         }
 
-                        const classMatch = line.match(/^class\s+([a-zA-Z0-9_-]+)\s+([a-zA-Z0-9_-]+)/);
+                        const classMatch = line.match(/^class\s+([a-zA-Z0-9_,-]+)\s+([a-zA-Z0-9_-]+)/);
                         if (classMatch) {
-                            getOrCreateNode(classMatch[1]).className = classMatch[2];
+                            const ids = classMatch[1].split(',');
+                            ids.forEach(id => {
+                                getOrCreateNode(id.trim()).className = classMatch[2];
+                            });
                             continue;
                         }
 
@@ -394,49 +533,67 @@
                             continue;
                         }
 
-                        const edgeRegex = /^([a-zA-Z0-9_-]+)\s*(?:([a-zA-Z0-9_-]+)@)?(---|-->|==>|-.->|<-->|o--o|x--x|--o|--x)\s*(?:\|(.*?)\|)?\s*([a-zA-Z0-9_-]+)$/;
-                        const edgeMatch = line.match(edgeRegex);
-                        if (edgeMatch) {
-                            const from = edgeMatch[1];
-                            const edgeId = edgeMatch[2] || `e_auto_${Date.now()}_${edgeCounter++}`;
-                            const type = edgeMatch[3];
-                            let text = edgeMatch[4] || '';
-
-                            newState.edges.push({ id: edgeId, from, to: edgeMatch[5], text, type, animated: false });
-                            getOrCreateNode(from);
-                            getOrCreateNode(edgeMatch[5]);
-                            continue;
-                        }
-
-                        const nodeV11Match = line.match(/^([a-zA-Z0-9_-]+)@\{\s*shape:\s*([a-zA-Z0-9_-]+)\s*,\s*label:\s*"(.*?)"\s*\}/);
-                        if (nodeV11Match) {
-                            let n = getOrCreateNode(nodeV11Match[1]);
-                            n.shape = nodeV11Match[2];
-                            n.label = nodeV11Match[3].replace(/\\n/g, '\n').replace(/&quot;/g, '"');
-                            if (currentSubgraph && !n.subgraph) n.subgraph = currentSubgraph;
-                            continue;
-                        }
-
-                        const nodeClassicMatch = line.match(/^([a-zA-Z0-9_-]+)\s*([\[\(\{]+)\s*(?:"(.*?)"|(.*?))\s*([\]\)\}]+)$/);
-                        if (nodeClassicMatch && !line.includes('-->') && !line.includes('---')) {
-                            let id = nodeClassicMatch[1];
-                            let bracket = nodeClassicMatch[2]; 
-                            let label = nodeClassicMatch[3] || nodeClassicMatch[4] || id;
-
+                        let cleanLine = line;
+                        
+                        // 修正 2：先抽取整行中所有的節點定義，支援節點與連線寫在同一行
+                        const nodeRegex = /([a-zA-Z0-9_-]+)\s*(\[\[|\[\(|\[\/|\[\\|\(\(\(|\(\(|\[|\(|\{\{|\{)\s*"?([\s\S]*?)"?\s*(\]\]|\)\]|\\\]|\/\]|\}\)\)|\)\)|\)|\]|\}\}|\})/g;
+                        let nodeMatch;
+                        while ((nodeMatch = nodeRegex.exec(line)) !== null) {
+                            let id = nodeMatch[1];
+                            let open = nodeMatch[2];
+                            let label = nodeMatch[3];
+                            let close = nodeMatch[4];
+                            
                             let shape = 'rect';
-                            if (line.includes('((({')) shape = 'double_circle_bracket';
-                            else if (line.includes('((')) shape = 'circle';
-                            else if (line.includes('[(')) shape = 'cylinder';
-                            else if (line.includes('([')) shape = 'stadium_bracket';
-                            else if (line.includes('{{')) shape = 'hexagon';
-                            else if (bracket.includes('{')) shape = 'diamond';
-                            else if (bracket.includes('(')) shape = 'rounded';
+                            if (open === '(((') shape = 'double_circle_bracket';
+                            else if (open === '((') shape = 'circle';
+                            else if (open === '[(') shape = 'cylinder';
+                            else if (open === '([') shape = 'stadium_bracket';
+                            else if (open === '{{') shape = 'hexagon';
+                            else if (open === '{') shape = 'diamond';
+                            else if (open === '(') shape = 'rounded';
+                            else if (open === '[/') shape = (close === '\\]' || close === ']') ? 'trapezoid' : 'parallelogram';
+                            else if (open === '\\[') shape = (close === '\\]' || close === ']') ? 'parallelogram_alt' : 'trapezoid_alt';
                             
                             let n = getOrCreateNode(id);
                             n.shape = shape;
                             n.label = label.replace(/<br\s*\/?>/g, '\n').replace(/&quot;/g, '"');
                             if (currentSubgraph && !n.subgraph) n.subgraph = currentSubgraph;
-                            continue;
+                            
+                            // 將節點定義從行文字中移除，只保留 ID 供後續連線解析
+                            cleanLine = cleanLine.replace(nodeMatch[0], id);
+                        }
+
+                        const v11NodeRegex = /([a-zA-Z0-9_-]+)@\{\s*shape:\s*([a-zA-Z0-9_-]+)\s*,\s*label:\s*"(.*?)"\s*\}/g;
+                        let v11Match;
+                        while ((v11Match = v11NodeRegex.exec(line)) !== null) {
+                            let n = getOrCreateNode(v11Match[1]);
+                            n.shape = v11Match[2];
+                            n.label = v11Match[3].replace(/\\n/g, '\n').replace(/&quot;/g, '"');
+                            if (currentSubgraph && !n.subgraph) n.subgraph = currentSubgraph;
+                            cleanLine = cleanLine.replace(v11Match[0], v11Match[1]);
+                        }
+
+                        // 修正 3：強化連線標籤語法，支援 --text--> 以及 ==text==>
+                        const edgeRegex = /([a-zA-Z0-9_-]+)\s*(?:([a-zA-Z0-9_-]+)@)?(--(.*?)-->|==(.*?)==>|-\.(.*?)\.->|---|-->|==>|-.->|<-->|o--o|x--x|--o|--x)\s*(?:\|(.*?)\|)?\s*([a-zA-Z0-9_-]+)/;
+                        const edgeMatch = cleanLine.match(edgeRegex);
+                        if (edgeMatch) {
+                            const from = edgeMatch[1];
+                            const edgeId = edgeMatch[2] || `e_auto_${Date.now()}_${edgeCounter++}`;
+                            let type = edgeMatch[3];
+                            let text = edgeMatch[4] || edgeMatch[5] || edgeMatch[6] || edgeMatch[7] || '';
+                            
+                            if (text.startsWith('"') && text.endsWith('"')) text = text.substring(1, text.length - 1);
+                            text = text.replace(/&quot;/g, '"');
+
+                            // 將 --text--> 轉回標準 type
+                            if (type.startsWith('--') && type.endsWith('-->') && type !== '-->') type = '-->';
+                            else if (type.startsWith('==') && type.endsWith('==>') && type !== '==>') type = '==>';
+                            else if (type.startsWith('-.') && type.endsWith('.->') && type !== '-.->') type = '-.->';
+
+                            newState.edges.push({ id: edgeId, from, to: edgeMatch[8], text, type, animated: false });
+                            getOrCreateNode(from);
+                            getOrCreateNode(edgeMatch[8]);
                         }
                     }
 
@@ -461,12 +618,21 @@
                         
                         let classicLabel = label.replace(/\n/g, '<br/>');
                         let qL = `"${classicLabel}"`;
+                        
+                        // 修正 4：補齊所有梯形與特殊圖形的語法輸出
                         switch(n.shape) {
                             case 'rect': return `${n.id}[${qL}]`;
                             case 'rounded': return `${n.id}(${qL})`;
                             case 'cylinder': return `${n.id}[(${qL})]`;
                             case 'diamond': return `${n.id}{${qL}}`;
                             case 'circle': return `${n.id}((${qL}))`;
+                            case 'stadium_bracket': return `${n.id}([${qL}])`;
+                            case 'double_circle_bracket': return `${n.id}((({${qL})))`;
+                            case 'hexagon': return `${n.id}{{${qL}}}`;
+                            case 'parallelogram': return `${n.id}[/${qL}/]`;
+                            case 'parallelogram_alt': return `${n.id}[\\${qL}\\]`;
+                            case 'trapezoid': return `${n.id}[/${qL}\\]`;
+                            case 'trapezoid_alt': return `${n.id}[\\${qL}/]`;
                             default: return `${n.id}[${qL}]`;
                         }
                     };
@@ -486,8 +652,6 @@
 
                     state.value.edges.forEach((e, idx) => {
                         let edgeType = e.type || '-->';
-                        
-                        // 移除標籤引號，純字串即可，避免干擾邊界解析
                         let cleanText = (e.text || '').replace(/[|]/g, ' ').trim();
                         let safeText = cleanText ? `|${cleanText}|` : '';
                         
@@ -519,17 +683,25 @@
                     
                     if (mode.value === 'manual' && targetMode === 'builder') {
                         if (manualCode.value !== generatedCode.value) {
-                            try {
-                                const parsedState = parseMermaidToState(manualCode.value);
-                                state.value = parsedState;
-                                showToast('已成功根據程式碼更新表單內容！');
-                            } catch (e) {
-                                console.error("解析失敗:", e);
-                                showToast('解析程式碼時發生部分錯誤，但已盡力還原。');
-                            }
+                            pendingMode.value = targetMode;
+                            showConfirmModal.value = true;
+                            return;
                         }
                     }
                     mode.value = targetMode;
+                };
+
+                const confirmSwitchMode = () => {
+                    try {
+                        const parsedState = parseMermaidToState(manualCode.value);
+                        state.value = parsedState;
+                        showToast('已成功根據程式碼更新表單內容！');
+                    } catch (e) {
+                        console.error("解析失敗:", e);
+                        showToast('解析程式碼時發生部分錯誤，但已盡力還原。');
+                    }
+                    mode.value = pendingMode.value;
+                    showConfirmModal.value = false;
                 };
 
                 watch(mode, (newMode) => { 
@@ -711,6 +883,7 @@
                 return { 
                     state, mode, manualCode, currentCode, generatedCode,
                     renderError, toastMsg, copyCode, switchMode,
+                    showConfirmModal, showClearConfirmModal, confirmSwitchMode, confirmClearAll, executeClearAll, importCode,
                     addSubgraph, removeSubgraph, addNode, removeNode, addEdge, removeEdge,
                     leftPanelWidth, startDrag, isDragging, downloadDiagram,
                     zoomPercentage, zoomIn, zoomOut, zoomReset, handleWheelZoom
