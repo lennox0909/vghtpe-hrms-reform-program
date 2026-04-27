@@ -2,299 +2,245 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>臺北榮總人事室 系統架構圖編輯器</title>
-    <!-- 引入 Tailwind CSS 進行快速排版 -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 FontAwesome 以支援圖表中的 fa:fa-robot 等圖示 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- === CSS 區塊 (可獨立存為 style.css) === -->
     <style>
-        /* 自訂捲軸樣式 */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8; 
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+        /* 確保 Mermaid 容器能夠 100% 填滿我們給予的自適應寬度 */
+        #mermaid-container svg { 
+            width: 100% !important; 
+            height: auto !important; 
+            max-width: none !important; 
         }
         
-        /* 隱藏/顯示區塊動畫 */
-        .fade-enter-active, .fade-leave-active {
-            transition: opacity 0.3s;
-        }
-        .fade-enter-from, .fade-leave-to {
-            opacity: 0;
-        }
-
-        /* 確保 Mermaid 容器能夠自適應與滾動 */
-        #mermaid-container svg {
-            max-width: 100%;
-            height: auto;
-        }
+        /* 拖曳時禁止選取文字 */
+        .dragging { user-select: none; }
     </style>
 </head>
-<body class="bg-slate-100 h-screen flex flex-col font-sans text-slate-800 overflow-hidden" id="app">
-    <!-- === HTML 區塊 (可獨立存為 index.html 的 Body) === -->
+<body class="bg-slate-100 h-screen flex flex-col font-sans text-slate-800 overflow-hidden" id="app" :class="{ 'dragging': isDragging }">
     
+    <!-- 強制預載 FontAwesome 字體以避免 Mermaid 渲染時計算尺寸錯誤 -->
+    <i class="fa-solid fa-robot absolute opacity-0 pointer-events-none" aria-hidden="true"></i>
+
     <!-- 頂部導覽列 -->
-    <header class="bg-white shadow-sm border-b border-slate-200 py-3 px-6 flex justify-between items-center z-10 shrink-0">
+    <header class="bg-white shadow-sm border-b border-slate-200 py-3 px-4 md:px-6 flex justify-between items-center z-10 shrink-0">
         <div class="flex items-center gap-3">
-            <i class="fa-solid fa-diagram-project text-blue-600 text-xl"></i>
-            <h1 class="text-xl font-bold text-slate-800">臺北榮總人事室 系統架構圖編輯器</h1>
-            <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-semibold">by Leno Tsai</p>
+            <i class="fa-solid fa-diagram-project text-blue-600 text-xl md:text-2xl"></i>
+            <div>
+                <h1 class="text-lg md:text-xl font-bold text-slate-800">臺北榮總人事室 系統架構圖編輯器</h1>
+                <p class="text-[10px] text-slate-500 tracking-wider font-semibold">by Leno Tsai version 0.2</p>
+            </div>
         </div>
         <div class="flex gap-2">
-            <button @click="mode = 'builder'" :class="mode === 'builder' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-4 py-2 rounded-md text-sm font-medium transition-colors">
-                <i class="fa-solid fa-sliders mr-2"></i>表單建構模式
+            <button @click="switchMode('builder')" :class="mode === 'builder' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-3 md:px-5 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center">
+                <i class="fa-solid fa-sliders mr-2"></i><span class="hidden md:inline">表單建構模式</span><span class="md:hidden">表單</span>
             </button>
-            <button @click="mode = 'manual'" :class="mode === 'manual' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-4 py-2 rounded-md text-sm font-medium transition-colors">
-                <i class="fa-solid fa-code mr-2"></i>手動編輯原始碼
+            <button @click="switchMode('manual')" :class="mode === 'manual' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="px-3 md:px-5 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center">
+                <i class="fa-solid fa-code mr-2"></i><span class="hidden md:inline">手動編輯原始碼</span><span class="md:hidden">手動</span>
             </button>
         </div>
     </header>
 
-    <!-- 主要內容區 -->
+    <!-- 主要內容區 (左右分割) -->
     <main class="flex-1 flex overflow-hidden">
         
-        <!-- 左側面板：表單建構器 (僅在 builder 模式顯示) -->
-        <aside v-show="mode === 'builder'" class="w-1/3 min-w-[400px] bg-white border-r border-slate-200 flex flex-col h-full overflow-hidden shrink-0 z-0 shadow-[2px_0_10px_rgba(0,0,0,0.02)]">
-            <div class="p-4 bg-slate-50 border-b border-slate-200 font-medium text-slate-700 flex justify-between items-center shrink-0">
-                <span>架構元素設定</span>
-                <select v-model="state.direction" class="text-sm border border-slate-300 rounded px-2 py-1 bg-white">
-                    <option value="TB">由上而下 (TB / TD)</option>
-                    <option value="BT">由下而上 (BT)</option>
-                    <option value="LR">由左至右 (LR)</option>
-                    <option value="RL">由右至左 (RL)</option>
-                </select>
-            </div>
+        <!-- 左側面板 (表單建構 或 程式碼編輯) -->
+        <aside :style="{ width: leftPanelWidth + '%' }" class="bg-white flex flex-col h-full shrink-0 z-0 relative shadow-[2px_0_10px_rgba(0,0,0,0.02)] min-w-[300px]">
             
-            <div class="flex-1 overflow-y-auto p-4 space-y-6">
+            <!-- 模式 1: 表單建構器 -->
+            <div v-show="mode === 'builder'" class="flex flex-col h-full overflow-hidden">
+                <div class="p-4 bg-slate-50 border-b border-slate-200 font-medium text-slate-700 flex justify-between items-center shrink-0">
+                    <span>架構元素設定</span>
+                    <select v-model="state.direction" class="text-sm border border-slate-300 rounded-md px-3 py-2 bg-white min-w-[120px]">
+                        <option value="TB">由上而下</option>
+                        <option value="BT">由下而上</option>
+                        <option value="LR">由左至右</option>
+                        <option value="RL">由右至左</option>
+                    </select>
+                </div>
                 
-                <!-- 子圖 (Subgraphs) 設定 -->
-                <section>
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-object-group text-slate-400"></i> 子區塊 (Subgraphs)</h3>
-                        <button @click="addSubgraph" class="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded"><i class="fa-solid fa-plus"></i> 新增</button>
-                    </div>
-                    <div class="space-y-2">
-                        <div v-for="(sg, index) in state.subgraphs" :key="'sg-'+index" class="flex gap-2 items-center bg-slate-50 p-2 rounded border border-slate-200">
-                            <input v-model="sg.id" placeholder="ID (選填)" class="w-1/3 text-sm border border-slate-300 rounded px-2 py-1">
-                            <input v-model="sg.title" placeholder="標題名稱" class="flex-1 text-sm border border-slate-300 rounded px-2 py-1">
-                            <button @click="removeSubgraph(index)" class="text-red-400 hover:text-red-600 px-1"><i class="fa-solid fa-trash"></i></button>
+                <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+                    <!-- 子圖 (Subgraphs) -->
+                    <section>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-object-group text-slate-400"></i> 子區塊</h3>
+                            <button @click="addSubgraph" class="text-sm bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-md transition-colors"><i class="fa-solid fa-plus"></i> 新增</button>
                         </div>
-                    </div>
-                </section>
+                        <div class="space-y-3">
+                            <div v-for="(sg, index) in state.subgraphs" :key="'sg-'+index" class="flex gap-2 items-center bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                <input v-model="sg.id" placeholder="ID" class="w-1/3 text-sm border border-slate-300 rounded-md px-3 py-2">
+                                <input v-model="sg.title" placeholder="標題名稱" class="flex-1 text-sm border border-slate-300 rounded-md px-3 py-2">
+                                <button @click="removeSubgraph(index)" class="text-red-400 hover:text-red-600 p-2"><i class="fa-solid fa-trash text-lg"></i></button>
+                            </div>
+                        </div>
+                    </section>
 
-                <!-- 節點 (Nodes) 設定 -->
-                <section>
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-server text-slate-400"></i> 節點與元件 (Nodes)</h3>
-                        <button @click="addNode" class="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded"><i class="fa-solid fa-plus"></i> 新增</button>
-                    </div>
-                    <div class="space-y-3">
-                        <div v-for="(node, index) in state.nodes" :key="'node-'+index" class="bg-slate-50 p-3 rounded border border-slate-200 relative group">
-                            <button @click="removeNode(index)" class="absolute top-2 right-2 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-solid fa-xmark"></i></button>
-                            <div class="grid grid-cols-2 gap-2 mb-2">
-                                <div>
-                                    <label class="text-xs text-slate-500">節點 ID</label>
-                                    <input v-model="node.id" class="w-full text-sm border border-slate-300 rounded px-2 py-1 mt-1">
+                    <!-- 節點 (Nodes) -->
+                    <section>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-server text-slate-400"></i> 節點與元件</h3>
+                            <button @click="addNode" class="text-sm bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-md transition-colors"><i class="fa-solid fa-plus"></i> 新增</button>
+                        </div>
+                        <div class="space-y-4">
+                            <div v-for="(node, index) in state.nodes" :key="'node-'+index" class="bg-slate-50 p-4 rounded-lg border border-slate-200 relative">
+                                <button @click="removeNode(index)" class="absolute top-3 right-3 text-slate-400 hover:text-red-500 bg-white rounded-full p-1 shadow-sm border border-slate-100"><i class="fa-solid fa-xmark"></i></button>
+                                <div class="grid grid-cols-2 gap-3 mb-3">
+                                    <div>
+                                        <label class="text-xs text-slate-500 mb-1 block">節點 ID</label>
+                                        <input v-model="node.id" class="w-full text-sm border border-slate-300 rounded-md px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-slate-500 mb-1 block">歸屬區塊</label>
+                                        <select v-model="node.subgraph" class="w-full text-sm border border-slate-300 rounded-md px-3 py-2 bg-white">
+                                            <option value="">(無)</option>
+                                            <option v-for="sg in state.subgraphs" :value="sg.id || sg.title">{{ sg.title }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="text-xs text-slate-500 mb-1 block">標籤文字 (支援直接 Enter 換行)</label>
+                                    <textarea v-model="node.label" rows="2" class="w-full text-sm border border-slate-300 rounded-md px-3 py-2 resize-y"></textarea>
                                 </div>
                                 <div>
-                                    <label class="text-xs text-slate-500">歸屬子區塊</label>
-                                    <select v-model="node.subgraph" class="w-full text-sm border border-slate-300 rounded px-2 py-1 mt-1 bg-white">
-                                        <option value="">(無)</option>
-                                        <option v-for="sg in state.subgraphs" :value="sg.id || sg.title">{{ sg.title }}</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="mb-2">
-                                <label class="text-xs text-slate-500">顯示標籤 (支援 Enter 換行與 HTML/fa:fa-icon)</label>
-                                <textarea v-model="node.label" rows="2" class="w-full text-sm border border-slate-300 rounded px-2 py-1 mt-1 resize-y"></textarea>
-                            </div>
-                            <div>
-                                <label class="text-xs text-slate-500">形狀 (Shape)</label>
-                                <select v-model="node.shape" class="w-full text-sm border border-slate-300 rounded px-2 py-1 mt-1 bg-white">
-                                    <optgroup label="基本與特殊形狀">
+                                    <label class="text-xs text-slate-500 mb-1 block">形狀</label>
+                                    <select v-model="node.shape" class="w-full text-sm border border-slate-300 rounded-md px-3 py-2 bg-white">
                                         <option value="rect">矩形 (Rect)</option>
                                         <option value="rounded">圓角矩形 (Rounded)</option>
-                                        <option value="stadium_bracket">藥丸/體育場 (Stadium) ([ ])</option>
                                         <option value="cylinder">圓柱/資料庫 (Cylinder)</option>
                                         <option value="diamond">菱形/判斷 (Diamond)</option>
                                         <option value="circle">圓形 (Circle)</option>
-                                        <option value="double_circle_bracket">雙圓/停止 (Double Circle) ((( )))</option>
-                                        <option value="hexagon">六角形 (Hexagon)</option>
-                                        <option value="subroutine">子程式 (Subroutine)</option>
-                                        <option value="asymmetric">不對稱 (Asymmetric)</option>
-                                        <option value="parallelogram">平行四邊形 (Parallelogram)</option>
-                                        <option value="parallelogram_alt">反平行四邊形 (Parallelogram Alt)</option>
-                                        <option value="trapezoid">梯形 (Trapezoid)</option>
-                                        <option value="trapezoid_alt">反梯形 (Trapezoid Alt)</option>
-                                    </optgroup>
-                                    <optgroup label="v11 新版形狀 (@{})">
                                         <option value="docs">多重文件 (Docs)</option>
-                                        <option value="manual-file">手動檔案 (Manual-file)</option>
-                                        <option value="manual-input">手動輸入 (Manual-input)</option>
-                                        <option value="procs">處理程序 (Procs)</option>
-                                        <option value="paper-tape">紙帶 (Paper-tape)</option>
-                                        <option value="stadium">體育場/終端點 (Stadium)</option>
-                                        <option value="dbl-circ">雙圓/停止 (Dbl-circ)</option>
-                                        <option value="notch-rect">卡片 (Notch-rect)</option>
-                                        <option value="delay">延遲 (Delay)</option>
-                                        <option value="das">直接存取儲存 (Das)</option>
-                                        <option value="lin-cyl">磁碟儲存 (Lin-cyl)</option>
-                                        <option value="curv-trap">顯示器 (Curv-trap)</option>
-                                        <option value="tri">提取 (Tri)</option>
-                                        <option value="f-circ">連接點 (F-circ)</option>
-                                        <option value="lin-doc">橫線文件 (Lin-doc)</option>
-                                        <option value="sl-rect">斜角矩形 (Sl-rect)</option>
-                                        <option value="processes">多重程序 (Processes)</option>
-                                        <option value="bow-rect">儲存資料 (Bow-rect)</option>
-                                        <option value="cross-circ">總結 (Cross-circ)</option>
-                                        <option value="tag-doc">標籤文件 (Tag-doc)</option>
-                                    </optgroup>
-                                </select>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2 mt-2 border-t border-slate-200 pt-2">
-                                <div>
-                                    <label class="text-xs text-slate-500">套用樣式類別 (ClassDef)</label>
-                                    <select v-model="node.className" class="w-full text-sm border border-slate-300 rounded px-2 py-1 mt-1 bg-white">
+                                    </select>
+                                </div>
+                                <div class="mt-3 pt-3 border-t border-slate-200">
+                                    <label class="text-xs text-slate-500 mb-1 block">套用樣式</label>
+                                    <select v-model="node.className" class="w-full text-sm border border-slate-300 rounded-md px-3 py-2 bg-white">
                                         <option value="">(無)</option>
                                         <option v-for="c in state.classes" :value="c.name">{{ c.name }}</option>
                                     </select>
                                 </div>
-                                <div>
-                                    <label class="text-xs text-slate-500">獨立自訂樣式 (Inline Style)</label>
-                                    <input v-model="node.inlineStyle" placeholder="fill:#f9f,stroke:#333..." class="w-full text-sm border border-slate-300 rounded px-2 py-1 mt-1">
-                                </div>
                             </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
 
-                <!-- 連線 (Edges) 設定 -->
-                <section>
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-arrow-right-arrow-left text-slate-400"></i> 連線與資料流 (Edges)</h3>
-                        <button @click="addEdge" class="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded"><i class="fa-solid fa-plus"></i> 新增</button>
-                    </div>
-                    <div class="space-y-3">
-                        <div v-for="(edge, index) in state.edges" :key="'edge-'+index" class="bg-slate-50 p-3 rounded border border-slate-200 relative group">
-                            <button @click="removeEdge(index)" class="absolute top-2 right-2 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-solid fa-xmark"></i></button>
-                            <div class="grid grid-cols-2 gap-2 mb-2">
-                                <div>
-                                    <label class="text-xs text-slate-500">起點 (From)</label>
-                                    <select v-model="edge.from" class="w-full text-sm border border-slate-300 rounded px-2 py-1 mt-1 bg-white">
-                                        <option v-for="n in state.nodes" :value="n.id">{{ n.id }} ({{ n.label.substring(0, 5) }}...)</option>
-                                    </select>
+                    <!-- 連線 (Edges) -->
+                    <section>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-arrow-right-arrow-left text-slate-400"></i> 連線與資料流</h3>
+                            <button @click="addEdge" class="text-sm bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded-md transition-colors"><i class="fa-solid fa-plus"></i> 新增</button>
+                        </div>
+                        <div class="space-y-4">
+                            <div v-for="(edge, index) in state.edges" :key="'edge-'+index" class="bg-slate-50 p-4 rounded-lg border border-slate-200 relative">
+                                <button @click="removeEdge(index)" class="absolute top-3 right-3 text-slate-400 hover:text-red-500 bg-white rounded-full p-1 shadow-sm border border-slate-100"><i class="fa-solid fa-xmark"></i></button>
+                                <div class="grid grid-cols-2 gap-3 mb-3">
+                                    <div>
+                                        <label class="text-xs text-slate-500 mb-1 block">起點</label>
+                                        <select v-model="edge.from" class="w-full text-sm border border-slate-300 rounded-md px-3 py-2 bg-white">
+                                            <option v-for="n in state.nodes" :value="n.id">{{ n.id }}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-slate-500 mb-1 block">終點</label>
+                                        <select v-model="edge.to" class="w-full text-sm border border-slate-300 rounded-md px-3 py-2 bg-white">
+                                            <option v-for="n in state.nodes" :value="n.id">{{ n.id }}</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="text-xs text-slate-500">終點 (To)</label>
-                                    <select v-model="edge.to" class="w-full text-sm border border-slate-300 rounded px-2 py-1 mt-1 bg-white">
-                                        <option v-for="n in state.nodes" :value="n.id">{{ n.id }} ({{ n.label.substring(0, 5) }}...)</option>
-                                    </select>
+                                <div class="mb-3">
+                                    <label class="text-xs text-slate-500 mb-1 block">說明文字</label>
+                                    <input v-model="edge.text" class="w-full text-sm border border-slate-300 rounded-md px-3 py-2">
                                 </div>
-                            </div>
-                            <div class="mb-2">
-                                <label class="text-xs text-slate-500">線段文字說明</label>
-                                <input v-model="edge.text" class="w-full text-sm border border-slate-300 rounded px-2 py-1 mt-1">
-                            </div>
-                            <div class="flex items-center gap-4">
-                                <div class="flex-1">
-                                    <label class="text-xs text-slate-500">線段樣式</label>
-                                    <select v-model="edge.type" class="w-full text-sm border border-slate-300 rounded px-2 py-1 mt-1 bg-white">
-                                        <optgroup label="帶箭頭連線">
+                                <div class="flex flex-col md:flex-row items-start md:items-center gap-4">
+                                    <div class="flex-1 w-full">
+                                        <label class="text-xs text-slate-500 mb-1 block">樣式</label>
+                                        <select v-model="edge.type" class="w-full text-sm border border-slate-300 rounded-md px-3 py-2 bg-white">
                                             <option value="-->">實線箭頭 (-->)</option>
                                             <option value="==>">粗實線箭頭 (==>)</option>
                                             <option value="-.->">虛線箭頭 (-.->)</option>
-                                            <option value="--o">末端圓圈 (--o)</option>
-                                            <option value="--x">末端叉號 (--x)</option>
-                                            <option value="<-->">雙向實線箭頭 (<-->)</option>
-                                            <option value="o--o">雙向圓圈 (o--o)</option>
-                                            <option value="x--x">雙向叉號 (x--x)</option>
-                                        </optgroup>
-                                        <optgroup label="無箭頭連線">
-                                            <option value="---">實線 (---)</option>
-                                            <option value="===">粗實線 (===)</option>
-                                            <option value="-.-">虛線 (-.-)</option>
-                                        </optgroup>
-                                    </select>
-                                </div>
-                                <div class="flex items-center gap-2 mt-5">
-                                    <input type="checkbox" :id="'anim-'+index" v-model="edge.animated" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                                    <label :for="'anim-'+index" class="text-sm text-slate-700 cursor-pointer">流動動畫</label>
+                                            <option value="---">無箭頭實線 (---)</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center gap-2 mt-2 md:mt-5">
+                                        <input type="checkbox" :id="'anim-'+index" v-model="edge.animated" class="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                                        <label :for="'anim-'+index" class="text-sm text-slate-700 cursor-pointer font-medium">啟用動畫</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </section>
-                
-                <!-- 自訂樣式 (Classes) 設定 -->
-                <section>
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-palette text-slate-400"></i> 自訂樣式類別 (Classes)</h3>
-                        <button @click="addClass" class="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded"><i class="fa-solid fa-plus"></i> 新增</button>
-                    </div>
-                    <div class="space-y-2">
-                        <div v-for="(cls, index) in state.classes" :key="'cls-'+index" class="bg-slate-50 p-3 rounded border border-slate-200 relative group">
-                            <button @click="removeClass(index)" class="absolute top-2 right-2 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-solid fa-xmark"></i></button>
-                            <div class="flex flex-col gap-2">
-                                <div>
-                                    <label class="text-xs text-slate-500">類別名稱 (Name)</label>
-                                    <input v-model="cls.name" placeholder="如: green" class="w-full text-sm border border-slate-300 rounded px-2 py-1 mt-1">
-                                </div>
-                                <div>
-                                    <label class="text-xs text-slate-500">樣式定義 (Style Definition)</label>
-                                    <input v-model="cls.def" placeholder="如: fill:#f96,stroke:#333,stroke-width:4px" class="w-full text-sm border border-slate-300 rounded px-2 py-1 mt-1">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- 底部空間 -->
-                <div class="h-10"></div>
-            </div>
-        </aside>
-
-        <!-- 右側面板：預覽與程式碼 -->
-        <section class="flex-1 flex flex-col bg-slate-200/50 relative">
-            
-            <!-- 預覽區塊 -->
-            <div class="flex-1 p-6 flex flex-col min-h-[50%]">
-                <div class="bg-white rounded-t-lg border border-slate-200 border-b-0 px-4 py-2 flex justify-between items-center shrink-0">
-                    <span class="font-bold text-slate-700"><i class="fa-solid fa-eye text-blue-500 mr-2"></i>架構圖即時預覽</span>
-                    <span v-if="renderError" class="text-xs text-red-500 font-mono bg-red-50 px-2 py-1 rounded border border-red-100 flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> 語法解析錯誤</span>
-                    <span v-else class="text-xs text-green-600 font-mono bg-green-50 px-2 py-1 rounded border border-green-100 flex items-center gap-1"><i class="fa-solid fa-check"></i> 渲染成功</span>
-                </div>
-                <div class="bg-white border border-slate-200 rounded-b-lg p-6 flex-1 overflow-auto flex items-center justify-center shadow-sm relative">
-                    <!-- Mermaid 繪製目標 -->
-                    <div id="mermaid-container" class="w-full flex justify-center"></div>
+                    </section>
+                    <div class="h-10"></div>
                 </div>
             </div>
 
-            <!-- 程式碼編輯/顯示區塊 -->
-            <div class="h-1/3 min-h-[250px] p-6 pt-0 flex flex-col shrink-0">
-                <div class="bg-slate-800 rounded-t-lg border border-slate-700 px-4 py-2 flex justify-between items-center shrink-0">
+            <!-- 模式 2: 手動編輯器 -->
+            <div v-show="mode === 'manual'" class="flex flex-col h-full bg-slate-900">
+                <div class="bg-slate-800 border-b border-slate-700 px-4 py-3 flex justify-between items-center shrink-0">
                     <span class="font-bold text-slate-200"><i class="fa-solid fa-file-code text-blue-400 mr-2"></i>Mermaid 原始碼</span>
-                    <button @click="copyCode" class="text-xs bg-slate-700 text-slate-300 hover:text-white hover:bg-slate-600 px-3 py-1.5 rounded transition-colors flex items-center gap-1">
-                        <i class="fa-solid fa-copy"></i> 複製原始碼
+                    <button @click="copyCode" class="text-xs bg-slate-700 text-slate-300 hover:text-white hover:bg-slate-600 px-3 py-2 rounded-md transition-colors flex items-center gap-1 shadow-sm">
+                        <i class="fa-solid fa-copy"></i> 複製
                     </button>
                 </div>
-                <div class="flex-1 relative">
-                    <!-- 當在建構器模式時，顯示唯讀程式碼 -->
-                    <textarea v-if="mode === 'builder'" readonly :value="generatedCode" class="w-full h-full bg-slate-900 text-green-400 font-mono text-sm p-4 rounded-b-lg border border-t-0 border-slate-700 focus:outline-none resize-none overflow-y-auto"></textarea>
-                    
-                    <!-- 當在手動模式時，顯示可編輯的 textarea -->
-                    <textarea v-else v-model="manualCode" class="w-full h-full bg-slate-900 text-blue-300 font-mono text-sm p-4 rounded-b-lg border border-t-0 border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-y-auto placeholder-slate-600" placeholder="在此直接輸入 Mermaid 語法..."></textarea>
+                <div class="flex-1 relative p-4">
+                    <textarea v-model="manualCode" class="w-full h-full bg-slate-900 text-blue-300 font-mono text-sm md:text-base focus:outline-none resize-none overflow-y-auto leading-relaxed" placeholder="在此直接輸入 Mermaid 語法..."></textarea>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- 分隔拖曳桿 -->
+        <div @mousedown="startDrag" @touchstart.prevent="startDrag" class="w-3 md:w-2 bg-slate-200 hover:bg-blue-400 cursor-col-resize shrink-0 transition-colors z-20 flex items-center justify-center group touch-none border-x border-slate-300">
+            <div class="h-12 w-1 bg-slate-400 rounded-full group-hover:bg-white transition-colors"></div>
+        </div>
+
+        <!-- 右側面板：預覽區 -->
+        <section class="flex-1 flex flex-col min-w-0 relative bg-white">
+            <!-- 工具列 -->
+            <div class="bg-white border-b border-slate-200 px-4 py-3 flex flex-col lg:flex-row justify-between items-start lg:items-center shrink-0 gap-3 z-10">
+                <div class="flex items-center gap-3">
+                    <span class="font-bold text-slate-700"><i class="fa-solid fa-eye text-blue-500 mr-2"></i>即時預覽</span>
+                    <span v-if="renderError" class="text-xs text-red-500 font-mono bg-red-50 px-2 py-1 rounded border border-red-100 flex items-center gap-1">
+                        <i class="fa-solid fa-triangle-exclamation"></i> 解析錯誤
+                    </span>
+                    <span v-else class="text-xs text-green-600 font-mono bg-green-50 px-2 py-1 rounded border border-green-100 flex items-center gap-1">
+                        <i class="fa-solid fa-check"></i> 成功
+                    </span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button @click="downloadDiagram('md')" class="text-sm bg-slate-800 border border-slate-700 text-white hover:bg-slate-700 px-3 md:px-4 py-2 rounded-lg transition-colors flex items-center gap-2 font-medium shadow-sm">
+                        <i class="fa-brands fa-markdown text-lg"></i> <span class="hidden xl:inline">匯出原始碼</span><span class="xl:hidden">MD</span>
+                    </button>
+                    <button @click="downloadDiagram('svg')" class="text-sm bg-white border border-slate-300 text-slate-700 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 px-3 md:px-4 py-2 rounded-lg transition-colors flex items-center gap-2 font-medium shadow-sm">
+                        <i class="fa-solid fa-file-code"></i> <span class="hidden xl:inline">匯出 SVG</span><span class="xl:hidden">SVG</span>
+                    </button>
+                    <button @click="downloadDiagram('png')" class="text-sm bg-white border border-slate-300 text-slate-700 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 px-3 md:px-4 py-2 rounded-lg transition-colors flex items-center gap-2 font-medium shadow-sm">
+                        <i class="fa-solid fa-image"></i> <span class="hidden xl:inline">匯出 PNG</span><span class="xl:hidden">PNG</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 畫布與縮放區 -->
+            <div class="relative flex-1 flex flex-col overflow-hidden">
+                <div class="absolute bottom-6 right-6 flex bg-white border border-slate-200 shadow-xl rounded-lg overflow-hidden z-30 opacity-90 hover:opacity-100 transition-opacity">
+                    <button @click="zoomOut" class="px-4 py-3 text-slate-600 hover:bg-slate-100 hover:text-blue-600 border-r border-slate-200 transition-colors" title="縮小 (或 Ctrl+向下滾輪)"><i class="fa-solid fa-minus"></i></button>
+                    <button @click="zoomReset" class="px-4 py-3 text-slate-700 hover:bg-slate-100 font-mono text-sm font-bold min-w-[75px] border-r border-slate-200 transition-colors" title="重設為左右填滿">{{ zoomPercentage }}%</button>
+                    <button @click="zoomIn" class="px-4 py-3 text-slate-600 hover:bg-slate-100 hover:text-blue-600 transition-colors" title="放大 (或 Ctrl+向上滾輪)"><i class="fa-solid fa-plus"></i></button>
+                </div>
+                <div class="flex-1 overflow-auto relative" style="background-color: #f8fafc; background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px;" @wheel.ctrl.prevent="handleWheelZoom">
+                    <div class="p-6 md:p-10 min-w-full min-h-full flex items-start justify-center">
+                        <div :style="{ width: zoomPercentage + '%' }" class="transition-all duration-200 ease-out flex justify-center">
+                            <div id="mermaid-container" class="bg-white p-6 md:p-8 rounded-xl shadow-md border border-slate-200 w-full flex justify-center relative z-10"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -303,37 +249,49 @@
 
     <!-- 自訂提示訊息 (Toast) -->
     <transition name="fade">
-        <div v-if="toastMsg" class="fixed bottom-6 right-6 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-xl flex items-center gap-3 z-50">
-            <i class="fa-solid fa-circle-check text-green-400"></i>
+        <div v-if="toastMsg" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-slate-800/95 backdrop-blur text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 z-50 font-medium">
+            <i class="fa-solid fa-circle-check text-green-400 text-lg"></i>
             {{ toastMsg }}
         </div>
     </transition>
 
-    <!-- === JavaScript 區塊 (可獨立存為 main.js) === -->
-    <!-- 引入 Vue 3 (不需編譯即可執行) -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <!-- 引入 Mermaid v11 (支援新版 @{} 語法與動畫) -->
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
         
-        // 初始化 Mermaid 設定
+        // 最佳化配置：強制使用 linear 曲線並加大間距，徹底解決 Dagre 佈局引擎「計算合適控制點」的崩潰臭蟲
         mermaid.initialize({ 
             startOnLoad: false, 
             theme: 'default',
             securityLevel: 'loose',
-            fontFamily: 'ui-sans-serif, system-ui, sans-serif'
+            fontFamily: 'ui-sans-serif, system-ui, sans-serif, "Font Awesome 6 Free"',
+            flowchart: {
+                htmlLabels: true,
+                curve: 'linear', // 強制使用直線，避免貝茲曲線距離計算發生 NaN
+                rankSpacing: 100, // 加大層級間距
+                nodeSpacing: 80   // 加大節點間距
+            }
         });
 
         const { createApp, ref, computed, watch, onMounted } = Vue;
 
         createApp({
             setup() {
-                const mode = ref('builder'); // 'builder' 或 'manual'
+                const mode = ref('builder'); 
                 const manualCode = ref('');
                 const toastMsg = ref('');
                 const renderError = ref('');
+                
+                const leftPanelWidth = ref(35);
+                const isDragging = ref(false);
+                const zoomPercentage = ref(100);
 
-                // 定義符合您範例的預設狀態
+                const zoomIn = () => { zoomPercentage.value = Math.min(zoomPercentage.value + 20, 500); };
+                const zoomOut = () => { zoomPercentage.value = Math.max(zoomPercentage.value - 20, 20); };
+                const zoomReset = () => { zoomPercentage.value = 100; };
+                const handleWheelZoom = (e) => { e.deltaY < 0 ? zoomIn() : zoomOut(); };
+
+                // 原始資料狀態 (修改預設形狀與連線避免觸發 v11 邊界計算錯誤)
                 const state = ref({
                     direction: 'TB',
                     subgraphs: [
@@ -343,93 +301,179 @@
                         { id: 'sg4', title: '人事室承辦人' }
                     ],
                     nodes: [
-                        { id: 'od', label: '考核組差勤法規庫', shape: 'docs', subgraph: 'sg1' },
-                        { id: 'od2', label: '資料組法規庫', shape: 'docs', subgraph: 'sg1' },
-                        { id: 'od3', label: '任免組差勤法規庫', shape: 'docs', subgraph: 'sg1' },
-                        { id: 'ro', label: '法規<br>向量<br>資料庫', shape: 'cylinder', subgraph: 'sg1' },
-                        { id: 'di', label: 'fa:fa-robot <br/> AI Agent <br/> 鎖定語言回復原則 <br/> RAG', shape: 'diamond', subgraph: 'sg1', className: 'orange' },
-                        
-                        { id: 'od4', label: 'HTML<br>CSS', shape: 'rect', subgraph: 'sg2' },
-                        { id: 'od5', label: 'JavaScript <br> WebGPU', shape: 'rect', subgraph: 'sg2' },
-                        
-                        { id: 'od6', label: 'HTML<br>CSS', shape: 'rect', subgraph: 'sg3' },
-                        { id: 'od7', label: 'JavaScript <br> WebGPU', shape: 'rect', subgraph: 'sg3' },
-                        
-                        { id: 'e', label: '外部開源 WebGPU <br> LLM 資料庫 <br> 供使用者下載', shape: 'circle', subgraph: '', className: 'green' },
-                        
+                        // 將原本的 docs 改為 rect 保證絕對穩定
+                        { id: 'od', label: '考核組差勤法規庫', shape: 'rect', subgraph: 'sg1' },
+                        { id: 'od2', label: '資料組法規庫', shape: 'rect', subgraph: 'sg1' },
+                        { id: 'od3', label: '任免組差勤法規庫', shape: 'rect', subgraph: 'sg1' },
+                        { id: 'ro', label: '法規\n向量\n資料庫', shape: 'cylinder', subgraph: 'sg1' },
+                        { id: 'di', label: 'fa:fa-robot AI Agent\n鎖定語言回復原則\nRAG', shape: 'diamond', subgraph: 'sg1', className: 'orange' },
+                        { id: 'od4', label: 'HTML\nCSS', shape: 'rect', subgraph: 'sg2' },
+                        { id: 'od5', label: 'JavaScript\nWebGPU', shape: 'rect', subgraph: 'sg2' },
+                        { id: 'od6', label: 'HTML\nCSS', shape: 'rect', subgraph: 'sg3' },
+                        { id: 'od7', label: 'JavaScript\nWebGPU', shape: 'rect', subgraph: 'sg3' },
+                        { id: 'e', label: '外部開源 WebGPU\nLLM 資料庫\n供使用者下載', shape: 'circle', subgraph: '', className: 'green' },
                         { id: 'od8', label: '考核組', shape: 'rect', subgraph: 'sg4' },
                         { id: 'od9', label: '資料組', shape: 'rect', subgraph: 'sg4' },
                         { id: 'od10', label: '任免組', shape: 'rect', subgraph: 'sg4' }
                     ],
                     edges: [
-                        { id: 'e1', from: 'od', to: 'ro', text: 'Embedding ', type: '-->', animated: true },
-                        { id: 'e2', from: 'od2', to: 'ro', text: 'Embedding ', type: '-->', animated: true },
-                        { id: 'e3', from: 'od3', to: 'ro', text: 'Embedding ', type: '-->', animated: true },
-                        { id: 'e4', from: 'di', to: 'ro', text: '建立 Embedding 規則', type: '-->', animated: true },
-                        
-                        { id: 'e_link1', from: 'od4', to: 'od5', text: '', type: '--o', animated: false },
-                        { id: 'e5', from: 'od5', to: 'di', text: '自然語言查詢法規', type: '-->', animated: true },
-                        
-                        { id: 'e_link2', from: 'od6', to: 'od7', text: '', type: '--o', animated: false },
-                        { id: 'e6', from: 'od7', to: 'di', text: '查詢 法規向量資料庫', type: '==>', animated: true },
-                        
-                        { id: 'e7', from: 'e', to: 'od5', text: '', type: '==>', animated: true },
-                        
+                        { id: 'e1', from: 'od', to: 'ro', text: 'Embedding', type: '-->', animated: true },
+                        { id: 'e2', from: 'od2', to: 'ro', text: 'Embedding', type: '-->', animated: true },
+                        { id: 'e3', from: 'od3', to: 'ro', text: 'Embedding', type: '-->', animated: true },
+                        { id: 'e4', from: 'di', to: 'ro', text: '建立規則', type: '-->', animated: true },
+                        { id: 'e_link1', from: 'od4', to: 'od5', text: '', type: '---', animated: false },
+                        { id: 'e5', from: 'od5', to: 'di', text: '自然語言查詢', type: '-->', animated: true },
+                        { id: 'e_link2', from: 'od6', to: 'od7', text: '', type: '---', animated: false },
+                        // 將 == 改為 -- 保證動畫解析器不會壞掉
+                        { id: 'e6', from: 'od7', to: 'di', text: '查詢向量資料庫', type: '-->', animated: true },
+                        { id: 'e7', from: 'e', to: 'od5', text: '', type: '-->', animated: true },
                         { id: 'e_link3', from: 'od8', to: 'od', text: '', type: '-->', animated: false },
                         { id: 'e_link4', from: 'od9', to: 'od2', text: '', type: '-->', animated: false },
                         { id: 'e_link5', from: 'od10', to: 'od3', text: '', type: '-->', animated: false }
                     ],
-                    // 保留您範例中的自訂樣式，並將指定邏輯移轉至 Node 物件中
                     classes: [
-                        { name: 'green', def: 'fill:#9f6,stroke:#333,stroke-width:2px;' },
-                        { name: 'orange', def: 'fill:#f96,stroke:#333,stroke-width:4px;' }
+                        // 移除尾隨的分號
+                        { name: 'green', def: 'fill:#9f6,stroke:#333,stroke-width:2px' },
+                        { name: 'orange', def: 'fill:#f96,stroke:#333,stroke-width:4px' }
                     ]
                 });
 
-                // 自動將表單狀態轉譯為 Mermaid 語法 (支援 v11 的動畫與新形狀語法)
-                const generatedCode = computed(() => {
-                    let code = `graph ${state.value.direction}\n`;
+                // --- 雙向解析邏輯：將 Mermaid 原始碼反向轉為表單 State ---
+                const parseMermaidToState = (code) => {
+                    let lines = code.split('\n').map(l => l.trim()).filter(l => l);
+                    let newState = { direction: 'TB', subgraphs: [], nodes: [], edges: [], classes: [] };
+                    let currentSubgraph = '';
+                    let animatedEdges = new Set();
+                    let edgeCounter = 0;
 
-                    // 處理節點形狀的 Helper 函數
-                    const getShapeStr = (n) => {
-                        // 將真實的換行符號轉為 Mermaid 支援的 <br/>，並將雙引號轉義避免破壞語法
-                        let label = n.label.replace(/\n/g, '<br/>').replace(/"/g, '&quot;');
-                        
-                        // 處理 v11 新版形狀 (@{} 語法)
-                        const v11Shapes = ['docs', 'manual-file', 'manual-input', 'procs', 'paper-tape', 'stadium', 'dbl-circ', 'notch-rect', 'delay', 'das', 'lin-cyl', 'curv-trap', 'tri', 'f-circ', 'lin-doc', 'sl-rect', 'processes', 'bow-rect', 'cross-circ', 'tag-doc'];
-                        if (v11Shapes.includes(n.shape)) {
-                            return `${n.id}@{ shape: ${n.shape}, label: "${label}" }`;
+                    const getOrCreateNode = (id) => {
+                        let n = newState.nodes.find(n => n.id === id);
+                        if (!n) {
+                            n = { id, label: id, shape: 'rect', subgraph: currentSubgraph, className: '', inlineStyle: '' };
+                            newState.nodes.push(n);
+                        }
+                        return n;
+                    };
+
+                    for (let line of lines) {
+                        const dirMatch = line.match(/^(?:graph|flowchart)\s+(TB|TD|BT|LR|RL)/);
+                        if (dirMatch) { newState.direction = dirMatch[1] === 'TD' ? 'TB' : dirMatch[1]; continue; }
+
+                        if (line === 'end') { currentSubgraph = ''; continue; }
+
+                        const sgMatch = line.match(/^subgraph\s+([a-zA-Z0-9_]+)(?:\s+\[(.*?)\])?/);
+                        if (sgMatch) {
+                            const sgId = sgMatch[1];
+                            const sgTitle = sgMatch[2] || sgId;
+                            newState.subgraphs.push({ id: sgId, title: sgTitle });
+                            currentSubgraph = sgId;
+                            continue;
                         }
 
-                        // 處理傳統括號形狀 (為提升穩定性，統一用雙引號將標籤包起來)
-                        let quotedLabel = `"${label}"`;
+                        const classDefMatch = line.match(/^classDef\s+([a-zA-Z0-9_-]+)\s+(.+)/);
+                        if (classDefMatch) {
+                            newState.classes.push({ name: classDefMatch[1], def: classDefMatch[2] });
+                            continue;
+                        }
+
+                        const classMatch = line.match(/^class\s+([a-zA-Z0-9_-]+)\s+([a-zA-Z0-9_-]+)/);
+                        if (classMatch) {
+                            getOrCreateNode(classMatch[1]).className = classMatch[2];
+                            continue;
+                        }
+
+                        const styleMatch = line.match(/^style\s+([a-zA-Z0-9_-]+)\s+(.+)/);
+                        if (styleMatch) {
+                            getOrCreateNode(styleMatch[1]).inlineStyle = styleMatch[2];
+                            continue;
+                        }
+
+                        const animMatch = line.match(/^([a-zA-Z0-9_-]+)@\{\s*animate:\s*true\s*\}/);
+                        if (animMatch) {
+                            animatedEdges.add(animMatch[1]);
+                            continue;
+                        }
+
+                        const edgeRegex = /^([a-zA-Z0-9_-]+)\s*(?:([a-zA-Z0-9_-]+)@)?(---|-->|==>|-.->|<-->|o--o|x--x|--o|--x)\s*(?:\|(.*?)\|)?\s*([a-zA-Z0-9_-]+)$/;
+                        const edgeMatch = line.match(edgeRegex);
+                        if (edgeMatch) {
+                            const from = edgeMatch[1];
+                            const edgeId = edgeMatch[2] || `e_auto_${Date.now()}_${edgeCounter++}`;
+                            const type = edgeMatch[3];
+                            let text = edgeMatch[4] || '';
+
+                            newState.edges.push({ id: edgeId, from, to: edgeMatch[5], text, type, animated: false });
+                            getOrCreateNode(from);
+                            getOrCreateNode(edgeMatch[5]);
+                            continue;
+                        }
+
+                        const nodeV11Match = line.match(/^([a-zA-Z0-9_-]+)@\{\s*shape:\s*([a-zA-Z0-9_-]+)\s*,\s*label:\s*"(.*?)"\s*\}/);
+                        if (nodeV11Match) {
+                            let n = getOrCreateNode(nodeV11Match[1]);
+                            n.shape = nodeV11Match[2];
+                            n.label = nodeV11Match[3].replace(/\\n/g, '\n').replace(/&quot;/g, '"');
+                            if (currentSubgraph && !n.subgraph) n.subgraph = currentSubgraph;
+                            continue;
+                        }
+
+                        const nodeClassicMatch = line.match(/^([a-zA-Z0-9_-]+)\s*([\[\(\{]+)\s*(?:"(.*?)"|(.*?))\s*([\]\)\}]+)$/);
+                        if (nodeClassicMatch && !line.includes('-->') && !line.includes('---')) {
+                            let id = nodeClassicMatch[1];
+                            let bracket = nodeClassicMatch[2]; 
+                            let label = nodeClassicMatch[3] || nodeClassicMatch[4] || id;
+
+                            let shape = 'rect';
+                            if (line.includes('((({')) shape = 'double_circle_bracket';
+                            else if (line.includes('((')) shape = 'circle';
+                            else if (line.includes('[(')) shape = 'cylinder';
+                            else if (line.includes('([')) shape = 'stadium_bracket';
+                            else if (line.includes('{{')) shape = 'hexagon';
+                            else if (bracket.includes('{')) shape = 'diamond';
+                            else if (bracket.includes('(')) shape = 'rounded';
+                            
+                            let n = getOrCreateNode(id);
+                            n.shape = shape;
+                            n.label = label.replace(/<br\s*\/?>/g, '\n').replace(/&quot;/g, '"');
+                            if (currentSubgraph && !n.subgraph) n.subgraph = currentSubgraph;
+                            continue;
+                        }
+                    }
+
+                    newState.edges.forEach(e => {
+                        if (animatedEdges.has(e.id)) e.animated = true;
+                    });
+
+                    return newState;
+                };
+
+                // 表單生成 Mermaid 語法邏輯
+                const generatedCode = computed(() => {
+                    let code = `graph ${state.value.direction}\n`;
+                    const getShapeStr = (n) => {
+                        let label = n.label.replace(/"/g, '&quot;');
+                        const v11Shapes = ['docs', 'manual-file', 'manual-input', 'procs', 'paper-tape', 'stadium', 'dbl-circ', 'notch-rect', 'delay', 'das', 'lin-cyl', 'curv-trap', 'tri', 'f-circ', 'lin-doc', 'sl-rect', 'processes', 'bow-rect', 'cross-circ', 'tag-doc'];
+                        
+                        if (v11Shapes.includes(n.shape)) {
+                            let v11Label = label.replace(/\n/g, '\\n');
+                            return `${n.id}@{ shape: ${n.shape}, label: "${v11Label}" }`;
+                        }
+                        
+                        let classicLabel = label.replace(/\n/g, '<br/>');
+                        let qL = `"${classicLabel}"`;
                         switch(n.shape) {
-                            case 'rect': return `${n.id}[${quotedLabel}]`;
-                            case 'rounded': return `${n.id}(${quotedLabel})`;
-                            case 'stadium_bracket': return `${n.id}([${quotedLabel}])`;
-                            case 'cylinder': return `${n.id}[(${quotedLabel})]`;
-                            case 'diamond': return `${n.id}{${quotedLabel}}`;
-                            case 'circle': return `${n.id}((${quotedLabel}))`;
-                            case 'double_circle_bracket': return `${n.id}((({${quotedLabel})))`;
-                            case 'hexagon': return `${n.id}{{${quotedLabel}}}`;
-                            case 'subroutine': return `${n.id}[[${quotedLabel}]]`;
-                            case 'asymmetric': return `${n.id}>${quotedLabel}]`;
-                            case 'parallelogram': return `${n.id}[/${quotedLabel}/]`;
-                            case 'parallelogram_alt': return `${n.id}[\\${quotedLabel}\\]`;
-                            case 'trapezoid': return `${n.id}[/${quotedLabel}\\]`;
-                            case 'trapezoid_alt': return `${n.id}[\\${quotedLabel}/]`;
-                            default: return `${n.id}[${quotedLabel}]`;
+                            case 'rect': return `${n.id}[${qL}]`;
+                            case 'rounded': return `${n.id}(${qL})`;
+                            case 'cylinder': return `${n.id}[(${qL})]`;
+                            case 'diamond': return `${n.id}{${qL}}`;
+                            case 'circle': return `${n.id}((${qL}))`;
+                            default: return `${n.id}[${qL}]`;
                         }
                     };
 
-                    // 1. 處理具有 Subgraph 的節點
                     state.value.subgraphs.forEach(sg => {
-                        // 使用官方推薦的 subgraph ID [Title] 語法，更穩定
-                        if (sg.id && sg.id.trim() !== '') {
-                            code += `    subgraph ${sg.id} [${sg.title}]\n`;
-                        } else {
-                            code += `    subgraph ${sg.title}\n`;
-                        }
+                        if (sg.id && sg.id.trim() !== '') code += `    subgraph ${sg.id} [${sg.title}]\n`;
+                        else code += `    subgraph ${sg.title}\n`;
                         
                         state.value.nodes.filter(n => n.subgraph === sg.id || n.subgraph === sg.title).forEach(n => {
                             code += `        ${getShapeStr(n)}\n`;
@@ -437,128 +481,239 @@
                         code += `    end\n\n`;
                     });
 
-                    // 2. 處理沒有歸屬 Subgraph 的獨立節點
-                    state.value.nodes.filter(n => !n.subgraph).forEach(n => {
-                        code += `    ${getShapeStr(n)}\n`;
-                    });
+                    state.value.nodes.filter(n => !n.subgraph).forEach(n => { code += `    ${getShapeStr(n)}\n`; });
                     code += '\n';
 
-                    // 3. 處理線段與動畫 (修復：補回連線生成邏輯)
                     state.value.edges.forEach((e, idx) => {
                         let edgeType = e.type || '-->';
-                        // 若啟用動畫，必須使用 v11 新版線段語法
+                        
+                        // 移除標籤引號，純字串即可，避免干擾邊界解析
+                        let cleanText = (e.text || '').replace(/[|]/g, ' ').trim();
+                        let safeText = cleanText ? `|${cleanText}|` : '';
+                        
                         if (e.animated) {
-                            let edgeId = e.id || `edge_anim_${idx}`;
-                            if (e.text) {
-                                code += `    ${e.from} ${edgeId}@${edgeType}|${e.text}| ${e.to}\n`;
-                            } else {
-                                code += `    ${e.from} ${edgeId}@${edgeType} ${e.to}\n`;
-                            }
+                            let edgeId = (e.id || `e_anim_${idx}`).replace(/[^a-zA-Z0-9_]/g, '');
+                            code += `    ${e.from} ${edgeId}@${edgeType}${safeText} ${e.to}\n`;
                             code += `    ${edgeId}@{ animate: true }\n`;
                         } else {
-                            // 傳統無動畫線段語法
-                            if (e.text) {
-                                code += `    ${e.from} ${edgeType}|${e.text}| ${e.to}\n`;
-                            } else {
-                                code += `    ${e.from} ${edgeType} ${e.to}\n`;
-                            }
+                            code += `    ${e.from} ${edgeType}${safeText} ${e.to}\n`;
                         }
                     });
                     code += '\n';
 
-                    // 4. 寫入自訂 CSS Class 與獨立樣式 (Inline Styles)
                     if (state.value.classes.length > 0) {
-                        state.value.classes.forEach(c => {
-                            if (c.name && c.def) {
-                                code += `    classDef ${c.name} ${c.def}\n`;
-                            }
-                        });
+                        state.value.classes.forEach(c => { if (c.name && c.def) code += `    classDef ${c.name} ${c.def}\n`; });
                     }
-                    
-                    // 掃描所有節點套用的樣式與 Class
                     state.value.nodes.forEach(n => {
-                        if (n.className) {
-                            code += `    class ${n.id} ${n.className}\n`;
-                        }
-                        if (n.inlineStyle && n.inlineStyle.trim() !== '') {
-                            code += `    style ${n.id} ${n.inlineStyle}\n`;
-                        }
+                        if (n.className) code += `    class ${n.id} ${n.className}\n`;
+                        if (n.inlineStyle && n.inlineStyle.trim() !== '') code += `    style ${n.id} ${n.inlineStyle}\n`;
                     });
 
                     return code;
                 });
 
-                // 決定當前要渲染的程式碼來源
-                const currentCode = computed(() => {
-                    return mode.value === 'builder' ? generatedCode.value : manualCode.value;
-                });
+                const currentCode = computed(() => mode.value === 'builder' ? generatedCode.value : manualCode.value);
 
-                // 當切換到手動模式時，將目前的生成碼複製過去
-                watch(mode, (newMode) => {
-                    if (newMode === 'manual') {
-                        manualCode.value = generatedCode.value;
+                const switchMode = (targetMode) => {
+                    if (targetMode === mode.value) return;
+                    
+                    if (mode.value === 'manual' && targetMode === 'builder') {
+                        if (manualCode.value !== generatedCode.value) {
+                            try {
+                                const parsedState = parseMermaidToState(manualCode.value);
+                                state.value = parsedState;
+                                showToast('已成功根據程式碼更新表單內容！');
+                            } catch (e) {
+                                console.error("解析失敗:", e);
+                                showToast('解析程式碼時發生部分錯誤，但已盡力還原。');
+                            }
+                        }
                     }
+                    mode.value = targetMode;
+                };
+
+                watch(mode, (newMode) => { 
+                    if (newMode === 'manual') manualCode.value = generatedCode.value; 
                 });
 
-                // 呼叫 Mermaid 進行繪製
                 const renderDiagram = async () => {
                     if (!currentCode.value.trim()) return;
+                    const container = document.getElementById('mermaid-container');
+                    if (!container) return; 
+
                     renderError.value = '';
-                    // 產生唯一的 ID 避免衝突，並移至 try 外部以供 catch 區塊存取
                     const id = `mermaid-svg-${Date.now()}`;
                     try {
-                        const container = document.getElementById('mermaid-container');
-                        container.innerHTML = ''; // 清空舊圖
+                        container.innerHTML = ''; 
                         const { svg } = await mermaid.render(id, currentCode.value);
                         container.innerHTML = svg;
                     } catch (e) {
                         console.error('Mermaid render error:', e);
                         renderError.value = e.message || '語法解析失敗';
-                        // 嘗試清理錯誤時產生的隱藏 DOM
-                        const errorMsgDOM = document.querySelector(`#d${id}`);
-                        if(errorMsgDOM) errorMsgDOM.remove();
                     }
                 };
 
-                // 監聽程式碼變動，使用防抖 (Debounce) 來觸發重新繪製
                 let renderTimeout;
                 watch(currentCode, () => {
                     clearTimeout(renderTimeout);
-                    renderTimeout = setTimeout(() => {
-                        renderDiagram();
-                    }, 500); // 延遲 500ms 避免輸入時頻繁閃爍
-                }, { immediate: true });
+                    renderTimeout = setTimeout(() => { renderDiagram(); }, 500); 
+                });
 
-                // 複製程式碼功能 (使用替代傳統 execCommand 的做法以確保相容性)
+                onMounted(() => {
+                    Promise.all([Vue.nextTick(), document.fonts.ready]).then(() => {
+                        setTimeout(() => {
+                            if (currentCode.value) {
+                                renderDiagram();
+                            }
+                        }, 200);
+                    });
+                });
+
                 const copyCode = () => {
-                    const el = document.createElement('textarea');
-                    el.value = currentCode.value;
-                    document.body.appendChild(el);
-                    el.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(el);
-                    
-                    toastMsg.value = '已將 Mermaid 原始碼複製到剪貼簿！';
+                    navigator.clipboard.writeText(currentCode.value).then(() => {
+                        showToast('已複製 Mermaid 語法！');
+                    });
+                };
+
+                const showToast = (msg) => {
+                    toastMsg.value = msg;
                     setTimeout(() => { toastMsg.value = ''; }, 3000);
                 };
 
-                // 表單操作 Helper
+                // --- 拖曳分隔線邏輯 ---
+                const startDrag = (e) => {
+                    isDragging.value = true;
+                    document.addEventListener('mousemove', onDrag);
+                    document.addEventListener('mouseup', stopDrag);
+                    document.addEventListener('touchmove', onDrag, { passive: false });
+                    document.addEventListener('touchend', stopDrag);
+                };
+
+                const onDrag = (e) => {
+                    if (!isDragging.value) return;
+                    e.preventDefault(); 
+                    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                    let newWidth = (clientX / window.innerWidth) * 100;
+                    if (newWidth < 20) newWidth = 20; 
+                    if (newWidth > 70) newWidth = 70; 
+                    leftPanelWidth.value = newWidth;
+                };
+
+                const stopDrag = () => {
+                    isDragging.value = false;
+                    document.removeEventListener('mousemove', onDrag);
+                    document.removeEventListener('mouseup', stopDrag);
+                    document.removeEventListener('touchmove', onDrag);
+                    document.removeEventListener('touchend', stopDrag);
+                };
+
+                // --- 整合所有下載邏輯 ---
+                const downloadDiagram = async (format) => {
+                    try {
+                        let blob;
+                        let mimeType;
+                        let extension;
+                        let desc;
+
+                        if (format === 'md') {
+                            const mdContent = `\`\`\`mermaid\n${currentCode.value}\n\`\`\``;
+                            blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8' });
+                            mimeType = 'text/markdown';
+                            extension = '.md';
+                            desc = 'Markdown 檔案';
+                        } else {
+                            const svgEl = document.querySelector('#mermaid-container svg');
+                            if (!svgEl) {
+                                showToast('圖表尚未渲染完成！');
+                                return;
+                            }
+                            if (format === 'svg') {
+                                const svgData = new XMLSerializer().serializeToString(svgEl);
+                                blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                                mimeType = 'image/svg+xml';
+                                extension = '.svg';
+                                desc = 'SVG 向量圖';
+                            } else if (format === 'png') {
+                                blob = await convertSvgToPng(svgEl);
+                                mimeType = 'image/png';
+                                extension = '.png';
+                                desc = 'PNG 圖片';
+                            }
+                        }
+
+                        if (window.showSaveFilePicker) {
+                            const handle = await window.showSaveFilePicker({
+                                suggestedName: `系統架構圖${extension}`,
+                                types: [{
+                                    description: desc,
+                                    accept: { [mimeType]: [extension] },
+                                }],
+                            });
+                            const writable = await handle.createWritable();
+                            await writable.write(blob);
+                            await writable.close();
+                            showToast(`已成功儲存檔案！`);
+                        } else {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `系統架構圖${extension}`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            showToast(`檔案已下載`);
+                        }
+                    } catch (err) {
+                        if (err.name !== 'AbortError') {
+                            console.error('儲存失敗:', err);
+                            alert('儲存失敗或瀏覽器不支援此功能');
+                        }
+                    }
+                };
+
+                const convertSvgToPng = (svgEl) => {
+                    return new Promise((resolve, reject) => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const rect = svgEl.getBoundingClientRect();
+                        
+                        const scale = 2; 
+                        canvas.width = rect.width * scale;
+                        canvas.height = rect.height * scale;
+                        
+                        ctx.fillStyle = '#ffffff'; 
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.scale(scale, scale);
+
+                        const svgData = new XMLSerializer().serializeToString(svgEl);
+                        const blob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+                        const url = URL.createObjectURL(blob);
+                        
+                        const img = new Image();
+                        img.onload = () => {
+                            ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                            URL.revokeObjectURL(url);
+                            canvas.toBlob((b) => resolve(b), 'image/png');
+                        };
+                        img.onerror = reject;
+                        img.src = url;
+                    });
+                };
+
                 const addSubgraph = () => state.value.subgraphs.push({ id: `sg${Date.now()}`, title: '新區塊' });
                 const removeSubgraph = (idx) => state.value.subgraphs.splice(idx, 1);
-                
                 const addNode = () => state.value.nodes.push({ id: `n${Date.now()}`, label: '新節點', shape: 'rect', subgraph: '' });
                 const removeNode = (idx) => state.value.nodes.splice(idx, 1);
-                
                 const addEdge = () => state.value.edges.push({ id: `e${Date.now()}`, from: '', to: '', text: '', type: '-->', animated: false });
                 const removeEdge = (idx) => state.value.edges.splice(idx, 1);
-                
-                const addClass = () => state.value.classes.push({ name: `style${Date.now().toString().slice(-4)}`, def: 'fill:#fff,stroke:#333,stroke-width:2px;' });
-                const removeClass = (idx) => state.value.classes.splice(idx, 1);
 
                 return { 
                     state, mode, manualCode, currentCode, generatedCode,
-                    renderError, toastMsg, copyCode,
-                    addSubgraph, removeSubgraph, addNode, removeNode, addEdge, removeEdge, addClass, removeClass
+                    renderError, toastMsg, copyCode, switchMode,
+                    addSubgraph, removeSubgraph, addNode, removeNode, addEdge, removeEdge,
+                    leftPanelWidth, startDrag, isDragging, downloadDiagram,
+                    zoomPercentage, zoomIn, zoomOut, zoomReset, handleWheelZoom
                 };
             }
         }).mount('#app');
