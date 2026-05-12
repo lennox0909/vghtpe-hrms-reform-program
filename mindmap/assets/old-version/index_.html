@@ -8,13 +8,7 @@
     <!-- 引入 Tailwind CSS & D3.js (Markmap 核心依賴) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-    
-    <!-- 引入 CodeMirror 實現語法高亮與行號 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/markdown/markdown.min.js"></script>
-    <!-- 引入外部 CSS 樣式表 -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-gray-50 h-screen flex flex-col font-sans text-gray-800 transition-colors duration-300 overflow-hidden">
 
@@ -113,14 +107,8 @@
                     <span id="save-status" class="text-xs text-emerald-600 font-normal opacity-0 transition-opacity duration-300">已自動儲存</span>
                 </div>
                 <div class="flex items-center gap-2 md:gap-3">
-                    <span class="hidden lg:inline text-xs font-normal mr-1">支援 HTML & 數學公式</span>
+                    <span class="hidden md:inline text-xs font-normal">支援 HTML & 數學公式</span>
                     
-                    <!-- 編輯區字體縮放按鈕群組 -->
-                    <div class="flex items-center bg-white border border-gray-300 rounded-md shadow-sm">
-                        <button id="btn-text-zoom-out" class="px-2 py-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-l-md transition-colors font-bold text-xs border-r border-gray-300" title="縮小編輯區字體">A-</button>
-                        <button id="btn-text-zoom-in" class="px-2 py-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-r-md transition-colors font-bold text-xs" title="放大編輯區字體">A+</button>
-                    </div>
-
                     <input type="file" id="file-import" accept=".md,.txt" class="hidden">
                     <button id="btn-import-file" class="text-xs bg-indigo-500 hover:bg-indigo-600 text-white px-2 py-1.5 rounded-md transition-colors shadow-sm flex items-center gap-1" title="匯入 Markdown 或 TXT 檔案">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
@@ -133,10 +121,8 @@
                     </button>
                 </div>
             </div>
-            <!-- 由 CodeMirror 接管 -->
-            <div class="flex-1 w-full h-full relative">
-                <textarea id="editor" class="hidden"></textarea>
-            </div>
+            <!-- 由 JS fetch 讀取 -->
+            <textarea id="editor" class="flex-1 p-5 w-full h-full resize-none font-mono text-base md:text-lg leading-relaxed text-gray-700 bg-white transition-colors duration-300" spellcheck="false"></textarea>
         </section>
 
         <!-- 拖曳調整桿 (Resizer) -->
@@ -151,17 +137,6 @@
         <!-- 右側心智圖顯示區 -->
         <section class="flex-1 relative bg-white transition-colors duration-300 overflow-hidden">
             <svg id="mindmap" class="w-full h-full cursor-grab active:cursor-grabbing"></svg>
-            
-            <!-- 浮動縮放控制列 -->
-            <div class="absolute bottom-6 right-6 flex items-center gap-2 bg-white/80 p-1.5 rounded-2xl shadow-sm border border-slate-200 backdrop-blur-md z-10">
-                <div class="w-px h-5 bg-slate-300 ml-1 mr-0.5"></div>
-                <button id="btn-zoom-in" class="flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 rounded-full text-sm font-medium transition-all shadow-sm" title="放大">
-                    🔍 放大
-                </button>
-                <button id="btn-zoom-out" class="flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 rounded-full text-sm font-medium transition-all shadow-sm" title="縮小">
-                    🔍 縮小
-                </button>
-            </div>
         </section>
     </main>
 
@@ -176,8 +151,6 @@
             </div>
         </div>
     </div>
-    
-    <!-- 引入外部 JavaScript 邏輯 (需加上 type="module") -->
     <script type="module" src="script.js"></script>
 </body>
 </html>

@@ -1,3 +1,4 @@
+
 import * as markmapLib from 'https://cdn.jsdelivr.net/npm/markmap-lib@0.18.9/+esm';
 import * as markmapView from 'https://cdn.jsdelivr.net/npm/markmap-view@0.18.9/+esm';
 import * as markmapCommon from 'https://cdn.jsdelivr.net/npm/markmap-common@0.18.9/+esm';
@@ -24,8 +25,6 @@ const resizer = document.getElementById('resizer');
 const editor = document.getElementById('editor');
 const svgEl = document.getElementById('mindmap');
 const btnFit = document.getElementById('btn-fit');
-const btnZoomIn = document.getElementById('btn-zoom-in');
-const btnZoomOut = document.getElementById('btn-zoom-out');
 const fitText = document.getElementById('fit-text');
 const btnDownload = document.getElementById('btn-download');
 const btnDownloadSvg = document.getElementById('btn-download-svg');
@@ -34,45 +33,10 @@ const saveStatus = document.getElementById('save-status');
 const btnClearEditor = document.getElementById('btn-clear-editor');
 const btnImportFile = document.getElementById('btn-import-file');
 const fileImport = document.getElementById('file-import');
-const btnTextZoomIn = document.getElementById('btn-text-zoom-in');
-const btnTextZoomOut = document.getElementById('btn-text-zoom-out');
 
 let isFitted = false;
 let prevTransform = null;
 let isEditorVisible = true;
-
-// --- 初始化 CodeMirror 編輯器 ---
-const cmEditor = CodeMirror.fromTextArea(editor, {
-    lineNumbers: true,
-    mode: 'markdown',
-    lineWrapping: true,
-    tabSize: 2,
-    extraKeys: {
-        "Tab": (cm) => {
-            if (cm.somethingSelected()) cm.indentSelection("add");
-            else cm.replaceSelection("  ", "end", "+input");
-        }
-    }
-});
-
-// --- 編輯區字體縮放邏輯 ---
-let editorFontSize = window.innerWidth >= 768 ? 16 : 14; // 預設字體大小(px)
-
-const updateEditorFontSize = () => {
-    const wrapper = cmEditor.getWrapperElement();
-    wrapper.style.fontSize = `${editorFontSize}px`;
-    cmEditor.refresh(); // 讓 CodeMirror 重新計算行號與游標位置
-};
-
-btnTextZoomIn.addEventListener('click', () => {
-    editorFontSize = Math.min(36, editorFontSize + 2); // 最大限制到 36px
-    updateEditorFontSize();
-});
-
-btnTextZoomOut.addEventListener('click', () => {
-    editorFontSize = Math.max(10, editorFontSize - 2); // 最小限制到 10px
-    updateEditorFontSize();
-});
 
 // --- 收合/展開編輯區邏輯 ---
 btnToggleEditor.addEventListener('click', () => {
@@ -274,7 +238,7 @@ const saveFile = async (blob, suggestedName, description, acceptTypes) => {
 };
 
 btnDownloadMd.addEventListener('click', async () => {
-    const markdownContent = cmEditor.getValue();
+    const markdownContent = editor.value;
     const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
     await saveFile(blob, 'markmap-mindmap.md', 'Markdown 檔案', { 'text/markdown': ['.md', '.markdown'] });
 });
@@ -283,7 +247,7 @@ btnDownload.addEventListener('click', async () => {
     const endTag = '<' + '/script>';
     const scriptRegex = new RegExp(endTag, 'gi');
     const uiColor = parseInt(selColor.value, 10);
-    let finalMdForExport = cmEditor.getValue().replace(scriptRegex, '&lt;/script&gt;').replace(/\xA0/g, ' ');
+    let finalMdForExport = editor.value.replace(scriptRegex, '&lt;/script&gt;').replace(/\xA0/g, ' ');
 
     const getFoldedPaths = (node, path = "0", folded = []) => {
         if (node && node.payload && node.payload.fold === 1) folded.push(path);
@@ -297,11 +261,10 @@ btnDownload.addEventListener('click', async () => {
     const currentTransform = window.d3.zoomTransform(svgEl);
     const transformJson = JSON.stringify(currentTransform);
 
-    // 拆解 HTML 結尾標籤字串，避免被 Live Server 等工具誤判而強制注入腳本導致語法壞掉
     const htmlLines = [
-        '<' + '!DOCTYPE html>',
-        '<' + 'html lang="zh-TW">',
-        '<' + 'head>',
+        '<!DOCTYPE html>',
+        '<html lang="zh-TW">',
+        '<head>',
         '    <meta charset="UTF-8">',
         '    <meta name="viewport" content="width=device-width, initial-scale=1.0">',
         '    <title>Markmap 匯出心智圖</title>',
@@ -317,8 +280,8 @@ btnDownload.addEventListener('click', async () => {
         '        button, select { padding: 0.375rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; background: white; cursor: pointer; font-size: 0.875rem; font-weight: 500; color: #334155; transition: all 0.2s; }',
         '        button:hover, select:hover { background: #f1f5f9; border-color: #94a3b8; }',
         '    </style>',
-        '<' + '/head>',
-        '<' + 'body>',
+        '</head>',
+        '<body>',
         '    <div id="controls">',
         '        <div style="display: flex; align-items: center; gap: 0.5rem;">',
         '            <label for="sel-expand" style="font-size: 0.875rem; font-weight: 600; color: #475569;">展開層級</label>',
@@ -406,8 +369,8 @@ btnDownload.addEventListener('click', async () => {
         '            });',
         '        })();',
         '    ' + endTag,
-        '<' + '/body>',
-        '<' + '/html>'
+        '</body>',
+        '</html>'
     ];
     const htmlContent = htmlLines.join('\n');
     const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
@@ -419,12 +382,12 @@ btnDownloadSvg.addEventListener('click', async () => {
     const clone = svgEl.cloneNode(true);
     const style = document.createElement('style');
     style.textContent = `
-                        .markmap-link { fill: none; }
-                        .markmap-node circle { cursor: pointer; }
-                        foreignObject { overflow: visible; }
-                        svg { background-color: #ffffff; color: #1f2937; font-family: sans-serif; }
-                        code { background-color: #f3f4f6; border-radius: 4px; padding: 2px 4px; }
-                    `;
+                .markmap-link { fill: none; }
+                .markmap-node circle { cursor: pointer; }
+                foreignObject { overflow: visible; }
+                svg { background-color: #ffffff; color: #1f2937; font-family: sans-serif; }
+                code { background-color: #f3f4f6; border-radius: 4px; padding: 2px 4px; }
+            `;
     clone.insertBefore(style, clone.firstChild);
     if (!clone.getAttribute('xmlns')) {
         clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
@@ -554,8 +517,8 @@ const debounceUpdate = (markdown, isInitialLoad = false) => {
     }, isInitialLoad ? 0 : 300);
 };
 
-cmEditor.on('change', () => {
-    debounceUpdate(cmEditor.getValue());
+editor.addEventListener('input', (e) => {
+    debounceUpdate(e.target.value);
 });
 
 if (btnClearEditor) {
@@ -566,9 +529,9 @@ if (btnClearEditor) {
             { confirmText: '確定清除', confirmColor: 'bg-red-500 hover:bg-red-600' }
         );
         if (confirmed) {
-            cmEditor.setValue('');
+            editor.value = '';
             debounceUpdate('');
-            cmEditor.focus();
+            editor.focus();
         }
     });
 }
@@ -585,7 +548,7 @@ if (btnImportFile && fileImport) {
         const reader = new FileReader();
         reader.onload = async (event) => {
             const content = event.target.result;
-            if (cmEditor.getValue().trim() !== '') {
+            if (editor.value.trim() !== '') {
                 const confirmed = await showModal(
                     '匯入檔案',
                     '匯入檔案將會覆蓋當前編輯區的所有內容，是否繼續？',
@@ -596,7 +559,7 @@ if (btnImportFile && fileImport) {
                     return;
                 }
             }
-            cmEditor.setValue(content);
+            editor.value = content;
             debounceUpdate(content);
             fileImport.value = '';
         };
@@ -608,8 +571,19 @@ if (btnImportFile && fileImport) {
     });
 }
 
-selExpand.addEventListener('change', () => debounceUpdate(cmEditor.getValue()));
-selColor.addEventListener('change', () => debounceUpdate(cmEditor.getValue()));
+selExpand.addEventListener('change', () => debounceUpdate(editor.value));
+selColor.addEventListener('change', () => debounceUpdate(editor.value));
+
+editor.addEventListener('keydown', function (e) {
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = this.selectionStart;
+        const end = this.selectionEnd;
+        this.value = this.value.substring(0, start) + "  " + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = start + 2;
+        debounceUpdate(this.value);
+    }
+});
 
 btnFit.addEventListener('click', () => {
     if (!mm) return;
@@ -626,76 +600,35 @@ btnFit.addEventListener('click', () => {
     debounceSaveViewState();
 });
 
-btnZoomIn.addEventListener('click', () => {
-    if (!mm) return;
-    window.d3.select(svgEl).transition().duration(300).call(mm.zoom.scaleBy, 1.2);
-    if (isFitted) {
-        isFitted = false;
-        fitText.innerText = '適應螢幕';
+
+// --- 非同步載入外部預設內容 ---
+async function loadDefaultContent() {
+    try {
+        const response = await fetch('assets/sample.md');
+        if (!response.ok) throw new Error('無法讀取 sample.md');
+        return await response.text();
+    } catch (err) {
+        console.error('載入預設內容失敗:', err);
+        return '# 載入失敗\n請確認您的伺服器環境中是否存在 `sample.md` 檔案，或檢查 CORS 設定。';
     }
-    debounceSaveViewState();
-});
+}
 
-btnZoomOut.addEventListener('click', () => {
-    if (!mm) return;
-    window.d3.select(svgEl).transition().duration(300).call(mm.zoom.scaleBy, 0.8);
-    if (isFitted) {
-        isFitted = false;
-        fitText.innerText = '適應螢幕';
-    }
-    debounceSaveViewState();
-});
 
-// --- 預設內容 ---
-const defaultContent = `# 歡迎使用心智圖編輯器
-## 什麼是 Markmap？
-- Markmap 是一個可以將 Markdown 語法轉換為心智圖的開源工具
-- 它結合了 markdown 的易讀性與心智圖的視覺化優勢
 
-## 核心特色
-- **即時預覽**：左側編輯，右側立即顯示結果
-- **呈現多種資料格式**
-  - **支援數學公式**：如 $x = {-b \\pm \\sqrt{b^2-4ac} \\over 2a}$<!-- markmap: fold -->
-    - [更多數學公式範例](#?d=gist:af76a4c245b302206b16aec503dbe07b:katex.md)
-    - **strong** ~~del~~ *italic* ==highlight==
-  - \`inline code\`
-  - [x] checkbox
-  -
-    \`\`\`js
-    console.log('hello, JavaScript')
-    \`\`\`
-  - 
-    | Products | Price |
-    |-|-|
-    | Apple | 4 |
-    | Banana | 2 |
 
-  - ![圖片](./assets/Taipei_Veterans_General_Hospital_Emblem.svg)
-
-- **多種匯出格式**
-  - Markdown 原始檔
-  - SVG 向量圖
-  - 可互動的 HTML 網頁
-
-## 如何使用？
-1. 在左側編輯區輸入您的想法
-2. 使用縮進 (Tab) 來建立層級結構
-3. 也可以直接點擊上方按鈕匯入現有的 Markdown 檔案
-4. 快速縮放預覽：按下\`ctrl\` + 滑鼠滾輪`;
-
-// --- 啟動邏輯 ---
+// --- 啟動邏輯：改為讀取 sample.md ---
 async function initEditor() {
     const savedContent = localStorage.getItem('vghtpe_markmap_content');
     if (savedContent) {
         // 如果本地有暫存，優先使用暫存
-        cmEditor.setValue(savedContent);
-        debounceUpdate(savedContent, true);
+        editor.value = savedContent;
+        debounceUpdate(editor.value, true);
     } else {
-        // 原本是 fetch sample.md，這裡為了單一檔案預覽改用內建字串
-        cmEditor.setValue(defaultContent);
-        debounceUpdate(defaultContent, true);
+        editor.value = await loadDefaultContent();
+        debounceUpdate(editor.value, true);
     }
 }
 
 // 執行啟動
 initEditor();
+
