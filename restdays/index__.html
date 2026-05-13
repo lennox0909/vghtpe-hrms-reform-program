@@ -91,27 +91,16 @@
                     <div id="mixedContainer" class="hidden mt-5 pt-5 border-t border-gray-200 fade-in">
                         <div class="bg-purple-50/70 p-4 md:p-5 rounded-lg border border-purple-200 shadow-inner">
                             <div class="mb-5 border-b border-purple-200 pb-4">
-                                <label class="block text-sm font-bold text-purple-900 mb-2">受僱(到職)時的初始身分與區間 <span class="text-red-500">*</span></label>
-                                <div class="flex flex-col md:flex-row gap-3 items-start md:items-center">
-                                    <div class="w-full md:w-auto flex items-center gap-2">
-                                        <input type="date" id="initialStartDate" class="w-full md:w-auto p-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 shadow-sm text-sm" required>
-                                        <span class="text-sm text-gray-600 font-medium">起為</span>
-                                    </div>
-                                    <select id="initialStatus" class="w-full md:w-1/3 p-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 shadow-sm font-medium" onchange="checkMixedPartTime()">
-                                        <option value="full">全時人員 (月薪制)</option>
-                                        <option value="half">半日人員 (月薪制)</option>
-                                        <option value="part">部分工時 (時薪制)</option>
-                                    </select>
-                                    <div class="w-full md:w-auto flex items-center gap-2">
-                                        <span class="text-sm text-gray-600 font-medium">至</span>
-                                        <input type="date" id="initialEndDate" class="w-full md:w-auto p-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 shadow-sm text-sm" title="若持續至年底或無轉換，可留空">
-                                        <span class="text-xs text-gray-500 hidden md:inline">(若持續至今可留空)</span>
-                                    </div>
-                                </div>
+                                <label class="block text-sm font-bold text-purple-900 mb-2">受僱(到職)時的初始身分 <span class="text-red-500">*</span></label>
+                                <select id="initialStatus" class="w-full md:w-1/3 p-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 shadow-sm font-medium" onchange="checkMixedPartTime()">
+                                    <option value="full">全時人員 (月薪制)</option>
+                                    <option value="half">半日人員 (月薪制)</option>
+                                    <option value="part">部分工時 (時薪制)</option>
+                                </select>
                             </div>
                             
                             <div class="flex items-center justify-between mb-3">
-                                <label class="block text-sm font-bold text-purple-900"><i class="fa-solid fa-timeline mr-1"></i> 後續身分紀錄 (依發生順序排列)</label>
+                                <label class="block text-sm font-bold text-purple-900"><i class="fa-solid fa-timeline mr-1"></i> 身分轉換紀錄 (依發生順序排列)</label>
                                 <button type="button" onclick="addTransition()" class="text-sm bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-md font-bold transition-colors shadow-sm">
                                     <i class="fa-solid fa-plus mr-1"></i>新增紀錄
                                 </button>
@@ -120,11 +109,22 @@
                                 <!-- Transition records will be dynamically generated here -->
                             </div>
 
-                            <!-- Conditionally Displayed: Part Time specific details for Mixed Mode (Dynamically Generated) -->
+                            <!-- Conditionally Displayed: Part Time specific details for Mixed Mode -->
                             <div id="mixedPartTimeDetails" class="hidden mt-5 pt-4 border-t border-purple-200 bg-white p-4 rounded-lg border shadow-sm">
-                                <p class="text-sm text-purple-800 font-bold mb-3"><i class="fa-solid fa-clock mr-1"></i> 各年度部分工時實際工時設定</p>
-                                <div id="dynamicMixedPtContainer" class="space-y-4">
-                                    <!-- Dynamic inputs will be injected here -->
+                                <p class="text-sm text-purple-800 font-bold mb-3"><i class="fa-solid fa-clock mr-1"></i> 部分工時期間換算設定</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="mixedPtYear" class="block text-xs font-bold text-gray-600 mb-2">部分工時對應結算年度 <span class="text-red-500">*</span></label>
+                                        <select id="mixedPtYear" class="w-full p-2.5 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 shadow-sm font-medium" onchange="updateMixedBaseline()">
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="mixedWorkHours" class="block text-xs font-bold text-gray-600 mb-2">該年度<span class="text-red-600 underline">部分工時期間</span>實際總工時 <span class="text-red-500">*</span></label>
+                                        <div class="flex items-center gap-2">
+                                            <input type="number" id="mixedWorkHours" min="0" max="4000" inputmode="numeric" pattern="[0-9]*" class="w-full p-2.5 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 shadow-sm" placeholder="例如: 500">
+                                            <span id="mixedBaselineText" class="text-purple-700 font-medium whitespace-nowrap text-sm">/ 1960 h</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -133,9 +133,10 @@
                             </p>
                         </div>
                     </div>
+                </div>
 
-                <!-- Start Date (Hidden in Mixed Mode) -->
-                <div id="startDateContainer">
+                <!-- Start Date -->
+                <div>
                     <label for="startDate" class="block text-sm font-medium text-gray-700 mb-2">受僱日期 (到職日) <span class="text-red-500">*</span></label>
                     <input type="date" id="startDate" class="w-full p-3.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors text-lg shadow-sm" required>
                 </div>
@@ -190,10 +191,9 @@
         const STORAGE_KEY_HOURS = 'tpvgh_restdays_workHours_cal';
         const STORAGE_KEY_PTYEAR = 'tpvgh_restdays_ptYear_cal';
         const STORAGE_KEY_MIXED_INIT = 'tpvgh_restdays_mixed_init_cal';
-        const STORAGE_KEY_MIXED_INIT_END = 'tpvgh_restdays_mixed_init_end_cal'; // New Key
         const STORAGE_KEY_MIXED_TRANS = 'tpvgh_restdays_mixed_trans_cal';
-        // Mixed PtYear is removed, we now store a map of hours per year
-        const STORAGE_KEY_MIXED_HOURS_MAP = 'tpvgh_restdays_mixed_workHoursMap_cal'; 
+        const STORAGE_KEY_MIXED_PTYEAR = 'tpvgh_restdays_mixed_ptYear_cal';
+        const STORAGE_KEY_MIXED_HOURS = 'tpvgh_restdays_mixed_workHours_cal';
         const STORAGE_KEY_CALC = 'tpvgh_restdays_hasCalculated_cal';
 
         // --- Date Formatters ---
@@ -226,17 +226,16 @@
                     }
                 }
             } catch (error) {
-                console.warn('Fallback: Unable to load working_days.csv, using default leap year logic.', error);
+                console.error('Failed to load working_days.csv:', error);
                 // Fail gracefully silently, will use fallback calculation
             }
         }
 
         // --- Transitions Logic (Mixed Mode) ---
         let transitions = [];
-        let mixedPtHoursMap = {}; // Stores year -> hours
 
-        function addTransition(startDate = '', endDate = '', status = 'half') {
-            transitions.push({ id: Date.now() + Math.random(), startDate, endDate, status });
+        function addTransition(date = '', status = 'half') {
+            transitions.push({ id: Date.now() + Math.random(), date, status });
             renderTransitions();
             checkMixedPartTime();
         }
@@ -250,122 +249,48 @@
         function updateTransition(id, field, value) {
             const t = transitions.find(t => t.id === id);
             if(t) t[field] = value;
-            if(field === 'status' || field === 'startDate' || field === 'endDate') checkMixedPartTime();
+            if(field === 'status') checkMixedPartTime();
         }
 
-        // Handle changes in initial status/dates
-        document.getElementById('initialStatus').addEventListener('change', checkMixedPartTime);
-        document.getElementById('initialStartDate').addEventListener('change', checkMixedPartTime);
-        document.getElementById('initialEndDate').addEventListener('change', checkMixedPartTime);
-
         function checkMixedPartTime() {
-            let ptYears = new Set();
-            
-            // Helper function to extract years from a date range
-            const extractYears = (startStr, endStr) => {
-                if (!startStr) return;
-                const startDate = parseDateLocal(startStr);
-                const startYear = startDate.getFullYear();
-                
-                let endYear;
-                if (endStr) {
-                    endYear = parseDateLocal(endStr).getFullYear();
-                } else {
-                    // If no end date, assume it goes up to at least the target year or current year
-                    const targetYInput = document.getElementById('targetYear').value;
-                    endYear = targetYInput ? parseInt(targetYInput) : new Date().getFullYear();
-                }
-
-                // Sanity check
-                if(endYear < startYear) return;
-                // Cap the forward projection to avoid creating too many inputs if end date is missing
-                const maxYear = Math.min(startYear + 10, new Date().getFullYear() + 2);
-                let actualEndYear = Math.min(endYear, maxYear);
-
-                for (let y = startYear; y <= actualEndYear; y++) {
-                    ptYears.add(y);
-                }
-            };
-
-            // Check Initial Status
-            if (document.getElementById('initialStatus').value === 'part') {
-                extractYears(document.getElementById('initialStartDate').value, document.getElementById('initialEndDate').value);
-            }
-
-            // Check Transitions
-            transitions.forEach(t => { 
-                if(t.status === 'part') {
-                    extractYears(t.startDate, t.endDate);
-                } 
-            });
-
+            let hasPart = document.getElementById('initialStatus').value === 'part';
+            transitions.forEach(t => { if(t.status === 'part') hasPart = true; });
             const container = document.getElementById('mixedPartTimeDetails');
-            const dynamicContainer = document.getElementById('dynamicMixedPtContainer');
-            
-            if (ptYears.size > 0) {
+            if (hasPart) {
                 container.classList.remove('hidden');
                 container.classList.add('fade-in');
-                
-                // Render inputs
-                let html = '';
-                let sortedYears = Array.from(ptYears).sort((a,b) => a-b);
-                
-                sortedYears.forEach(year => {
-                    const baseline = getBaselineHours(year);
-                    const savedVal = mixedPtHoursMap[year] || '';
-                    html += `
-                        <div class="flex items-center gap-3 bg-purple-50/50 p-3 rounded-lg border border-purple-100">
-                            <label class="font-bold text-purple-900 min-w-[60px]">${year}年度</label>
-                            <div class="flex-1 flex items-center gap-2">
-                                <input type="number" id="mixedPtHours_${year}" value="${savedVal}" min="0" max="4000" inputmode="numeric" pattern="[0-9]*" class="w-full p-2.5 border border-purple-300 rounded focus:ring-2 focus:ring-purple-500 shadow-sm" placeholder="輸入該年度實際工時" onchange="updateMixedHoursMap(${year}, this.value)">
-                                <span class="text-purple-700 font-medium whitespace-nowrap text-sm bg-white px-2 py-1 rounded border border-purple-200">/ ${baseline} h</span>
-                            </div>
-                        </div>
-                    `;
-                });
-                dynamicContainer.innerHTML = html;
-
             } else {
                 container.classList.add('hidden');
                 container.classList.remove('fade-in');
-                dynamicContainer.innerHTML = '';
             }
-        }
-
-        function updateMixedHoursMap(year, value) {
-            mixedPtHoursMap[year] = value;
         }
 
         function renderTransitions() {
             const list = document.getElementById('transitionList');
             list.innerHTML = '';
             if(transitions.length === 0) {
-                list.innerHTML = '<p class="text-sm text-purple-400 italic py-2 bg-white rounded px-3 border border-purple-100">目前無後續紀錄。系統將依據「初始身分」的起訖區間進行計算，未涵蓋之期間視為空窗。</p>';
+                list.innerHTML = '<p class="text-sm text-purple-400 italic py-2 bg-white rounded px-3 border border-purple-100">目前無轉換紀錄。若無紀錄，將全程以初始身分計算。</p>';
                 return;
             }
             transitions.forEach((t, index) => {
                 const div = document.createElement('div');
-                div.className = "flex flex-col md:flex-row gap-2 bg-white p-3 rounded border border-purple-200 items-start md:items-center animate-[fadeIn_0.2s_ease-in-out]";
+                div.className = "flex flex-col md:flex-row gap-3 bg-white p-3 rounded border border-purple-200 items-center animate-[fadeIn_0.2s_ease-in-out]";
                 div.innerHTML = `
-                    <span class="text-purple-400 font-bold w-6 hidden md:block mt-2 md:mt-0">${index + 1}.</span>
-                    <div class="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div class="flex items-center gap-2">
-                            <label class="text-xs text-gray-500 w-8 md:hidden">期間</label>
-                            <input type="date" value="${t.startDate}" onchange="updateTransition(${t.id}, 'startDate', this.value)" class="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-sm" title="起始日期">
-                            <span class="text-gray-500">-</span>
-                            <input type="date" value="${t.endDate}" onchange="updateTransition(${t.id}, 'endDate', this.value)" class="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-sm" title="結束日期 (留空代表至今)">
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <label class="text-xs text-gray-500 w-8 md:hidden">身分</label>
-                            <select onchange="updateTransition(${t.id}, 'status', this.value)" class="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500 text-sm">
-                                <option value="full" ${t.status === 'full' ? 'selected' : ''}>全時人員 (月薪制)</option>
-                                <option value="half" ${t.status === 'half' ? 'selected' : ''}>半日人員 (月薪制)</option>
-                                <option value="part" ${t.status === 'part' ? 'selected' : ''}>部分工時 (時薪制)</option>
-                            </select>
-                        </div>
+                    <span class="text-purple-400 font-bold w-6 hidden md:block">${index + 1}.</span>
+                    <div class="w-full md:w-auto flex-1">
+                        <label class="block text-xs text-gray-500 mb-1 md:hidden">轉換日期</label>
+                        <input type="date" value="${t.date}" onchange="updateTransition(${t.id}, 'date', this.value)" class="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500">
                     </div>
-                    <button type="button" onclick="removeTransition(${t.id})" class="w-full md:w-auto mt-2 md:mt-0 text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition-colors self-end md:self-center">
-                        <i class="fa-solid fa-trash-can"></i> <span class="md:hidden ml-1">刪除此筆</span>
+                    <div class="w-full md:w-auto flex-1">
+                        <label class="block text-xs text-gray-500 mb-1 md:hidden">轉換為</label>
+                        <select onchange="updateTransition(${t.id}, 'status', this.value)" class="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-purple-500">
+                            <option value="full" ${t.status === 'full' ? 'selected' : ''}>全時人員 (月薪制)</option>
+                            <option value="half" ${t.status === 'half' ? 'selected' : ''}>半日人員 (月薪制)</option>
+                            <option value="part" ${t.status === 'part' ? 'selected' : ''}>部分工時 (時薪制)</option>
+                        </select>
+                    </div>
+                    <button type="button" onclick="removeTransition(${t.id})" class="w-full md:w-auto mt-2 md:mt-0 text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition-colors">
+                        <i class="fa-solid fa-trash-can"></i> <span class="md:hidden">刪除此筆</span>
                     </button>
                 `;
                 list.appendChild(div);
@@ -409,6 +334,7 @@
 
         function populateYears() {
             const ptYearSelect = document.getElementById('ptYear');
+            const mixedPtYearSelect = document.getElementById('mixedPtYear');
             
             if(ptYearSelect.options.length > 0) return;
             
@@ -419,6 +345,10 @@
                     let option1 = document.createElement('option');
                     option1.value = y; option1.text = `${y}年 (全時基準: ${getBaselineHours(y)}小時)`;
                     ptYearSelect.appendChild(option1);
+                    
+                    let option2 = document.createElement('option');
+                    option2.value = y; option2.text = `${y}年 (全時基準: ${getBaselineHours(y)}小時)`;
+                    mixedPtYearSelect.appendChild(option2);
                 });
             } else {
                 const currentYear = new Date().getFullYear();
@@ -426,6 +356,10 @@
                     let option1 = document.createElement('option');
                     option1.value = y; option1.text = `${y}年 (預設基準: ${getBaselineHours(y)}小時)`;
                     ptYearSelect.appendChild(option1);
+
+                    let option2 = document.createElement('option');
+                    option2.value = y; option2.text = `${y}年 (預設基準: ${getBaselineHours(y)}小時)`;
+                    mixedPtYearSelect.appendChild(option2);
                 }
             }
         }
@@ -453,11 +387,10 @@
             const savedEmpType = localStorage.getItem(STORAGE_KEY_EMPTYPE);
             const savedHours = localStorage.getItem(STORAGE_KEY_HOURS);
             const savedPtYear = localStorage.getItem(STORAGE_KEY_PTYEAR);
-            const savedMixedInitStart = localStorage.getItem('tpvgh_restdays_mixed_init_start_cal'); 
             const savedMixedInit = localStorage.getItem(STORAGE_KEY_MIXED_INIT);
-            const savedMixedInitEnd = localStorage.getItem(STORAGE_KEY_MIXED_INIT_END);
             const savedMixedTrans = localStorage.getItem(STORAGE_KEY_MIXED_TRANS);
-            const savedMixedHoursMap = localStorage.getItem(STORAGE_KEY_MIXED_HOURS_MAP);
+            const savedMixedPtYear = localStorage.getItem(STORAGE_KEY_MIXED_PTYEAR);
+            const savedMixedHours = localStorage.getItem(STORAGE_KEY_MIXED_HOURS);
             const hasCalculated = localStorage.getItem(STORAGE_KEY_CALC);
 
             if (savedDate) document.getElementById('startDate').value = savedDate;
@@ -476,14 +409,12 @@
             if (savedHours) document.getElementById('workHours').value = savedHours;
 
             // Load Mixed Data
-            if (savedMixedInitStart) document.getElementById('initialStartDate').value = savedMixedInitStart;
-            else setDefaultMixedInitDate();
             if (savedMixedInit) document.getElementById('initialStatus').value = savedMixedInit;
-            if (savedMixedInitEnd) document.getElementById('initialEndDate').value = savedMixedInitEnd;
+            if (savedMixedPtYear) document.getElementById('mixedPtYear').value = savedMixedPtYear;
+            else document.getElementById('mixedPtYear').value = WORKING_DAYS_DATA[currentYear] ? currentYear : currentYear;
+            if (savedMixedHours) document.getElementById('mixedWorkHours').value = savedMixedHours;
             
-            if (savedMixedHoursMap) {
-                try { mixedPtHoursMap = JSON.parse(savedMixedHoursMap); } catch(e) { mixedPtHoursMap = {}; }
-            }
+            updateMixedBaseline();
 
             if (savedMixedTrans) {
                 try { transitions = JSON.parse(savedMixedTrans); } catch(e) { transitions = []; }
@@ -498,29 +429,13 @@
         function setDefaultDate() {
             const today = new Date();
             const defaultStart = new Date(today.getFullYear() - 1, 8, 4); 
-            const formattedDate = `${defaultStart.getFullYear()}-${(defaultStart.getMonth()+1).toString().padStart(2,'0')}-${defaultStart.getDate().toString().padStart(2,'0')}`;
-            document.getElementById('startDate').value = formattedDate;
-        }
-
-        function setDefaultMixedInitDate() {
-            const today = new Date();
-            const defaultStart = new Date(today.getFullYear() - 1, 8, 4); 
-            const formattedDate = `${defaultStart.getFullYear()}-${(defaultStart.getMonth()+1).toString().padStart(2,'0')}-${defaultStart.getDate().toString().padStart(2,'0')}`;
-            document.getElementById('initialStartDate').value = formattedDate;
+            document.getElementById('startDate').value = `${defaultStart.getFullYear()}-${(defaultStart.getMonth()+1).toString().padStart(2,'0')}-${defaultStart.getDate().toString().padStart(2,'0')}`;
         }
 
         function togglePartTimeInput() {
             const empType = document.querySelector('input[name="empType"]:checked').value;
             document.getElementById('partTimeContainer').classList.toggle('hidden', empType !== 'partTime');
             document.getElementById('mixedContainer').classList.toggle('hidden', empType !== 'mixed');
-            
-            // Hide the generic start date if in mixed mode
-            document.getElementById('startDateContainer').classList.toggle('hidden', empType === 'mixed');
-            
-            // Sync dates if switching from normal to mixed (to be helpful)
-            if (empType === 'mixed' && document.getElementById('startDate').value && !document.getElementById('initialStartDate').value) {
-                 document.getElementById('initialStartDate').value = document.getElementById('startDate').value;
-            }
         }
 
         function clearStorage() {
@@ -529,26 +444,25 @@
             localStorage.removeItem(STORAGE_KEY_EMPTYPE);
             localStorage.removeItem(STORAGE_KEY_HOURS);
             localStorage.removeItem(STORAGE_KEY_PTYEAR);
-            localStorage.removeItem('tpvgh_restdays_mixed_init_start_cal');
             localStorage.removeItem(STORAGE_KEY_MIXED_INIT);
-            localStorage.removeItem(STORAGE_KEY_MIXED_INIT_END);
             localStorage.removeItem(STORAGE_KEY_MIXED_TRANS);
-            localStorage.removeItem(STORAGE_KEY_MIXED_HOURS_MAP);
+            localStorage.removeItem(STORAGE_KEY_MIXED_PTYEAR);
+            localStorage.removeItem(STORAGE_KEY_MIXED_HOURS);
             localStorage.removeItem(STORAGE_KEY_CALC);
 
             setDefaultDate();
             document.getElementById('targetYear').value = new Date().getFullYear();
             document.querySelector('input[name="empType"][value="fullTime"]').checked = true;
             document.getElementById('workHours').value = '';
-            mixedPtHoursMap = {};
+            document.getElementById('mixedWorkHours').value = '';
             
             const currentYear = new Date().getFullYear();
             document.getElementById('ptYear').value = currentYear;
+            document.getElementById('mixedPtYear').value = currentYear;
             updateBaseline();
+            updateMixedBaseline();
             
-            document.getElementById('initialStartDate').value = document.getElementById('startDate').value;
             document.getElementById('initialStatus').value = 'full';
-            document.getElementById('initialEndDate').value = '';
             transitions = [];
             renderTransitions();
             checkMixedPartTime();
@@ -639,22 +553,15 @@
             document.getElementById('errorMsg').classList.add('hidden');
             latestReportData = null;
 
-            let startDateStr = '';
-            const empType = document.querySelector('input[name="empType"]:checked').value;
-            
-            // Determine which start date to use based on empType
-            if (empType === 'mixed') {
-                startDateStr = document.getElementById('initialStartDate').value;
-            } else {
-                startDateStr = document.getElementById('startDate').value;
-            }
-
+            const startDateStr = document.getElementById('startDate').value;
             const tyStr = document.getElementById('targetYear').value;
+            const empType = document.querySelector('input[name="empType"]:checked').value;
             const workHoursInput = document.getElementById('workHours').value;
             const ptYearValue = parseInt(document.getElementById('ptYear').value) || new Date().getFullYear();
             
             const initialStatus = document.getElementById('initialStatus').value;
-            const initialEndDateStr = document.getElementById('initialEndDate').value;
+            const mixedPtYearValue = parseInt(document.getElementById('mixedPtYear').value) || new Date().getFullYear();
+            const mixedWorkHoursInput = document.getElementById('mixedWorkHours').value;
             
             if (!startDateStr) { showError('請選擇受僱日期 (到職日)！'); return; }
             if (!tyStr) { showError('請輸入約定給假之年月日起始日 (西元年)！'); return; }
@@ -670,37 +577,21 @@
             // Validate Mixed Mode
             let validTimeline = [];
             if (empType === 'mixed') {
-                let initEnd = initialEndDateStr ? parseDateLocal(initialEndDateStr).getTime() : Infinity;
-                if (initEnd < startDate.getTime()) { showError('初始身分的結束日期不可早於受僱日期！'); return; }
-                
-                validTimeline.push({ 
-                    startDate: startDate.getTime(), 
-                    endDate: initEnd, 
-                    status: initialStatus 
-                });
-
+                validTimeline.push({ date: startDate.getTime(), status: initialStatus });
                 for(let i=0; i<transitions.length; i++) {
                     const t = transitions[i];
-                    if (!t.startDate) { showError('請填寫所有轉換紀錄的起始日期，或移除空白的紀錄。'); return; }
-                    
-                    const tStart = parseDateLocal(t.startDate).getTime();
-                    const tEnd = t.endDate ? parseDateLocal(t.endDate).getTime() : Infinity;
-
-                    if (tStart < startDate.getTime()) { showError(`紀錄 ${i+1} 起始日期 (${t.startDate}) 不可早於受僱日期！`); return; }
-                    if (tEnd < tStart) { showError(`紀錄 ${i+1} 結束日期不可早於起始日期！`); return; }
-                    
-                    validTimeline.push({ startDate: tStart, endDate: tEnd, status: t.status });
+                    if (!t.date) { showError('請填寫所有轉換紀錄的日期，或移除空白的紀錄。'); return; }
+                    const tDate = parseDateLocal(t.date).getTime();
+                    if (tDate < startDate.getTime()) { showError(`轉換日期 (${t.date}) 不可早於受僱日期！`); return; }
+                    validTimeline.push({ date: tDate, status: t.status });
                 }
-                
-                // Sort by start date, then process to handle overlaps (later records override earlier ones if overlapping)
-                // For simplicity in UI instruction, we treat them as independent ranges. 
-                // If a day falls into multiple ranges, the one latest in the array (most recently added/listed) takes precedence, 
-                // or we can sort them chronologically. Here we sort by start date.
-                validTimeline.sort((a, b) => a.startDate - b.startDate);
+                validTimeline.sort((a, b) => a.date - b.date);
             }
 
             let fullTimeBaseline = getBaselineHours(ptYearValue);
+            let mixedFullTimeBaseline = getBaselineHours(mixedPtYearValue);
             let workHours = fullTimeBaseline; 
+            let mixedWorkHoursValue = mixedFullTimeBaseline;
 
             if (empType === 'partTime') {
                 if (!workHoursInput) { showError('請輸入該年度結算之實際工作時數！'); return; }
@@ -708,7 +599,10 @@
                 if (workHours < 0 || workHours > 4000) { showError('請輸入合理的工作時數！'); return; }
             }
 
-            // Validation for mixed hours will happen during proportion calculation
+            if (empType === 'mixed') {
+                // Will check mixedWorkHoursInput later if part-time period exists
+                if (mixedWorkHoursInput) mixedWorkHoursValue = parseFloat(mixedWorkHoursInput);
+            }
 
             if (isManualClick) {
                 localStorage.setItem(STORAGE_KEY_DATE, startDateStr);
@@ -718,15 +612,11 @@
                     localStorage.setItem(STORAGE_KEY_HOURS, workHours);
                     localStorage.setItem(STORAGE_KEY_PTYEAR, ptYearValue);
                 }
-                if (empType !== 'mixed') {
-                    localStorage.setItem(STORAGE_KEY_DATE, document.getElementById('startDate').value);
-                }
                 if (empType === 'mixed') {
-                    localStorage.setItem('tpvgh_restdays_mixed_init_start_cal', document.getElementById('initialStartDate').value);
                     localStorage.setItem(STORAGE_KEY_MIXED_INIT, initialStatus);
-                    localStorage.setItem(STORAGE_KEY_MIXED_INIT_END, initialEndDateStr);
                     localStorage.setItem(STORAGE_KEY_MIXED_TRANS, JSON.stringify(transitions));
-                    localStorage.setItem(STORAGE_KEY_MIXED_HOURS_MAP, JSON.stringify(mixedPtHoursMap));
+                    localStorage.setItem(STORAGE_KEY_MIXED_PTYEAR, mixedPtYearValue);
+                    if(mixedWorkHoursInput) localStorage.setItem(STORAGE_KEY_MIXED_HOURS, mixedWorkHoursInput);
                 }
                 localStorage.setItem(STORAGE_KEY_CALC, 'true');
                 if (document.activeElement) document.activeElement.blur();
@@ -777,24 +667,17 @@
             
             // Variables for mixed/CSV usage
             let mixedFullCount = 0; let mixedHalfCount = 0; let mixedPartCount = 0;
-            let mixedEmptyCount = 0; // Empty window count
             let mixedTotalDaysInYear = 0;
-            let mixedTargetYearPtActualHours = 0;
-            let mixedTargetYearPtBaseline = getBaselineHours(targetY);
             let formulaDetailCsv = "";
             let empTypeNameForCsv = "全時人員 (月薪制)";
 
             if (empType === 'mixed') {
                 empTypeNameForCsv = "全/半日/部分工時 多次轉換";
                 const getStatusOnDate = (time) => {
-                    let s = 'empty'; // Default to empty window
-                    // Iterate backwards so later overlapping records take precedence if user made a mistake
-                    for(let i = validTimeline.length - 1; i >= 0; i--) {
-                        let t = validTimeline[i];
-                        if (time >= t.startDate && time <= t.endDate) {
-                            s = t.status;
-                            break;
-                        }
+                    let s = initialStatus;
+                    for(let t of validTimeline) {
+                        if (time >= t.date) s = t.status;
+                        else break;
                     }
                     return s;
                 };
@@ -804,26 +687,19 @@
                 
                 while(d <= endD) {
                     let time = d.getTime();
-                    // Only count days on or after start date
-                    if (time >= startDate.getTime()) {
-                        let currentStatus = getStatusOnDate(time);
-                        if (currentStatus === 'full') mixedFullCount++;
-                        else if (currentStatus === 'half') mixedHalfCount++;
-                        else if (currentStatus === 'part') mixedPartCount++;
-                        else mixedEmptyCount++; // Falls outside all defined ranges
-                    }
+                    let currentStatus = getStatusOnDate(time);
+                    if (currentStatus === 'full') mixedFullCount++;
+                    else if (currentStatus === 'half') mixedHalfCount++;
+                    else if (currentStatus === 'part') mixedPartCount++;
+                    
                     d.setDate(d.getDate() + 1);
                 }
-                mixedTotalDaysInYear = mixedFullCount + mixedHalfCount + mixedPartCount + mixedEmptyCount;
+                mixedTotalDaysInYear = mixedFullCount + mixedHalfCount + mixedPartCount;
 
-                // Process Part-Time Hours for Target Year
-                if (mixedPartCount > 0) {
-                    const inputHours = mixedPtHoursMap[targetY];
-                    if (!inputHours && inputHours !== '0') {
-                        showError(`目標年度 (${targetY}年) 包含「部分工時」紀錄，請於設定區塊填寫【${targetY}年度】對應的實際總工時！`);
-                        return;
-                    }
-                    mixedTargetYearPtActualHours = parseFloat(inputHours);
+                // Validate if Part-Time exists but no hours given
+                if (mixedPartCount > 0 && !mixedWorkHoursInput && mixedWorkHoursInput !== '0') {
+                    showError('該年度身分紀錄中包含「部分工時」，請於上方填寫期間對應的實際總工時！');
+                    return;
                 }
                 
                 // Proportion logic
@@ -832,8 +708,7 @@
                 let partHours = 0;
                 
                 if (mixedPartCount > 0) {
-                    // Critical calculation: Use target year's hours and target year's baseline
-                    partHours = calTotalDays * (mixedTargetYearPtActualHours / mixedTargetYearPtBaseline) * 8;
+                    partHours = calTotalDays * (mixedWorkHoursValue / mixedFullTimeBaseline) * 8;
                 }
 
                 finalValue = Math.round((fullHours + halfHours + partHours) * 10) / 10;
@@ -841,7 +716,7 @@
                 
                 // CSV Formula construction
                 formulaDetailCsv = `全日佔比:${mixedFullCount}/${mixedTotalDaysInYear}, 半日佔比:${mixedHalfCount}/${mixedTotalDaysInYear}`;
-                if (mixedPartCount > 0) formulaDetailCsv += `, ${targetY}年部分工時工時:${mixedTargetYearPtActualHours}h (基準${mixedTargetYearPtBaseline}h)`;
+                if (mixedPartCount > 0) formulaDetailCsv += `, 部分工時工時:${mixedWorkHoursValue}h (基準${mixedFullTimeBaseline}h)`;
                 
             } else if (empType === 'partTime') {
                 empTypeNameForCsv = "部分工時 (時薪制)";
@@ -1031,25 +906,18 @@
                 let partTimeFormulaStr = '';
                 if (mixedPartCount > 0) {
                     let partPct = (mixedTotalDaysInYear > 0) ? (mixedPartCount / mixedTotalDaysInYear * 100).toFixed(1) : 0;
-                    partTimeExplainStr = `<li><strong>部分工時時期：</strong>共 ${mixedPartCount} 天 (佔比 ${partPct}%)，該年度(${targetY}年)實際總工時 ${mixedTargetYearPtActualHours} 小時</li>`;
-                    partTimeFormulaStr = `<br>+ ( ${calTotalDays}日 × <span class="text-gray-500">${mixedTargetYearPtActualHours}/${mixedTargetYearPtBaseline}</span> × 8hr )`;
-                }
-                
-                let emptyExplainStr = '';
-                if(mixedEmptyCount > 0) {
-                     let emptyPct = (mixedTotalDaysInYear > 0) ? (mixedEmptyCount / mixedTotalDaysInYear * 100).toFixed(1) : 0;
-                     emptyExplainStr = `<li class="text-red-600"><strong>空窗期 (未指定身分)：</strong>共 ${mixedEmptyCount} 天 (佔比 ${emptyPct}%)，不計入特休時數</li>`;
+                    partTimeExplainStr = `<li><strong>部分工時時期：</strong>共 ${mixedPartCount} 天 (佔比 ${partPct}%)，該期間實際總工時 ${mixedWorkHoursValue} 小時</li>`;
+                    partTimeFormulaStr = `<br>+ ( ${calTotalDays}日 × <span class="text-gray-500">${mixedWorkHoursValue}/${mixedFullTimeBaseline}</span> × 8hr )`;
                 }
 
                 extraExplanation = `
                 <div class="bg-purple-50 p-4 rounded-lg mt-4 border border-purple-200 shadow-sm">
                     <h4 class="font-bold text-purple-800 mb-2"><i class="fa-solid fa-scale-balanced mr-1"></i> 身分轉換 加權換算說明</h4>
-                    <p class="text-gray-700">該員工總年資未中斷，特休天數仍為 <strong>${calTotalDays}日</strong>。<br>系統已逐日掃描 <strong>${targetY} 年度 (自到職日起涵蓋共 ${mixedTotalDaysInYear} 天)</strong> 之在職身分起訖區間，期間佔比換算如下：</p>
+                    <p class="text-gray-700">該員工總年資未中斷，特休天數仍為 <strong>${calTotalDays}日</strong>。<br>系統已逐日掃描 <strong>${targetY} 年度 (共 ${mixedTotalDaysInYear} 天)</strong> 之在職身分，期間佔比換算如下：</p>
                     <ul class="list-disc pl-5 mt-2 space-y-1 text-gray-700">
                         <li><strong>全日時期：</strong>共 ${mixedFullCount} 天 (佔比 ${fullPct}%)</li>
                         <li><strong>半日時期：</strong>共 ${mixedHalfCount} 天 (佔比 ${halfPct}%)</li>
                         ${partTimeExplainStr}
-                        ${emptyExplainStr}
                     </ul>
                     <div class="mt-3 bg-white p-3 rounded border border-purple-100 text-sm">
                         <strong class="text-purple-800">最終給假時數計算：</strong><br>
