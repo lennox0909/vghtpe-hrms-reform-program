@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企業級資料架構現代化與治理策略</title>
+    <!-- 引入 Tailwind CSS 用於樣式排版 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* 麥肯錫風格色系與排版設定 */
+        :root {
+            --mck-blue-dark: #051c2c;
+            --mck-blue-primary: #0056b3;
+            --mck-blue-light: #f4f8fb;
+            --mck-gray-text: #333333;
+            --mck-accent-red: #c91035; /* 偶爾用於警示或重點 */
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            background-color: #e5e7eb; /* 較深的背景，凸顯白色投影片 */
+            color: var(--mck-gray-text);
+        }
+
+        .slide-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 投影片預設為隱藏，採用經典顧問簡報比例 (約 16:9 且更寬敞) */
+        .slide {
+            display: none;
+            width: 95%;
+            max-width: 1200px;
+            height: 85vh;
+            background-color: white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: 3rem 4rem; /* 稍微縮小邊距，提供更多內容空間 */
+            overflow-y: auto;
+            position: relative;
+            /* 頂部裝飾線：麥肯錫藍 */
+            border-top: 8px solid var(--mck-blue-dark);
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            animation: fadeSlideIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ================= 麥肯錫排版美學 ================= */
+        /* 行動標題 (Action Title)：放在投影片最上方，直接點出結論 */
+        .action-title { 
+            font-size: 2rem; 
+            font-weight: 700; 
+            color: var(--mck-blue-dark); 
+            margin-bottom: 2rem;
+            line-height: 1.3;
+            border-bottom: 2px solid var(--mck-blue-primary);
+            padding-bottom: 0.5rem;
+        }
+        
+        .cover-title { font-size: 3.5rem; font-weight: 800; color: var(--mck-blue-dark); margin-bottom: 1.5rem; line-height: 1.2; }
+        .cover-subtitle { font-size: 1.5rem; color: #555; margin-bottom: 3rem; }
+        
+        h2 { font-size: 1.5rem; font-weight: 700; color: var(--mck-blue-primary); margin-top: 1.5rem; margin-bottom: 1rem; }
+        h3 { font-size: 1.25rem; font-weight: 600; color: var(--mck-blue-dark); margin-top: 1rem; }
+        p, li { font-size: 1.15rem; line-height: 1.7; color: var(--mck-gray-text); }
+        ul { list-style-type: square; padding-left: 1.5rem; margin-bottom: 1.5rem; color: var(--mck-blue-primary); }
+        ul li span { color: var(--mck-gray-text); } /* 讓文字維持深灰，只有 bullet 是藍色 */
+        
+        .highlight-text { font-weight: 700; color: var(--mck-blue-primary); }
+        .alert-text { font-weight: 700; color: var(--mck-accent-red); }
+
+        /* 顧問框架區塊 (Framework Block) */
+        .framework-box {
+            background-color: var(--mck-blue-light);
+            border-left: 4px solid var(--mck-blue-primary);
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        /* 兩欄式佈局 (常用於對比或並列資訊) */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            margin-top: 2rem;
+        }
+
+        /* 頁尾與浮水印 */
+        .slide-footer {
+            margin-top: auto; /* 將頁尾順延推至內容最底部 */
+            flex-shrink: 0;   /* 確保頁尾區域不會被壓縮 */
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #888;
+            border-top: 1px solid #eaeaea;
+            padding-top: 1rem;
+        }
+
+        /* 保證內容區塊與頁尾之間至少有足夠的距離，避免貼齊邊線 */
+        .slide > *:nth-last-child(2) {
+            margin-bottom: 2.5rem;
+        }
+
+        /* ================= HTML 流程圖樣式 ================= */
+        .flow-chart-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: var(--mck-blue-light);
+            border: 1px solid #e5e7eb;
+            width: 100%;
+            padding: 1rem;
+            margin: 0 auto;
+            max-width: 950px;
+        }
+
+        .flow-group {
+            background-color: white;
+            border: 2px dashed;
+            padding: 1.5rem 0.75rem 0.75rem 0.75rem;
+            position: relative;
+            width: 100%;
+        }
+        .flow-group-blue { border-color: var(--mck-blue-primary); }
+        .flow-group-red { border-color: var(--mck-accent-red); }
+        
+        .flow-group-title {
+            position: absolute;
+            top: -0.75rem;
+            left: 1rem;
+            background-color: white;
+            padding: 0 0.5rem;
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: var(--mck-blue-dark);
+        }
+
+        .flow-node {
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.4rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 2;
+        }
+        .node-blue { background-color: var(--mck-blue-primary); border: 2px solid var(--mck-blue-dark); }
+        .node-red { background-color: var(--mck-accent-red); border: 2px solid var(--mck-blue-dark); }
+        .node-dark { background-color: var(--mck-blue-dark); border: 2px solid white; }
+        
+        /* 資料庫圓柱體效果 */
+        .node-db {
+            background-color: var(--mck-blue-dark);
+            border: 2px solid white;
+            border-radius: 50% / 15%;
+            position: relative;
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .node-db::before {
+            content: '';
+            position: absolute;
+            top: -2px; left: 0; right: 0;
+            height: 25%;
+            border: 2px solid white;
+            border-bottom: none;
+            border-radius: 50% / 50%;
+            background-color: inherit;
+        }
+
+        /* 真實 CSS 連接箭頭 */
+        .v-arrow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-height: 1.5rem; /* 保證最小高度 */
+            width: 100%;
+            z-index: 1;
+        }
+        .v-arrow-line {
+            width: 2px;
+            height: 100%;
+            background-color: var(--mck-blue-dark);
+        }
+        .v-arrow-head {
+            position: absolute;
+            bottom: -2px;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 6px solid var(--mck-blue-dark);
+        }
+        .v-arrow-label {
+            position: absolute;
+            background-color: white;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--mck-blue-dark);
+            border-radius: 4px;
+            border: 1px solid #c8d4df;
+            white-space: nowrap;
+            z-index: 10;
+        }
+
+        /* 修復：讓右側異質寫入防護網的箭頭能自動填滿剩餘高度 */
+        .flex-grow-arrow {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        /* ================= 列印專屬樣式 ================= */
+        @media print {
+            body { background-color: white; overflow: visible; }
+            .slide-container { display: block; height: auto; }
+            .slide { 
+                display: block !important; 
+                width: 100%; 
+                max-width: none; 
+                height: 100vh; /* 強制每頁滿版 */
+                box-shadow: none; 
+                border-top: 6px solid var(--mck-blue-dark);
+                padding: 1cm; 
+                page-break-after: always; 
+                animation: none; 
+            }
+            .controls, #print-btn { display: none !important; }
+            .slide-footer { 
+                position: absolute; 
+                bottom: 1cm; 
+                left: 1cm; 
+                right: 1cm; 
+                margin-top: 0;
+            }
+            /* 確保背景色能被列印出來 */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .flow-chart-container, .flow-group { border-style: solid !important; } /* 列印時實線較清晰 */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="slide-container" id="presentation">
+
+        <!-- Slide 1: 標題與前言 (Executive Summary) -->
+        <div class="slide active" id="slide-1">
+            <div class="flex-grow flex flex-col justify-center items-start text-left">
+                <!-- 模擬顧問公司的標誌位置 -->
+                <div class="mb-12 font-bold text-xl tracking-wider text-[#051c2c]">STRATEGIC IT ADVISORY</div>
+                <h1 class="cover-title">企業級資料架構現代化與<br>整合治理策略</h1>
+                <p class="cover-subtitle">解決遺留系統負債，建立具備擴充性與單一真實來源之資料生態系</p>
+                
+                <div class="framework-box mt-8 max-w-4xl">
+                    <p class="font-bold text-[#051c2c] mb-2 uppercase tracking-wide text-sm">高階主管摘要 (Executive Summary)</p>
+                    <p class="text-lg">本報告旨在解決大型機構面臨之<span class="highlight-text">資料孤島</span>與<span class="highlight-text">異質系統編碼衝突</span>問題。透過建立統一治理框架、實施中介層防護網，並強制推行單一真實來源 (SSOT) 策略，我們將協助機構將資料負債轉化為戰略資產，降低維運風險並提升跨部門協作效率。</p>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>機密文件 - 僅供內部決策參考</span>
+                <span>頁 1</span>
+            </div>
+        </div>
+
+        <!-- Slide 2: 現況痛點 -->
+        <div class="slide" id="slide-2">
+            <h1 class="action-title">歷史遺留系統與各自為政的開發模式，正導致嚴重的資料冗餘與系統風險</h1>
+            
+            <p class="mb-6">在缺乏統一架構治理的情境下，機構正承擔兩大核心資料風險，直接影響營運效率與後續數位轉型：</p>
+            
+            <div class="two-col">
+                <div class="bg-white border border-gray-200 p-8 shadow-sm">
+                    <h3 class="!text-[#c91035] !mt-0 !text-xl uppercase tracking-wide">風險一：資料孤島與架構膨脹</h3>
+                    <p class="font-bold mt-4 mb-2 text-[#051c2c]">Data Silos & Schema Bloat</p>
+                    <ul>
+                        <li><span>各業務單位（如 HR、財務）對同一業務實體提出重複需求。</span></li>
+                        <li><span>缺乏查核機制，導致同一資料庫中出現多個本質相同但命名不同的欄位（如：緊急電話 vs. 家屬手機）。</span></li>
+                        <li><span>結果：資料更新不同步，無法建立單一視圖 (Single View of Truth)。</span></li>
+                    </ul>
+                </div>
+                
+                <div class="bg-white border border-gray-200 p-8 shadow-sm">
+                    <h3 class="!text-[#c91035] !mt-0 !text-xl uppercase tracking-wide">風險二：異質編碼導致系統失靈</h3>
+                    <p class="font-bold mt-4 mb-2 text-[#051c2c]">Encoding Inconsistency</p>
+                    <ul>
+                        <li><span>老舊核心系統（如 Big5 編碼）與現代化應用程式（如 UTF-8 編碼）直接共用底層資料庫。</span></li>
+                        <li><span>缺乏轉碼防護，導致寫入與讀取時頻繁出現「亂碼 (Mojibake)」。</span></li>
+                        <li><span>結果：關鍵搜尋功能失效，並需要耗費大量人力進行人工資料校正。</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>現況診斷分析</span>
+                <span>頁 2</span>
+            </div>
+        </div>
+
+        <!-- Slide 3: 治理與架構 -->
+        <div class="slide" id="slide-3">
+            <h1 class="action-title">建立嚴謹的資料治理流程與實體架構標準，是根除資料重複的基石</h1>
+            
+            <div class="two-col mt-0">
+                <div>
+                    <h2>1. 流程與治理面重塑 (Governance Re-design)</h2>
+                    <ul>
+                        <li><span class="highlight-text font-bold">設立架構審查關卡：</span> 終止「需求直達開發」的模式。所有資料庫變更需經由資料架構師 (Data Architect) 進行業務本質分析與需求收斂。</li>
+                        <li><span class="highlight-text font-bold">導入企業級資料字典：</span> 建立全機構共用的 Master Data 綱要（Data Dictionary）。新需求應優先執行「查表比對」，最大化欄位復用率。</li>
+                        <li><span class="highlight-text font-bold">確立資料擁有權 (Data Ownership)：</span> 明確界定各資料域的「擁有者（如人事處掌控地址資料）」，其餘單位僅具讀取與檢視權限。</li>
+                    </ul>
+                </div>
+                
+                <div class="framework-box !mt-0 !bg-[#f8f9fa] border-gray-300">
+                    <h2>2. 實體架構與標準化 (Physical Architecture)</h2>
+                    <ul>
+                        <li><span class="highlight-text font-bold">主檔與明細解耦：</span> 核心實體集中於主檔（Master Tables），業務關聯表單僅儲存識別碼（Foreign Keys）。</li>
+                        <li><span class="highlight-text font-bold">多重屬性擴展機制：</span> 具備一對多特性的資料（如多組聯絡人），應建立獨立明細表，以「類型代碼」區分，嚴禁水平擴展單一表單。</li>
+                        <li><span class="highlight-text font-bold">強制統一底層編碼：</span> 資料庫實體層級之 Collation 必須實施絕對標準化（建議採用 UTF8MB4），對混合編碼採取零容忍政策。</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>策略建議：治理與架構</span>
+                <span>頁 3</span>
+            </div>
+        </div>
+
+        <!-- Slide 4: 寫入防護 -->
+        <div class="slide" id="slide-4">
+            <h1 class="action-title">實施「中介層防護網」，徹底阻絕異質系統造成的髒資料直寫入底層庫</h1>
+            
+            <div class="framework-box mb-6 bg-[#0056b3] text-white !border-l-0">
+                <p class="font-bold text-lg mb-0 text-white">核心戰術方針：剝奪老舊系統的直接連線存取權 (Revoke Direct Access)</p>
+            </div>
+            
+            <p class="mb-4">為解決編碼衝突與確保寫入邏輯一致性，必須在應用系統與資料庫之間建立隔離層：</p>
+
+            <div class="space-y-4">
+                <div class="p-4 border-l-4 border-[#051c2c] bg-white">
+                    <h3 class="!mt-0 mb-1">A. 部署中介網關 (Middleware / API Gateway)</h3>
+                    <p class="m-0">全面禁止老舊系統（Legacy Systems）直接發送 SQL 指令至核心資料庫。所有寫入動作必須路由至中介層（API 或 Database Proxy）進行統一處理與驗證。</p>
+                </div>
+                <div class="p-4 border-l-4 border-[#051c2c] bg-white">
+                    <h3 class="!mt-0 mb-1">B. 強制雙向轉碼 (Bi-directional Encoding Conversion)</h3>
+                    <p class="m-0">在中介層建置自動轉譯機制。針對使用舊式編碼（如 Big5）的請求，由中介層攔截並轉換為標準 UTF-8 後執行寫入；讀取時反向轉譯，確保不影響舊系統既有運作。</p>
+                </div>
+                <div class="p-4 border-l-4 border-[#051c2c] bg-white">
+                    <h3 class="!mt-0 mb-1">C. 連線字串的嚴格控管 (Connection String Management)</h3>
+                    <p class="m-0">全面盤點並標準化所有應用程式之資料庫連線字串，強制顯性宣告編碼參數（如 <code>characterEncoding=UTF-8</code>），消除對作業系統環境變數之依賴風險。</p>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>策略建議：系統整合與防護</span>
+                <span>頁 4</span>
+            </div>
+        </div>
+
+        <!-- Slide 5: 展現與清理 -->
+        <div class="slide" id="slide-5">
+            <h1 class="action-title">透過視圖客製化與非結構化擴充，兼顧跨單位需求彈性與核心架構穩定</h1>
+            
+            <div class="two-col mt-0">
+                <div>
+                    <h2>3. 展現層分離與客製化 (Presentation Tier)</h2>
+                    <p class="mb-4 text-sm">在不更動底層共用欄位的前提下，滿足各業務單位之客製化術語需求：</p>
+                    <ul>
+                        <li><span class="highlight-text font-bold">客製化資料庫視圖 (DB Views)：</span> 針對不同單位建立專屬 View，透過 Alias 將共用欄位映射為該單位的業務專有名詞。</li>
+                        <li><span class="highlight-text font-bold">API DTO 動態映射：</span> 利用現代化後端架構，於回傳層 (Data Transfer Object) 動態轉換 JSON Key，實現「底層單一、表層多元」。</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h2>4. 彈性防護與資料清理 (Flexibility & Remediation)</h2>
+                    <p class="mb-4 text-sm">針對冷門需求與歷史包袱的處置策略：</p>
+                    <ul>
+                        <li><span class="highlight-text font-bold">JSON / EAV 模型擴充：</span> 面對低頻、高客製之孤立屬性，採用非結構化 JSON 欄位或 EAV (Entity-Attribute-Value) 模式儲存，遏止核心 Schema 之無序擴張。</li>
+                        <li><span class="highlight-text font-bold">歷史髒資料清洗專案 (Data Cleansing)：</span> 針對既有之亂碼或重複紀錄，應立案專屬 ETL 專案，輔以特徵比對演算法進行批次正規化與轉譯。</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>策略建議：彈性擴充與清理</span>
+                <span>頁 5</span>
+            </div>
+        </div>
+
+        <!-- Slide 6: 流程圖 (改用 HTML 繪製) -->
+        <div class="slide" id="slide-6">
+            <h1 class="action-title !mb-2">目標營運模式：防禦型架構整合藍圖 (Target Operating Model)</h1>
+            <p class="mb-3 text-sm text-gray-500">本架構展示了「需求治理」與「中介轉碼防護」雙軌並行的防禦機制。</p>
+            
+            <div class="flex-grow flex justify-center items-start w-full">
+                <!-- HTML 繪製的流程圖 (壓縮版以適應單一頁面) -->
+                <div class="flow-chart-container">
+                    
+                    <!-- 頂部核心資料庫 -->
+                    <div class="flow-node node-db text-sm py-2 px-6 z-10">核心資料庫 (UTF8MB4)</div>
+
+                    <!-- 雙軌防護網 -->
+                    <div class="flex flex-row w-full gap-4 mt-2 h-64">
+                        
+                        <!-- 左側：需求治理子流程 -->
+                        <div class="flow-group flow-group-blue flex-1 flex flex-col items-center justify-between h-full">
+                            <div class="flow-group-title">Governance: 需求審查與收斂機制</div>
+                            
+                            <div class="flex gap-2 w-full justify-center mt-2">
+                                <div class="flow-node node-blue flex-1 text-xs">需求: 緊急聯絡人</div>
+                                <div class="flow-node node-blue flex-1 text-xs">需求: 家屬電話</div>
+                            </div>
+                            
+                            <div class="v-arrow flex-grow-arrow"><div class="v-arrow-line"></div><div class="v-arrow-head"></div><span class="v-arrow-label">業務本質解構</span></div>
+                            
+                            <div class="flow-node node-blue w-[70%] text-xs">SA / 架構師審查</div>
+                            
+                            <div class="v-arrow flex-grow-arrow"><div class="v-arrow-line"></div><div class="v-arrow-head"></div><span class="v-arrow-label">查詢 Data Dictionary</span></div>
+                            
+                            <div class="flow-node node-blue w-[70%] text-xs">查詢結果判定</div>
+                            
+                            <div class="flex gap-2 w-full mt-2 h-16">
+                                <div class="flex-1 flex flex-col items-center h-full">
+                                    <div class="v-arrow flex-grow-arrow"><div class="v-arrow-line"></div><div class="v-arrow-head"></div><span class="v-arrow-label text-[0.6rem] !px-1">存在</span></div>
+                                    <div class="flow-node node-blue w-full text-xs">復用既有主檔欄位</div>
+                                </div>
+                                <div class="flex-1 flex flex-col items-center h-full">
+                                    <div class="v-arrow flex-grow-arrow"><div class="v-arrow-line"></div><div class="v-arrow-head"></div><span class="v-arrow-label text-[0.6rem] !px-1">不存在</span></div>
+                                    <div class="flow-node node-blue w-full text-xs">建立共用屬性</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 右側：異質寫入防護網子流程 -->
+                        <div class="flow-group flow-group-red flex-1 flex flex-col items-center justify-between h-full">
+                            <div class="flow-group-title">Architecture: 異質寫入防護網</div>
+                            
+                            <div class="flex gap-2 w-full justify-center mt-2 h-full">
+                                <div class="flex-1 flex flex-col items-center h-full">
+                                    <div class="flow-node node-red w-full text-xs shrink-0">遺留系統 (Big5)</div>
+                                    <div class="v-arrow flex-grow-arrow h-full"><div class="v-arrow-line h-full"></div><div class="v-arrow-head"></div><span class="v-arrow-label">連線攔截</span></div>
+                                </div>
+                                <div class="flex-1 flex flex-col items-center h-full">
+                                    <div class="flow-node node-red w-full text-xs shrink-0">現代系統 (UTF-8)</div>
+                                    <div class="v-arrow flex-grow-arrow h-full"><div class="v-arrow-line h-full"></div><div class="v-arrow-head"></div><span class="v-arrow-label">標準 API</span></div>
+                                </div>
+                            </div>
+                            
+                            <div class="flow-node node-red w-full leading-tight py-3 text-xs shrink-0">
+                                中介層 / API Gateway<br><span class="text-[0.7rem] opacity-90">(轉碼: Big5 至 UTF-8)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 匯聚至底部資料庫 -->
+                    <div class="flex flex-row w-full gap-4 h-12">
+                        <div class="flex-1 flex justify-center h-full">
+                            <div class="v-arrow flex-grow-arrow"><div class="v-arrow-line h-full"></div><div class="v-arrow-head"></div><span class="v-arrow-label">標準化寫入</span></div>
+                        </div>
+                        <div class="flex-1 flex justify-center h-full">
+                            <div class="v-arrow flex-grow-arrow"><div class="v-arrow-line h-full"></div><div class="v-arrow-head"></div><span class="v-arrow-label">統一寫入口</span></div>
+                        </div>
+                    </div>
+
+                    <div class="flow-node node-db w-2/3 text-sm py-2 z-10 shrink-0">核心資料庫 (UTF8MB4)</div>
+
+                    <!-- 最底端讀取層 -->
+                    <div class="flex flex-col items-center w-full h-12">
+                         <div class="v-arrow flex-grow-arrow"><div class="v-arrow-line h-full"></div><div class="v-arrow-head"></div><span class="v-arrow-label">讀取與客製展現</span></div>
+                    </div>
+                    <div class="flow-node node-dark w-1/2 text-sm py-2 shrink-0">建立 Views 或 API DTO</div>
+
+                </div>
+            </div>
+
+            <div class="slide-footer">
+                <span>目標架構藍圖 (TOM)</span>
+                <span>頁 6</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 控制面板 (經典灰階設計) -->
+    <div class="controls fixed bottom-6 left-0 right-0 flex justify-center items-center gap-4 z-50">
+        <button id="prev-btn" class="bg-white border border-gray-300 text-[#051c2c] px-6 py-2 shadow-sm hover:bg-gray-50 font-semibold disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+            &larr; PREVIOUS
+        </button>
+        <span id="slide-counter" class="bg-[#051c2c] text-white px-4 py-2 text-sm font-bold tracking-widest shadow">
+            1 / 6
+        </span>
+        <button id="next-btn" class="bg-white border border-gray-300 text-[#051c2c] px-6 py-2 shadow-sm hover:bg-gray-50 font-semibold disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+            NEXT &rarr;
+        </button>
+    </div>
+
+    <!-- 列印按鈕 (符合整體色系) -->
+    <button id="print-btn" class="fixed top-6 right-6 bg-white border border-gray-300 text-[#051c2c] p-3 shadow-sm hover:bg-gray-50 transition-colors z-50 flex items-center justify-center group" title="匯出為 PDF (Print)">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+        </svg>
+        <span class="ml-2 hidden group-hover:block whitespace-nowrap font-semibold text-sm">EXPORT PDF</span>
+    </button>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const counter = document.getElementById('slide-counter');
+        const printBtn = document.getElementById('print-btn');
+        
+        let currentSlide = 0;
+        let isScrolling = false; // 滾動鎖定狀態，防止一次滾輪滾動跳太多頁
+
+        function updateSlides() {
+            slides.forEach((slide, index) => {
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+            counter.textContent = `${currentSlide + 1} / ${slides.length}`;
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === slides.length - 1;
+        }
+
+        function goNext() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlides();
+            }
+        }
+
+        function goPrev() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlides();
+            }
+        }
+
+        // 滑鼠滾動換頁功能 (監聽 wheel 事件)
+        window.addEventListener('wheel', (e) => {
+            // 如果正在冷卻時間內，則忽略此次滾動
+            if (isScrolling) return;
+
+            if (e.deltaY > 0) {
+                // 往下滾動 -> 下一頁
+                if (currentSlide < slides.length - 1) {
+                    goNext();
+                    lockScroll();
+                }
+            } else if (e.deltaY < 0) {
+                // 往上滾動 -> 上一頁
+                if (currentSlide > 0) {
+                    goPrev();
+                    lockScroll();
+                }
+            }
+        });
+
+        // 滾動冷卻機制 (避免一次滾動滑鼠滾輪直接跳過多頁)
+        function lockScroll() {
+            isScrolling = true;
+            setTimeout(() => {
+                isScrolling = false;
+            }, 800); // 鎖定 800 毫秒，等換頁動畫結束後才能再次滾動
+        }
+
+        // 按鈕點擊事件
+        nextBtn.addEventListener('click', goNext);
+        prevBtn.addEventListener('click', goPrev);
+
+        // 鍵盤方向鍵事件
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                goNext();
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                goPrev();
+            }
+        });
+
+        // 列印按鈕事件
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+
+        // 初始化第一張投影片
+        updateSlides();
+    </script>
+</body>
+</html>
