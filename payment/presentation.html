@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>薪資系統優化建議</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+/* 1. THE SETUP */
+* {
+  box-sizing: border-box;
+}
+
+p {
+  margin: 0;
+  margin-bottom: 15px;
+}
+
+body {
+  background-color: #e2e8f0;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1fr;
+  margin: 0;
+  min-height: 100vh;
+  padding: 20px 0;
+  place-items: center;
+}
+
+/* Base Slide Container */
+.slide-container {
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  font-family: 'Noto Sans TC', sans-serif;
+  height: 720px;
+  justify-content: center;
+  overflow: hidden;
+  padding: 60px;
+  position: relative;
+  width: 1280px;
+}
+
+/* Background Design - Subtle geometric pattern */
+.slide-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(0, 64, 128, 0.03) 0%, rgba(0, 64, 128, 0.08) 100%);
+  clip-path: polygon(100% 0, 0 0, 100% 100%);
+  z-index: 0;
+}
+
+.slide-container::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, #004080, #0073e6);
+  z-index: 0;
+}
+
+.slide-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Page Number */
+.page-number {
+  position: absolute;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 18px;
+  color: #94a3b8;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  z-index: 10;
+}
+
+/* 2. CONSISTENT TYPOGRAPHY */
+.slide-container h1,
+.slide-container h2,
+.slide-container h3,
+.slide-container th {
+  color: #0f172a;
+  font-family: 'Poppins', 'Noto Sans TC', sans-serif;
+  font-weight: 700;
+  margin: 0;
+}
+
+.slide-container p,
+.slide-container li,
+.slide-container .subtitle,
+.slide-container td {
+  color: #334155;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 400;
+}
+
+/* Unified body text size */
+.slide-container p,
+.slide-container li,
+.slide-container td,
+.slide-container .subtitle {
+  font-size: 20px;
+  line-height: 1.6;
+}
+
+/* Heading Sizes */
+.slide-container h1 {
+  font-size: 64px;
+  line-height: 1.2;
+  color: #004080;
+  margin-bottom: 20px;
+}
+
+.slide-container .slide-title {
+  font-size: 44px;
+  font-weight: 700;
+  margin-bottom: 40px;
+  text-align: left;
+  width: 100%;
+  color: #004080;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 15px;
+}
+
+.slide-container h3 {
+  font-size: 28px;
+  margin-bottom: 20px;
+  color: #0f172a;
+}
+
+.slide-container .content-area {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  justify-content: center;
+  width: 100%;
+}
+
+/* 3. LAYOUT DEFINITIONS */
+
+/* Title Layout */
+.title-layout {
+  text-align: center;
+  max-width: 900px;
+}
+.title-layout .subtitle {
+  font-size: 28px;
+  color: #475569;
+  margin-top: 20px;
+}
+
+/* Two Column Layout */
+.two-column {
+  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 50px;
+  width: 100%;
+}
+
+.two-column.tiled {
+  align-items: stretch;
+}
+
+.two-column.tiled > div {
+  background-color: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  border-top: 4px solid #004080;
+  padding: 40px;
+  text-align: left;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+
+.two-column ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 0;
+}
+
+.two-column li {
+  margin-bottom: 20px;
+  padding-left: 30px;
+  position: relative;
+}
+
+.two-column li::before {
+  content: "■";
+  color: #004080;
+  position: absolute;
+  left: 0;
+  top: 2px;
+  font-size: 14px;
+}
+
+/* Image Wrapper */
+.image-wrapper {
+  border-radius: 12px;
+  height: 400px;
+  max-width: 100%;
+  overflow: hidden;
+  width: 100%;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.image-wrapper img {
+  height: 100%;
+  max-width: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.two-column .image-wrapper img {
+  object-fit: cover; /* Ensuring corporate images look good */
+}
+
+/* Tiled Content (3 columns) */
+.tiled-content {
+  align-items: stretch;
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  width: 100%;
+}
+
+.tile {
+  align-items: flex-start;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: flex-start;
+  padding: 35px 30px;
+  text-align: left;
+  transition: transform 0.2s;
+}
+
+.tile .icon {
+  background-color: #e0f2fe;
+  border-radius: 50%;
+  color: #004080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  height: 70px;
+  width: 70px;
+  margin-bottom: 25px;
+}
+
+/* Styled Bullet Points */
+.bullet-list {
+  max-width: 1000px;
+  width: 100%;
+}
+
+.bullet-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bullet-list li {
+  background-color: #f8fafc;
+  border-left: 4px solid #004080;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 20px;
+  padding: 25px 30px 25px 80px;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.bullet-list i {
+  color: #004080;
+  font-size: 30px;
+  left: 25px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.bullet-list li strong {
+  color: #0f172a;
+  display: block;
+  font-size: 24px;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+/* Table Layout */
+.table-layout {
+  width: 100%;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.table-layout table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.table-layout th,
+.table-layout td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 20px 25px;
+  text-align: left;
+}
+
+.table-layout th {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.table-layout tr:last-child td {
+  border-bottom: none;
+}
+
+.table-layout tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.status-pending { background-color: #fef3c7; color: #b45309; }
+.status-ongoing { background-color: #e0f2fe; color: #0369a1; }
+
+/* Q&A Layout */
+.qa-layout {
+  text-align: center;
+  width: 100%;
+}
+
+.qa-layout h2 {
+  font-size: 80px;
+  color: #004080;
+  margin-bottom: 20px;
+}
+
+.qa-layout p {
+  font-size: 28px;
+  color: #475569;
+}
+
+/* Print to PDF Settings */
+.print-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background-color: #004080;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 15px 25px;
+  font-size: 18px;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 64, 128, 0.3);
+  transition: all 0.3s ease;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.print-btn:hover {
+  background-color: #002b5e;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 64, 128, 0.4);
+}
+
+@page {
+  size: 1280px 720px; /* 完美匹配簡報尺寸 */
+  margin: 0;
+}
+
+@media print {
+  body {
+    background-color: white;
+    padding: 0;
+    display: block;
+  }
+  .slide-container {
+    box-shadow: none;
+    border-radius: 0;
+    margin: 0;
+    page-break-after: always;
+    break-after: page;
+  }
+  .print-btn {
+    display: none !important; /* 列印時隱藏按鈕 */
+  }
+}
+    </style>
+</head>
+<body>
+
+<button class="print-btn" onclick="window.print()">
+    <i class="fa-solid fa-file-pdf"></i> 下載為 PDF
+</button>
+
+<div class="slide-container" id="slide1">
+    <div class="title-layout">
+        <h1>薪資系統優化建議</h1>
+    </div>
+    <div class="page-number">1</div>
+</div>
+
+<div class="slide-container" id="slide2">
+    <h2 class="slide-title">薪資與加班費計算異常</h2>
+    <div class="content-area">
+        <div class="two-column tiled">
+            <div>
+                <h3>破月計算導致時薪失真</h3>
+                <p>目前常因員工「新報到、留職停薪、復職、離退」等未滿整月的狀況（破月），導致系統抓取的時薪發生錯誤（例如呈現 0 元或金額過高）。</p>
+                <p>基礎時薪的計算失誤，連帶造成後續的加班費給付計算錯誤，增加人事與出納作業負擔及員工爭議。</p>
+            </div>
+            <div>
+                <h3>衍生計算與統一標準缺失</h3>
+                <p>針對「破月」時的分母基數（如：是否固定除以 240 小時）以及跨職務轉換（如契約轉公職、行政轉助理等）的薪資比例計算，目前缺乏統一的標準公式。</p>
+                <p>系統自動化缺乏穩定的基礎規則，導致特例狀況必須倚賴大量人工計算與校正。</p>
+            </div>
+        </div>
+    </div>
+    <div class="page-number">2</div>
+</div>
+
+<div class="slide-container" id="slide3">
+    <h2 class="slide-title">解決方案：新建薪資 Table</h2>
+    <div class="content-area">
+        <div class="tiled-content">
+            <div class="tile">
+                <div class="icon"><i class="fa-solid fa-database"></i></div>
+                <h3>建置獨立資料表</h3>
+                <p>建議建立一個全新的薪資 Table 機制，將底薪與各項加給資料模組化，作為跨單位系統取用薪資數據的唯一標準來源，根絕抓取錯誤。</p>
+            </div>
+            <div class="tile">
+                <div class="icon"><i class="fa-solid fa-user-check"></i></div>
+                <h3>定期資料匯入</h3>
+                <p>由人事室與績效組定期將資料（如本俸、專業加給、夜班費等）匯入並維護。透過前端主動更新，確保系統隨時呈現正確、即時的時薪基礎。</p>
+            </div>
+            <div class="tile">
+                <div class="icon"><i class="fa-solid fa-calculator"></i></div>
+                <h3>解決特殊公式</h3>
+                <p>此統一化機制可同步解決如「醫師免稅」等特殊群體的計算問題（總薪資除以240小時等特殊邏輯，實際公式依衛福部公告直接套入系統）。</p>
+            </div>
+        </div>
+    </div>
+    <div class="page-number">3</div>
+</div>
+
+<div class="slide-container" id="slide4">
+    <h2 class="slide-title">跨單位協調與權責劃分</h2>
+    <div class="content-area">
+        <div class="two-column">
+            <div>
+                <ul>
+                    <li><strong>資訊室：</strong> 資訊室同意協助建置新 Table 機制，確保系統架構足以支撐新的薪資運算邏輯。</li>
+                    <li><strong>主動維護資料：</strong> 各單位（人事、績效、出納）必須在人員發生異動時「主動」維護資料表。</li>
+                    <li><strong>主動回溯：</strong> 改變以往「等員工請領加班費失敗後，才被動回溯處理」的舊有流程，落實源頭管理。</li>
+                    <li><strong>凝聚共識：</strong> 各單位須針對破月分母與跨職務轉換的比例計算，盡速召開會議確立統一標準。</li>
+                </ul>
+            </div>
+            <div>
+                <div class="image-wrapper">
+                    <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="現代會議室中專業團隊協作">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="page-number">4</div>
+</div>
+
+<div class="slide-container" id="slide5">
+    <h2 class="slide-title">管理流程優化：異動生效日規範化</h2>
+    <div class="content-area">
+        <div class="bullet-list">
+            <ul>
+                <li>
+                    <i class="fa-regular fa-calendar-check"></i>
+                    <strong>律定統一生效日</strong>
+                    為了便於系統管理與薪資結算，建議人事室訂定規範：未來的職務異動、轉正等生效日，應統一律定於特定日期（如每月的 1 號或 16 號）。
+                </li>
+                <li>
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <strong>減少零碎破月</strong>
+                    透過強制規範生效日期，能大幅降低破月天數過於零碎的狀況，讓薪資計算與系統運算邏輯大幅簡化，降低出錯率。
+                </li>
+                <li>
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <strong>專案特例處理</strong>
+                    對於不可控的突發離職（如前一天才提離職等），則列為專案特例由人工介入處理，不影響通案的系統自動化邏輯設計。
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="page-number">5</div>
+</div>
+
+<div class="slide-container" id="slide6">
+    <h2 class="slide-title">待辦事項清單 (Action Items)</h2>
+    <div class="content-area">
+        <div class="table-layout">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 50%;">待辦任務</th>
+                        <th style="width: 30%;">負責單位 / 人員</th>
+                        <th style="width: 20%;">期限 / 狀態</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>擬定薪資計算公式</strong><br><span style="font-size: 16px; color: #64748b;">針對各種異動狀況（破月、契約轉公職、離退等）制定標準計算公式，提供系統套用。</span></td>
+                        <td>人事室 / 出納組 / 績效組</td>
+                        <td><span class="status-badge status-pending">待確認</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>評估新建薪資 Table</strong><br><span style="font-size: 16px; color: #64748b;">評估建置獨立資料表的技術可行性，並確立後續維護權責。</span></td>
+                        <td>資訊室</td>
+                        <td><span class="status-badge status-pending">待確認</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>盤點資料匯入欄位</strong><br><span style="font-size: 16px; color: #64748b;">持續盤點新舊系統需匯入的欄位（姓名、到職日等）與 HR 代碼，以利資料轉移。</span></td>
+                        <td>系統開發團隊</td>
+                        <td><span class="status-badge status-ongoing">持續進行</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="page-number">6</div>
+</div>
+
+</body>
+</html>
