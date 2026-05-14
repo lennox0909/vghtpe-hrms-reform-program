@@ -1,8 +1,9 @@
-/* * 人事室智慧工具箱 - 全域樣式表
- * 包含：字體導入、毛玻璃效果、背景圖樣、工作流動畫與彈窗過場
- */
-
+/* 人事室智慧工具箱 - 全域樣式表 */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+}
 
 /* 毛玻璃卡片效果 */
 .glass-card {
@@ -35,7 +36,12 @@
     width: 100%;
     height: 2px;
     background: #e2e8f0;
-    z-index: -1;
+    z-index: 0; /* 修改 z-index 以避免遮擋圓示 */
+}
+
+/* 隱藏最後一個步驟的連接線 */
+.workflow-step:last-child::after {
+    display: none;
 }
 
 @media (max-width: 768px) {
@@ -50,7 +56,7 @@
 }
 
 .modal-container {
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
 }
 
 .modal-hidden {
@@ -59,5 +65,6 @@
 }
 
 .modal-hidden .modal-container {
-    transform: scale(0.95);
+    transform: scale(0.9);
+    opacity: 0;
 }

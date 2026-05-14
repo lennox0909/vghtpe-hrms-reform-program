@@ -2,11 +2,7 @@
  * 聯絡資訊彈窗控制邏輯
  */
 
-/**
- * 全域 Modal 控制函數
- * 讓 top_banner.js 內的按鈕或其他組件可以直接透過 window.toggleModal 進行通訊
- * @param {boolean} show - 是否顯示彈窗
- */
+// 全域 Modal 控制函數
 window.toggleModal = function(show) {
     const modal = document.getElementById('contact-modal');
     if (!modal) return;
