@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>需求訪談的「潘朵拉的盒子」</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #1a1a2e; /* Dark theme background */
+            margin: 0;
+            overflow-x: hidden;
+        }
+        
+        /* 16:9 Aspect Ratio Container */
+        .slide-container {
+            aspect-ratio: 16 / 9;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
+            transform: scale(0.95);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        /* Glassmorphism for text panels */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Print Styles */
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            .slide-container { 
+                box-shadow: none; 
+                border-radius: 0;
+                max-width: 100%;
+                width: 100vw;
+                height: 100vh;
+                aspect-ratio: auto;
+            }
+            .slide {
+                position: relative;
+                opacity: 1;
+                transform: none;
+                page-break-after: always;
+                height: 100vh;
+                display: flex !important;
+                background: white !important; /* Force white background for printing */
+            }
+            .slide::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                z-index: -1;
+                /* Re-apply gradients for print as backgrounds */
+            }
+            /* Adjust text colors for printing */
+            h1, h2, h3, p, li, span { color: black !important; }
+            .glass-panel { 
+                background: rgba(0,0,0,0.05); 
+                border: 1px solid #ccc; 
+                box-shadow: none;
+            }
+            /* Storyboard layout for print */
+            .print-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
+
+    <div class="w-full max-w-6xl flex justify-between items-center mb-6 no-print text-white">
+        <div>
+            <h1 class="text-2xl font-bold tracking-wider">劇本化簡報預覽</h1>
+            <p class="text-sm text-gray-400">使用鍵盤左右鍵或點擊兩側切換</p>
+        </div>
+        <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-full font-medium transition-all shadow-lg shadow-indigo-500/30 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            匯出 PDF / 列印
+        </button>
+    </div>
+
+    <div class="slide-container bg-gray-900 group" id="presentation">
+        
+        <!-- Slide 1 -->
+        <div class="slide active bg-gradient-to-br from-[#0F172A] to-[#1E3A8A]" id="slide-1">
+            <div class="flex-1 flex flex-col justify-center p-12 md:p-20 relative overflow-hidden">
+                <!-- Abstract BG Element -->
+                <div class="absolute -right-20 -bottom-20 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+                
+                <div class="z-10 grid grid-cols-1 md:grid-cols-2 gap-12 items-center h-full">
+                    <div class="space-y-6">
+                        <div class="inline-block px-4 py-1 rounded-full border border-blue-400/30 text-blue-300 text-sm tracking-widest font-semibold">ACT I : THE HOOK</div>
+                        <h1 class="text-5xl md:text-6xl font-black text-white leading-tight">
+                            需求訪談的<br>
+                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">「潘朵拉盒子」</span>
+                        </h1>
+                        <p class="text-xl text-gray-300 border-l-4 border-blue-500 pl-4">排班系統開發揭露的內部矛盾</p>
+                    </div>
+
+                    <div class="glass-panel p-8 rounded-2xl space-y-6">
+                        <div>
+                            <h3 class="text-blue-300 font-bold mb-2 flex items-center gap-2">
+                                🎬 劇本對白 (核心訊息)
+                            </h3>
+                            <p class="text-white text-lg">「最大的挑戰從來不是寫出程式碼，而是數位化這面照妖鏡，將過去靠『人治』與『妥協』掩蓋的裂痕，赤裸裸地攤在陽光下。」</p>
+                        </div>
+                        <div class="bg-black/30 p-4 rounded-xl">
+                            <h3 class="text-cyan-400 font-bold mb-2 text-sm">📸 畫面指示 (Show, Don't Tell)</h3>
+                            <p class="text-gray-300 text-sm italic">特寫：一個微開的無菌醫療鐵盒，縫隙中透出刺眼的冷藍色光芒。暗處，幾雙穿著白袍與西裝的手，正試圖將盒子重新壓緊，但0與1的數位光塵正從縫隙中溢出。</p>
+                        </div>
+                        <div class="flex items-center justify-between text-xs text-gray-400">
+                            <span>🎨 色調：深邃海軍藍與霓虹冷光</span>
+                            <span>象徵：未知、科技與深層秘密</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Transition prompt -->
+                <div class="absolute bottom-6 right-12 text-blue-400/50 text-sm italic">切換下一頁：發現盒中的四大矛盾 ➔</div>
+            </div>
+        </div>
+
+        <!-- Slide 2 -->
+        <div class="slide bg-gradient-to-br from-[#450a0a] to-[#1e1b4b]" id="slide-2">
+            <div class="flex-1 flex flex-col p-12 md:p-16 relative">
+                <div class="inline-block px-4 py-1 rounded-full border border-red-400/30 text-red-300 text-sm tracking-widest font-semibold w-max mb-8">ACT II : CONFLICT 01</div>
+                
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-10">
+                    夾心餅乾：<span class="text-red-400">法規天條</span> vs. <span class="text-indigo-300">臨床生存</span>
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
+                    <div class="space-y-6 flex flex-col justify-center">
+                        <div class="bg-red-900/40 border-l-4 border-red-500 p-6 rounded-r-xl">
+                            <h4 class="text-red-200 font-bold mb-2">人資部 (明規則)</h4>
+                            <p class="text-white">「系統必須卡死勞基法。不合法，就不准給過！」</p>
+                        </div>
+                        <div class="bg-indigo-900/40 border-l-4 border-indigo-500 p-6 rounded-r-xl">
+                            <h4 class="text-indigo-200 font-bold mb-2">護理長 (潛規則)</h4>
+                            <p class="text-white">「你敢照寫，我明天就排不出班、直接關床！」</p>
+                        </div>
+                        <p class="text-gray-300 font-medium text-lg pt-4">
+                            🔥 痛點：積假、黑班、打卡不上班。這些為了維持運作的「生存法則」，成為系統規格無法定案的死結。
+                        </p>
+                    </div>
+
+                    <div class="glass-panel p-8 rounded-2xl flex flex-col justify-between">
+                        <div class="bg-black/40 p-5 rounded-xl border border-white/10">
+                            <h3 class="text-red-400 font-bold mb-3 text-sm tracking-wide">📸 畫面指示 (視覺構圖)</h3>
+                            <p class="text-gray-300 text-sm italic leading-relaxed">
+                                俯角鏡頭。畫面中央是一條發光的紅線（法規）。PM 像走鋼索的人，一邊是巨大冰冷的法槌陰影，另一邊則是閃爍著紅色警示燈、插滿點滴的病床。PM 的筆電螢幕顯示著「ERROR：不合規定」。
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-white/10">
+                            <p class="text-sm text-gray-400">🎨 <strong class="text-white">色調計畫：</strong> 警戒 Crimson Red (#DC2626) 與 冰冷 Steel Blue (#1D4ED8)。<br>💡 <strong class="text-white">情感對應：</strong> 表現出不容妥協的法規與臨床現場的焦慮感。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3 -->
+        <div class="slide bg-gradient-to-br from-[#14532d] to-[#422006]" id="slide-3">
+            <div class="flex-1 flex flex-col p-12 md:p-16 relative">
+                <div class="inline-block px-4 py-1 rounded-full border border-green-400/30 text-green-300 text-sm tracking-widest font-semibold w-max mb-8">ACT II : CONFLICT 02</div>
+                
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-10">
+                    階級角力：<span class="text-amber-400">媳婦熬成婆</span> vs. <span class="text-green-400">齊頭式平等</span>
+                </h2>
+
+                <div class="grid grid-cols-3 gap-6 h-full">
+                    <div class="col-span-2 space-y-6">
+                        <p class="text-2xl text-gray-200 font-light mb-8">「演算法需要客觀的公式，但人類對『公平』的感受卻是相對的。」</p>
+                        
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="glass-panel p-6 rounded-xl">
+                                <h4 class="text-amber-300 font-bold mb-4 text-xl">🏆 資深人員期望</h4>
+                                <ul class="space-y-3 text-gray-200">
+                                    <li class="flex items-start gap-2"><span class="text-amber-500">▶</span> 優先挑選白班</li>
+                                    <li class="flex items-start gap-2"><span class="text-amber-500">▶</span> 預約熱門連假</li>
+                                    <li class="flex items-start gap-2"><span class="text-amber-500">▶</span> 認為這是年資應得的特權</li>
+                                </ul>
+                            </div>
+                            <div class="glass-panel p-6 rounded-xl">
+                                <h4 class="text-green-300 font-bold mb-4 text-xl">⚖️ 資淺人員抗議</h4>
+                                <ul class="space-y-3 text-gray-200">
+                                    <li class="flex items-start gap-2"><span class="text-green-500">▶</span> 拒絕全包週末與花花班</li>
+                                    <li class="flex items-start gap-2"><span class="text-green-500">▶</span> 要求夜班數量絕對均等</li>
+                                    <li class="flex items-start gap-2"><span class="text-green-500">▶</span> 揚言抵制不公的系統</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="text-amber-100/80 mt-4">👉 參數設定困境：設權重，年輕人抵制；不設權重，核心戰力離職。</p>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-2xl flex flex-col justify-between h-full bg-black/20">
+                        <div class="space-y-4">
+                            <h3 class="text-green-400 font-bold text-sm tracking-wide">📸 場景描述</h3>
+                            <p class="text-gray-300 text-sm italic">
+                                畫面中央是一座古銅色的復古天平。左側秤盤放著一枚厚重的金幣（刻有年份），右側放著一大把一模一樣的嶄新銀幣。天平的指針不是傳統的箭頭，而是一段正在激烈跳動的程式碼波形，天平軸心正在冒出火花。
+                            </p>
+                        </div>
+                        <div class="text-sm text-gray-400 pt-4 border-t border-white/10">
+                            🎨 <span class="text-amber-400">復古金</span> 碰撞 <span class="text-green-400">新生綠</span><br>
+                            象徵：傳統階級既得利益與新生代平等意識的撕裂。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4 -->
+        <div class="slide bg-gradient-to-br from-[#2e1065] to-[#431407]" id="slide-4">
+            <div class="flex-1 flex flex-col p-12 md:p-16 relative">
+                <div class="inline-block px-4 py-1 rounded-full border border-purple-400/30 text-purple-300 text-sm tracking-widest font-semibold w-max mb-8">ACT II : CONFLICT 03</div>
+                
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">
+                    資源護衛戰：<span class="text-purple-400">跨單位的本位主義</span>
+                </h2>
+
+                <div class="w-full max-w-4xl space-y-8">
+                    <p class="text-xl text-gray-300">當系統試圖建立「全院排班互通機制」時，利己主義瞬間瓦解了共享的烏托邦。</p>
+
+                    <div class="flex flex-col md:flex-row gap-6 relative">
+                        <!-- Connecting Line -->
+                        <div class="hidden md:block absolute top-1/2 left-0 w-full border-t-2 border-dashed border-orange-500/50 -z-10"></div>
+                        
+                        <!-- Unit A -->
+                        <div class="flex-1 glass-panel p-8 rounded-2xl border-purple-500/30">
+                            <h4 class="text-purple-300 font-black text-2xl mb-4">🛡️ 借出單位的抗拒</h4>
+                            <p class="text-white text-lg">「我們自己都缺人了，憑什麼系統要把我的資深核心抽去支援急診？」</p>
+                        </div>
+                        
+                        <!-- Block marker -->
+                        <div class="hidden md:flex items-center justify-center w-12 h-12 rounded-full bg-orange-600 text-white font-bold z-10 self-center shadow-lg shadow-orange-500/50">
+                            X
+                        </div>
+
+                        <!-- Unit B -->
+                        <div class="flex-1 glass-panel p-8 rounded-2xl border-orange-500/30">
+                            <h4 class="text-orange-300 font-black text-2xl mb-4">⚔️ 接收單位的挑剔</h4>
+                            <p class="text-white text-lg">「系統派來的人根本不會操作我們的特殊儀器，來了反而幫倒忙！」</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-6 mt-8">
+                        <div class="flex-1 bg-black/40 p-5 rounded-xl border border-white/10">
+                            <h3 class="text-purple-400 font-bold mb-2 text-sm">📸 畫面指示 (視覺構圖)</h3>
+                            <p class="text-gray-300 text-sm italic">
+                                畫面分割。兩座如同堡壘般的護理站隔著一條深淵。深淵上方原本有一座由數位光束構成的橋樑（全院互通模組），但在中段斷裂粉碎。兩邊的主管正緊緊抱著發光的棋子（核心人力）不放。
+                            </p>
+                        </div>
+                        <div class="w-1/3 text-sm text-gray-400 flex flex-col justify-center border-l border-white/10 pl-6">
+                            <p class="mb-2">🎨 <strong>色調：</strong> 午夜紫 (#4C1D95) 與 警告橘 (#F97316)</p>
+                            <p>💡 <strong>象徵：</strong> 封閉的部門壁壘與資源搶奪的摩擦火花。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5 -->
+        <div class="slide bg-gradient-to-br from-[#000000] to-[#064e3b]" id="slide-5">
+            <div class="flex-1 flex flex-col p-12 md:p-16 relative">
+                <div class="inline-block px-4 py-1 rounded-full border border-lime-400/30 text-lime-300 text-sm tracking-widest font-semibold w-max mb-8">ACT II : CONFLICT 04</div>
+                
+                <h2 class="text-4xl md:text-5xl font-bold text-white mb-10">
+                    信任危機：<span class="text-lime-400">管理監控</span> vs. <span class="text-gray-400">基層彈性</span>
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 h-full items-center">
+                    <div class="space-y-8">
+                        <div class="relative pl-8 border-l-2 border-lime-500">
+                            <div class="absolute -left-3 top-0 text-2xl">👁️</div>
+                            <h4 class="text-lime-400 font-bold text-xl mb-2">高層的老大哥視角</h4>
+                            <p class="text-gray-300">期待「高透明度」。要求系統連動打卡與績效，精準抓出誰在偷懶、工時異常。</p>
+                        </div>
+                        
+                        <div class="relative pl-8 border-l-2 border-gray-500">
+                            <div class="absolute -left-3 top-0 text-2xl">📱</div>
+                            <h4 class="text-gray-300 font-bold text-xl mb-2">基層的地下秩序</h4>
+                            <p class="text-gray-400">恐懼失去「私下用 LINE 喬班」的彈性。三層主管線上簽核？太麻煩，直接拒用。</p>
+                        </div>
+
+                        <div class="bg-lime-900/20 p-4 rounded-lg mt-8 text-lime-100 text-sm">
+                            ⚠️ PM的兩難：太嚴密＝基層排斥；太寬鬆＝高層覺得白花錢。
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-8 rounded-2xl bg-black/60 backdrop-blur-md">
+                        <div class="space-y-4">
+                            <h3 class="text-lime-500 font-bold text-sm tracking-wide">📸 視覺場景設定</h3>
+                            <p class="text-gray-300 italic leading-relaxed">
+                                壓抑的構圖。畫面正上方是一個巨大的監視器鏡頭，造型像手術室的無影燈，投射出刺眼的錐形綠光。在光錐邊緣的陰影處，幾名護理人員的剪影正在偷偷交換手中發光的 LINE 對話框拼圖。
+                            </p>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-white/10 text-sm text-gray-400">
+                            🎨 <span class="text-white">賽博黑 (#000000)</span> 籠罩 <span class="text-lime-400">毒氣綠 (#84CC16)</span><br>
+                            營造出一種被監視的壓迫感與缺乏信任的冰冷氛圍。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6 -->
+        <div class="slide bg-gradient-to-br from-[#c2410c] to-[#0f172a]" id="slide-6">
+            <div class="flex-1 flex flex-col p-12 md:p-16 relative text-center">
+                <div class="mx-auto inline-block px-4 py-1 rounded-full border border-orange-400/30 text-orange-300 text-sm tracking-widest font-semibold w-max mb-8">ACT III : CLIMAX & RESOLUTION</div>
+                
+                <h2 class="text-5xl font-black text-white mb-6">
+                    PM 的破局之道：<span class="text-orange-400">留白與灰階</span>
+                </h2>
+                <p class="text-xl text-gray-300 mb-12 max-w-3xl mx-auto">
+                    優秀的 PM 不能只是「聽寫機 (Order Taker)」。不要妄想用一組演算法強行解決人類社會的政治問題。
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left max-w-5xl mx-auto w-full">
+                    <div class="glass-panel p-8 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors">
+                        <div class="text-orange-400 text-3xl mb-4">🔓</div>
+                        <h4 class="text-white font-bold text-xl mb-3">1. 預留「人類介入的後門」</h4>
+                        <p class="text-gray-300">辨識哪些是「法規天條」（系統鎖死），哪些是「灰色地帶」。保留人工強制覆寫（Override）的權限，讓主管能處理特殊人情。</p>
+                    </div>
+                    <div class="glass-panel p-8 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors">
+                        <div class="text-orange-400 text-3xl mb-4">🎛️</div>
+                        <h4 class="text-white font-bold text-xl mb-3">2. 高度參數化的調整空間</h4>
+                        <p class="text-gray-300">將公平權重、跨單位支援比例等爭議點，設計為主管可自定義的「參數拉桿」，將決策權（與政治責任）交還給管理層。</p>
+                    </div>
+                </div>
+
+                <div class="mt-12 bg-black/40 p-6 rounded-xl max-w-4xl mx-auto text-left border border-orange-500/20 flex gap-6 items-center">
+                    <div class="flex-1">
+                        <h3 class="text-orange-400 font-bold mb-2 text-sm">📸 畫面指示</h3>
+                        <p class="text-gray-300 text-sm italic">
+                            一座冷酷、結構嚴密的數位迷宮（演算法）。但在迷宮的最中央，並不是冰冷的核心，而是一扇保留著人類剪影輪廓的門，門後透出溫暖的晨光。
+                        </p>
+                    </div>
+                    <div class="flex-1 border-l border-white/10 pl-6 text-sm text-gray-400">
+                        🎨 <strong>色調：</strong> 黎明橘 (#FB923C) 與 柔和灰 (#F8FAFC)<br>
+                        💡 <strong>象徵：</strong> 在冰冷程式碼中找到人性的解套與希望。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7 -->
+        <div class="slide bg-gradient-to-b from-[#0f172a] to-[#042f2e]" id="slide-7">
+            <div class="flex-1 flex flex-col items-center justify-center p-12 md:p-20 text-center relative">
+                <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==')] opacity-50"></div>
+                
+                <h1 class="text-5xl md:text-7xl font-black text-white mb-8 tracking-wide z-10">
+                    科技，終究要<span class="text-teal-400">回歸人性</span>
+                </h1>
+                
+                <p class="text-2xl text-teal-100/80 mb-16 font-light z-10 tracking-widest">
+                    系統是輔助，<strong class="text-white font-bold border-b-2 border-teal-500 pb-1">溝通才是解藥</strong>。
+                </p>
+
+                <div class="glass-panel p-6 rounded-xl max-w-2xl text-left border border-teal-500/20 z-10 w-full flex items-center justify-between">
+                    <div>
+                        <h3 class="text-teal-400 font-bold mb-1 text-sm">📸 終幕畫面</h3>
+                        <p class="text-gray-300 text-sm italic">
+                            特寫鏡頭。一隻由發光藍色線條構成的機械手，與一隻溫暖的人類手掌，共同握著一個發光的聽診器。背景是漸亮的黎明。
+                        </p>
+                    </div>
+                    <div class="text-right pl-4">
+                        <span class="text-teal-500 text-3xl">THE END</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Arrows (Hidden in print) -->
+        <button id="prevBtn" class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur transition-all no-print z-20">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+        </button>
+        <button id="nextBtn" class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur transition-all no-print z-20">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+        </button>
+
+        <!-- Slide Indicators -->
+        <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 no-print z-20" id="indicators">
+            <!-- Injected via JS -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slides = document.querySelectorAll('.slide');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const indicatorsContainer = document.getElementById('indicators');
+            let currentSlide = 0;
+
+            // Create indicators
+            slides.forEach((_, index) => {
+                const dot = document.createElement('div');
+                dot.classList.add('w-2', 'h-2', 'rounded-full', 'bg-white/30', 'cursor-pointer', 'transition-all');
+                if (index === 0) dot.classList.replace('bg-white/30', 'bg-white');
+                dot.addEventListener('click', () => goToSlide(index));
+                indicatorsContainer.appendChild(dot);
+            });
+
+            const indicators = indicatorsContainer.querySelectorAll('div');
+
+            function updateSlides() {
+                slides.forEach((slide, index) => {
+                    if (index === currentSlide) {
+                        slide.classList.add('active');
+                        indicators[index].classList.replace('bg-white/30', 'bg-white');
+                        indicators[index].classList.add('w-4'); // elongate active dot
+                    } else {
+                        slide.classList.remove('active');
+                        indicators[index].classList.replace('bg-white', 'bg-white/30');
+                        indicators[index].classList.remove('w-4');
+                    }
+                });
+            }
+
+            function nextSlide() {
+                if (currentSlide < slides.length - 1) {
+                    currentSlide++;
+                    updateSlides();
+                }
+            }
+
+            function prevSlide() {
+                if (currentSlide > 0) {
+                    currentSlide--;
+                    updateSlides();
+                }
+            }
+
+            function goToSlide(index) {
+                currentSlide = index;
+                updateSlides();
+            }
+
+            // Click events
+            nextBtn.addEventListener('click', nextSlide);
+            prevBtn.addEventListener('click', prevSlide);
+
+            // Keyboard events
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight' || e.key === ' ') {
+                    nextSlide();
+                } else if (e.key === 'ArrowLeft') {
+                    prevSlide();
+                }
+            });
+
+            // Click on left/right areas of the container to navigate
+            document.getElementById('presentation').addEventListener('click', (e) => {
+                // Ignore clicks on buttons or interactive elements
+                if(e.target.closest('button') || e.target.closest('#indicators')) return;
+                
+                const rect = e.currentTarget.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                if (clickX > rect.width / 2) {
+                    nextSlide();
+                } else {
+                    prevSlide();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

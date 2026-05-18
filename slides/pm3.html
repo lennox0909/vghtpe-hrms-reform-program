@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>需求訪談的「潘朵拉的盒子」- 單頁精華</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #0f172a; /* Slate 900 background */
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        /* 16:9 Aspect Ratio Container for the Slide */
+        .slide-container {
+            aspect-ratio: 16 / 9;
+            width: 100%;
+            max-width: 1400px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(59, 130, 246, 0.1);
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Glassmorphism utilities */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-panel:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+        }
+
+        @media print {
+            body { background: white; padding: 0; display: block; }
+            .no-print { display: none !important; }
+            .slide-container { 
+                box-shadow: none; 
+                border-radius: 0;
+                width: 297mm; /* A4 Landscape width */
+                height: 210mm; /* A4 Landscape height */
+                max-width: none;
+                aspect-ratio: auto;
+                background: white !important; /* Force white for printing */
+                page-break-after: avoid;
+            }
+            .slide-container::before { content: none; }
+            /* Force background colors to print */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            /* Adjust text colors for light background */
+            h1, h2, h3, p, span, li, div { color: #111 !important; text-shadow: none !important; }
+            .glass-panel { 
+                background: #f8fafc !important; 
+                border: 1px solid #cbd5e1 !important; 
+            }
+            .print-border { border: 1px solid #e2e8f0; }
+        }
+
+        /* Custom Scrollbar for inner elements if needed */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <div class="w-full max-w-[1400px] flex justify-between items-center mb-4 no-print text-white px-2">
+        <div>
+            <h1 class="text-xl font-bold tracking-wider text-blue-400">一頁式劇本簡報</h1>
+            <p class="text-xs text-gray-400">將游標懸停在卡片上可凸顯重點</p>
+        </div>
+        <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg font-medium transition-all shadow-lg shadow-indigo-500/30 flex items-center gap-2 text-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            匯出 PDF
+        </button>
+    </div>
+
+    <div class="slide-container p-6 md:p-8 flex flex-col relative print-border">
+        
+        <!-- Abstract Background Effects -->
+        <div class="absolute top-0 right-0 w-96 h-96 bg-blue-600/20 rounded-full mix-blend-screen filter blur-[100px] pointer-events-none"></div>
+        <div class="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/20 rounded-full mix-blend-screen filter blur-[100px] pointer-events-none"></div>
+
+        <header class="mb-6 flex justify-between items-end z-10">
+            <div>
+                <div class="inline-block px-3 py-1 rounded-full border border-blue-400/30 text-blue-300 text-xs tracking-widest font-semibold mb-2">
+                    DIGITAL TRANSFORMATION CONFLICTS
+                </div>
+                <h1 class="text-3xl md:text-5xl font-black text-white leading-tight mb-2 tracking-wide">
+                    需求訪談的 <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">潘朵拉盒子</span>
+                </h1>
+                <p class="text-gray-300 text-sm md:text-base border-l-2 border-blue-500 pl-3">
+                    排班系統是一面數位照妖鏡，將過去靠「人治」與「妥協」掩蓋的四大內部矛盾攤在陽光下。
+                </p>
+            </div>
+            
+            <!-- Director's Notes Panel (Replaces separate slides for Show/Don't Tell) -->
+            <div class="hidden md:block w-72 glass-panel p-3 rounded-xl border-l-4 border-l-yellow-500/50">
+                <h3 class="text-yellow-400 font-bold text-xs mb-1 flex items-center gap-1">
+                    🎬 畫面與色調指示 (Director's Note)
+                </h3>
+                <p class="text-gray-400 text-[10px] leading-relaxed">
+                    <strong>構圖：</strong> 中央置入微開的無菌醫療鐵盒，光塵溢出切割出四大象限。<br>
+                    <strong>色調：</strong> 上半部採用冰冷科技藍與警戒紅的強烈對比(衝突)；底部解方區轉為溫暖的黎明金(希望)。
+                </p>
+            </div>
+        </header>
+
+        <div class="flex-1 grid grid-cols-2 gap-4 md:gap-6 z-10">
+            
+            <!-- Conflict 1 -->
+            <div class="glass-panel p-5 rounded-2xl flex flex-col relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">⚖️</div>
+                <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <span class="w-2 h-6 bg-red-500 rounded-full"></span>
+                    法規天條 vs. 臨床生存
+                </h2>
+                <div class="grid grid-cols-2 gap-3 flex-1">
+                    <div class="bg-red-900/20 p-3 rounded-lg border border-red-500/20">
+                        <span class="text-red-400 text-xs font-bold block mb-1">人資 (明規則)</span>
+                        <p class="text-gray-300 text-xs">「系統卡死勞基法，不合法就不准給過！」</p>
+                    </div>
+                    <div class="bg-blue-900/20 p-3 rounded-lg border border-blue-500/20">
+                        <span class="text-blue-400 text-xs font-bold block mb-1">護理長 (潛規則)</span>
+                        <p class="text-gray-300 text-xs">「照寫死，我明天就排不出班、直接關床！」</p>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-white/10 text-gray-400 text-xs">
+                    <strong class="text-red-300">💥 痛點：</strong> 積假、黑班、打卡異常無法系統化，規格卡關。
+                </div>
+            </div>
+
+            <!-- Conflict 2 -->
+            <div class="glass-panel p-5 rounded-2xl flex flex-col relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl transform group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500">🏆</div>
+                <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <span class="w-2 h-6 bg-amber-500 rounded-full"></span>
+                    階級角力 vs. 絕對平等
+                </h2>
+                <div class="grid grid-cols-2 gap-3 flex-1">
+                    <div class="bg-amber-900/20 p-3 rounded-lg border border-amber-500/20">
+                        <span class="text-amber-400 text-xs font-bold block mb-1">資深 (媳婦熬成婆)</span>
+                        <p class="text-gray-300 text-xs">特權期望：優先挑白班、預約熱門連假。</p>
+                    </div>
+                    <div class="bg-emerald-900/20 p-3 rounded-lg border border-emerald-500/20">
+                        <span class="text-emerald-400 text-xs font-bold block mb-1">資淺 (齊頭式平等)</span>
+                        <p class="text-gray-300 text-xs">反抗爛班：要求夜班數與週末班絕對均等。</p>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-white/10 text-gray-400 text-xs">
+                    <strong class="text-amber-300">💥 痛點：</strong> 演算法權重設定兩難，得罪任何一方都會引發離職潮。
+                </div>
+            </div>
+
+            <!-- Conflict 3 -->
+            <div class="glass-panel p-5 rounded-2xl flex flex-col relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">🛡️</div>
+                <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <span class="w-2 h-6 bg-purple-500 rounded-full"></span>
+                    本位主義 vs. 資源共享
+                </h2>
+                <div class="flex gap-4 items-center flex-1">
+                    <div class="flex-1">
+                        <p class="text-gray-300 text-xs mb-2"><strong>借出方：</strong>「我們也缺人，憑什麼抽走核心人力？」</p>
+                        <p class="text-gray-300 text-xs"><strong>接收方：</strong>「派來的人不會用特定儀器，幫倒忙！」</p>
+                    </div>
+                    <div class="w-px h-full bg-gradient-to-b from-transparent via-white/20 to-transparent"></div>
+                    <div class="flex-1 text-xs text-gray-400">
+                        <p>全院互通機制(Float Pool)的美好願景，在各單位<span class="text-purple-300">「緊抓人力、拒收爛班」</span>的利己主義下宣告破局。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conflict 4 -->
+            <div class="glass-panel p-5 rounded-2xl flex flex-col relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl transform group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500">👁️</div>
+                <h2 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <span class="w-2 h-6 bg-lime-500 rounded-full"></span>
+                    管理監控 vs. 基層彈性
+                </h2>
+                <div class="flex gap-4 items-center flex-1">
+                    <div class="flex-1">
+                        <p class="text-gray-300 text-xs mb-2"><span class="text-lime-400 font-bold">高層：老大哥視角</span><br>要透明度、連動績效抓偷懶。</p>
+                        <p class="text-gray-300 text-xs"><span class="text-gray-400 font-bold">基層：地下秩序</span><br>恐懼失去私下用LINE喬班的彈性。</p>
+                    </div>
+                    <div class="w-px h-full bg-gradient-to-b from-transparent via-white/20 to-transparent"></div>
+                    <div class="flex-1 text-xs text-gray-400">
+                        <p>太嚴密(三層簽核) = <span class="text-red-300">基層拒用</span><br>
+                        太寬鬆 = <span class="text-lime-300">高層覺得沒管理效益</span><br>
+                        系統陷入信任危機。</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <footer class="mt-6 glass-panel rounded-2xl p-5 border-t-4 border-t-orange-500 bg-gradient-to-r from-white/5 to-orange-900/20 z-10">
+            <div class="flex items-center gap-6">
+                <div class="hidden md:flex items-center justify-center w-16 h-16 rounded-full bg-orange-500/20 border border-orange-500 text-orange-400 text-2xl shadow-[0_0_15px_rgba(249,115,22,0.3)]">
+                    🗝️
+                </div>
+                <div class="flex-1">
+                    <h2 class="text-xl font-bold text-white mb-2">
+                        Resolution：PM 的破局之道 —— <span class="text-orange-400">留白與灰階</span>
+                    </h2>
+                    <p class="text-gray-300 text-sm leading-relaxed">
+                        優秀的 PM 不是聽寫機。不要妄想用演算法強行解決人類政治問題。<strong class="text-white">系統是輔助，溝通才是解藥。</strong><br>
+                        架構必須：<span class="bg-orange-500/20 text-orange-200 px-2 py-0.5 rounded mx-1">1. 預留人類介入後門 (人工覆寫權限)</span> 與 <span class="bg-orange-500/20 text-orange-200 px-2 py-0.5 rounded mx-1">2. 高度參數化 (下放微調決策權)</span>，將政治責任交還管理層。
+                    </p>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+</body>
+</html>

@@ -40,7 +40,7 @@ class PoNavbar extends HTMLElement {
                                     <a href="http://wd.vghtpe.gov.tw/per/" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">臺北榮總人事室</a>
                                     <a href="https://mermaid.js.org/intro/syntax-reference.html" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">Mermaid 語法指南</a>
                                     <a href="https://www.markdownguide.org/" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">Markdown 語法指南</a>
-                                    <a href="./components/shifting-painpoint.html" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">排班與休假管理痛點分析</a>
+                                    <a href="./slides/shifting-painpoint.html" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">排班與休假管理痛點分析</a>
                                     <a href="https://nature.leno-1.com/game_of_life/" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">小遊戲：數位繁衍</a>
 
                                     

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>揭開潘朵拉的盒子：排班系統下的組織真相</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow: hidden;
+        }
+        .slide-enter {
+            animation: slideIn 0.6s ease-out forwards;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        @media print {
+            .no-print { display: none; }
+            .slide { 
+                page-break-after: always; 
+                height: auto !important; 
+                display: block !important;
+                opacity: 1 !important;
+                position: relative !important;
+            }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+<div id="app" class="flex-grow relative flex items-center justify-center p-4 md:p-8">
+    <!-- Slide Container -->
+    <div id="slide-content" class="w-full max-w-6xl h-full flex flex-col justify-center slide-enter">
+        <!-- Content will be injected here -->
+    </div>
+
+    <!-- Navigation Overlay -->
+    <div class="fixed bottom-8 left-0 right-0 flex justify-center items-center gap-6 no-print">
+        <button onclick="prevSlide()" class="p-3 rounded-full glass-card hover:bg-white/10 transition-all text-white/50 hover:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="15 19l-7-7 7-7" />
+            </svg>
+        </button>
+        <span id="page-indicator" class="text-sm font-medium tracking-widest text-white/40 uppercase">Slide 1 / 7</span>
+        <button onclick="nextSlide()" class="p-3 rounded-full glass-card hover:bg-white/10 transition-all text-white/50 hover:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="9 5l7 7-7 7" />
+            </svg>
+        </button>
+        <button onclick="window.print()" class="ml-4 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-all">
+            列印 / 匯出 PDF
+        </button>
+    </div>
+</div>
+
+<script>
+    const slides = [
+        {
+            title: "揭開潘朵拉的盒子：排班系統下的組織真相",
+            subtitle: "當數位化成為『照妖鏡』，我們看見的是程式碼還是人性？",
+            content: [
+                "醫療排班不只是數學問題，更是政治問題",
+                "數位化轉型迫使『潛規則』無所遁形",
+                "PM 的角色：從規格聽寫員轉向權益協調者"
+            ],
+            visual: "一個半透明的發光立方體（代表排班系統）懸浮在醫院長廊中心，立方體內部溢散出混亂的陰影與光流，長廊盡頭站著一個手提公事包的 PM 剪影，面對著未知的黑暗。",
+            color: "深夜般的幽藍色與警告性的微光橙，象徵未知與真相的併發。",
+            isTitleSlide: true
+        },
+        {
+            title: "規則的衝撞：法規的高牆 vs. 生存的縫隙",
+            content: [
+                "人資天條：嚴格卡死勞基法、超時即違規",
+                "臨床現實：『不違規，明天就沒人上班、病房關床』",
+                "矛盾點：積假、私下換班等『黑班』難以系統化"
+            ],
+            visual: "畫面一分為二，左側是冰冷、對齊的法律文件與數位時鐘；右側是凌亂的紙本班表與護理長疲累地揉太陽穴的側臉，兩者之間有一道帶電的裂痕。",
+            color: "冷冽的鋼鐵灰（秩序）與焦慮的磚紅色（生存壓力），展現教條與彈性間的尖銳衝突。",
+            transition: "當法規遇上救命，PM 成了那塊夾心餅乾。"
+        },
+        {
+            title: "公平的幻影：階級權威與絕對平等的戰爭",
+            content: [
+                "資深期望：『媳婦熬成婆』的特權與優先權",
+                "資淺訴求：齊頭式的絕對公平，拒絕爛班慣例",
+                "矛盾點：演算法無法同時討好『戰力核心』與『新血勞力』"
+            ],
+            visual: "一架極具現代感的數位天平。天平的一端是象徵年資的金質勳章，另一端是無數代表年輕員工的白色棋子。天平劇烈晃動，背景是無數雙注視著天平的眼睛。",
+            color: "權威的金黃色與象徵純粹的潔白色，營造出神聖感與利益爭奪的緊張氛圍。",
+            transition: "公平不是數學公式，而是心理平衡。"
+        },
+        {
+            title: "領域的堡壘：跨單位支援的本位主義",
+            content: [
+                "外借的抗拒：『我們自己都缺人，憑什麼支援急診？』",
+                "接收的挑剔：『來支援的人根本不懂，來了反而是負擔！』",
+                "矛盾點：每個人都宣稱專業不可取代，藉此守護核心人力"
+            ],
+            visual: "多個發光的六角形蜂巢結構（代表不同科室），每個結構都築起了高聳的數據牆。一個代表支援人員的小光球試圖進入其中一個結構，卻被防禦屏障反彈回去。",
+            color: "互不相容的深紫與翠綠，對比出科室間的排他性與領地意識。",
+            transition: "當單位利益高於全院效率，支援模組便成了死路。"
+        },
+        {
+            title: "老大哥的凝視：效率管理與信任的崩潰",
+            content: [
+                "高層視角：追求高透明度，連動打卡抓出冗員",
+                "基層恐懼：失去 LINE 群組喬班的私人彈性",
+                "矛盾點：系統的嚴密性與管理效益成正比，卻與員工好感度成反比"
+            ],
+            visual: "一個由數據組成的巨大眼睛（監視攝影機結構）俯瞰著醫院。下方的員工們紛紛躲避視線，手中握著發光的智慧手機（象徵私底下的協調），與眼光對峙。",
+            color: "深邃的墨綠色與刺眼的霓虹藍，象徵監視、科技感與不安感。",
+            transition: "管理的極致，往往是信任的終點。"
+        },
+        {
+            title: "PM 的覺醒：不再只是規格的記錄者",
+            content: [
+                "識別天條：哪些是法規紅線，哪些是可談判的灰色帶",
+                "留有後門：保留『人類介入』與『高度參數化』空間",
+                "核心心法：系統是為了緩解矛盾，而非強行抹除人性"
+            ],
+            visual: "PM 坐在發光的操控台前，手中不再是筆，而是調整旋鈕。背景的混亂線條（矛盾）在他的調教下，雖然依然交錯，但開始呈現出一種有機的、流動的和諧。",
+            color: "柔和的琥珀色與清新的薄荷綠，象徵洞察力、溫暖與最終的調解方案。",
+            transition: "智慧系統的真諦，在於對人性複雜度的妥協。"
+        },
+        {
+            title: "結語：讓系統承載人性的複雜",
+            content: [
+                "成功的系統必須具備：法規剛性 + 現場柔性",
+                "PM 必備：極高的政治敏感度與場景理解力",
+                "這不是解決問題，而是在不同利益間找到暫時的平衡點"
+            ],
+            visual: "一個完美的莫比烏斯環，環身由代碼與護理日誌交織而成。象徵法規與現實、管理與彈性在此循環往復，不再是非黑即白的對立。",
+            color: "晨曦般的橙金與淺灰，象徵希望、轉型與雙贏的開端。",
+            isEndSlide: true
+        }
+    ];
+
+    let currentSlide = 0;
+
+    function renderSlide() {
+        const slide = slides[currentSlide];
+        const container = document.getElementById('slide-content');
+        const indicator = document.getElementById('page-indicator');
+        
+        container.classList.remove('slide-enter');
+        void container.offsetWidth; // Trigger reflow
+        container.classList.add('slide-enter');
+
+        let html = '';
+        if (slide.isTitleSlide) {
+            html = `
+                <div class="text-center">
+                    <h1 class="text-5xl md:text-7xl font-bold mb-6 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
+                        ${slide.title}
+                    </h1>
+                    <p class="text-xl md:text-2xl text-slate-400 mb-12 font-light">${slide.subtitle}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                        ${slide.content.map(item => `
+                            <div class="p-6 glass-card rounded-2xl">
+                                <p class="text-slate-300 leading-relaxed">${item}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        } else {
+            html = `
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h2 class="text-3xl md:text-4xl font-bold mb-8 text-white border-l-4 border-indigo-500 pl-6">
+                            ${slide.title}
+                        </h2>
+                        <ul class="space-y-6 mb-10">
+                            ${slide.content.map(item => `
+                                <li class="flex items-start gap-4">
+                                    <span class="mt-1.5 h-2 w-2 rounded-full bg-indigo-500 shadow-[0_0_10px_#6366f1]"></span>
+                                    <span class="text-lg text-slate-300 leading-relaxed">${item}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                        <div class="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 italic text-indigo-300 text-sm">
+                            "${slide.transition || ''}"
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="p-6 glass-card rounded-2xl border-indigo-500/30">
+                            <h4 class="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-4">視覺場景描述 (Show, Don't Tell)</h4>
+                            <p class="text-slate-400 text-sm leading-relaxed mb-4">${slide.visual}</p>
+                            <div class="flex items-center gap-3 mt-6 pt-6 border-t border-white/10">
+                                <div class="h-4 w-4 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500"></div>
+                                <span class="text-xs font-medium text-slate-300">色調建議：${slide.color}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+        indicator.innerText = `Slide ${currentSlide + 1} / ${slides.length}`;
+    }
+
+    function nextSlide() {
+        if (currentSlide < slides.length - 1) {
+            currentSlide++;
+            renderSlide();
+        }
+    }
+
+    function prevSlide() {
+        if (currentSlide > 0) {
+            currentSlide--;
+            renderSlide();
+        }
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+        if (e.key === 'ArrowLeft') prevSlide();
+    });
+
+    window.onload = renderSlide;
+</script>
+</body>
+</html>
