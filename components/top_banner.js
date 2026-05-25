@@ -42,7 +42,7 @@ class PoNavbar extends HTMLElement {
                                     <a href="https://www.markdownguide.org/" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">Markdown 語法指南</a>
                                     <a href="https://nature.leno-1.com/game_of_life/" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">小遊戲：數位繁衍</a>
                                     <a href="./slides/shifting-painpoint.html" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">排班與休假管理痛點分析</a>
-                                    <a href="./slides/mardon-database.html" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">資料架構現代化</a>
+                                    <a href="./slides/modern-database.html" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">資料架構現代化</a>
 
                                     
 
