@@ -38,6 +38,7 @@ class PoNavbar extends HTMLElement {
                                     <div class="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50">相關資源</div>
                                     <a href="https://www.vghtpe.gov.tw/" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">臺北榮總官網</a>
                                     <a href="http://wd.vghtpe.gov.tw/per/" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">臺北榮總人事室</a>
+                                    <a href="https://www.ey.gov.tw/File/256FA8EA44DBFF45" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"> 懶人包「公務機關使用生成式AI相關管理規範」</a>
                                     <a href="https://mermaid.js.org/intro/syntax-reference.html" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">Mermaid 語法指南</a>
                                     <a href="https://www.markdownguide.org/" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">Markdown 語法指南</a>
                                     <a href="https://nature.leno-1.com/game_of_life/" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">小遊戲：數位繁衍</a>
