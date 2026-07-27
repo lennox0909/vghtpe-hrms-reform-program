@@ -32,6 +32,9 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* 底部加上淡淡的陰影增加立體感 */
             padding: 0 20px;
             box-sizing: border-box; /* 讓 padding 不會撐破 width */
+            text-decoration: none; /* 移除超連結預設底線 */
+            cursor: pointer; /* 讓鼠標變成點擊的手指 */
+            transition: background-color 0.2s ease; /* 增加滑鼠懸停的漸變動畫 */
         }
 
         .top-banner h1 {
@@ -78,10 +81,10 @@
 </head>
 <body>
 
-    <!-- Top Banner -->
-    <header class="top-banner">
+    <!-- Top Banner (現在改為超連結，點擊另開新分頁) -->
+    <a href="https://hrms.leno-1.com/" target="_blank" class="top-banner" title="前往人事室智慧工具箱">
         <h1>臺北榮民總醫院 人事室 智慧工具箱</h1>
-    </header>
+    </a>
 
     <div class="iframe-container">
         <div class="fallback-message">
