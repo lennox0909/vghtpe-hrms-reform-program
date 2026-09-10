@@ -5,7 +5,10 @@ import { handleSvgDownload, handlePngDownload } from './image-export.js';
 export async function renderContent() {
     const rawText = DOM.editor.value || '';
     // 預先過濾導致崩潰的不見字元
-    const sanitizedText = rawText.replace(/\u00A0/g, ' ').replace(/\u2029/g, '\n');
+    // 將不中斷空白轉換為普通空白，將特殊的行/段落分隔符強制轉為 Mermaid 換行標籤
+    const sanitizedText = rawText
+        .replace(/\u00A0/g, ' ')
+        .replace(/[\u2028\u2029]/g, '<br/>');
     
     if (window.marked) {
        DOM.preview.innerHTML = marked.parse(sanitizedText);
