@@ -4,6 +4,7 @@ import { handleSvgDownload, handlePngDownload } from './image-export.js';
 
 export async function renderContent() {
     const rawText = DOM.editor.value || '';
+    
     // 預先過濾導致崩潰的不見字元
     // 將不中斷空白轉換為普通空白，將特殊的行/段落分隔符強制轉為 Mermaid 換行標籤
     const sanitizedText = rawText
@@ -28,7 +29,9 @@ export async function renderContent() {
         const id = `mermaid-chart-${Date.now()}-${index}`;
         mDiv.id = id;
         
-        const sourceText = block.textContent;
+        let sourceText = block.textContent;
+        // 強制將 不中斷空白(\u00A0)、全形空白(\u3000)、零寬字元(\u200B) 全部替換成標準半形空白
+        sourceText = sourceText.replace(/[\u00A0\u3000\u200B]/g, ' ');
         
         try {
             // 單獨渲染以捕捉錯誤
